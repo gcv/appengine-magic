@@ -1,0 +1,1 @@
+(ns appengine-magic.core)
