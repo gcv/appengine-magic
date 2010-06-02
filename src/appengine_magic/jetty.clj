@@ -2,6 +2,7 @@
   (:use [ring.util.servlet :only [servlet]])
   (:import org.mortbay.jetty.handler.ContextHandlerCollection
            org.mortbay.jetty.Server
+           javax.servlet.http.HttpServlet
            [org.mortbay.jetty.servlet Context ServletHolder]))
 
 
@@ -22,7 +23,7 @@
 
 ;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
 ;;; syntax for keyword arguments.
-(defn #^Server start [handlers {:keys [port join?] :or {port 8080 join? true}}]
+(defn #^Server start [handlers {:keys [port join?] :or {port 8080 join? false}}]
   (let [server (Server. port)]
     (doto server
       (.setHandler (if (map? handlers)
