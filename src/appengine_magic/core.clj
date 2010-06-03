@@ -16,8 +16,9 @@
 
 (defmacro def-appengine-app [app-var-name handler war-root]
   `(def ~app-var-name
-        (let [war-root# ~war-root]
-          {:handler (wrap-file (environment-decorator ~handler) (str war-root#))
+        (let [handler# ~handler
+              war-root# ~war-root]
+          {:handler (wrap-file (environment-decorator handler#) (str war-root#))
            :war-root war-root#})))
 
 
