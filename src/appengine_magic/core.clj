@@ -14,12 +14,15 @@
 ;;; servlet, or deploy to App Engine.
 
 
-(defmacro def-appengine-app [app-var-name handler war-root]
-  `(def ~app-var-name
-        (let [handler# ~handler
-              war-root# ~war-root]
-          {:handler (wrap-file (environment-decorator handler#) (str war-root#))
-           :war-root war-root#})))
+;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
+;;; syntax for keyword arguments, if it works with macros.
+(defmacro def-appengine-app [app-var-name handler & [args]]
+  (let [{:keys [war-root] :or {war-root "war"}} args]
+    `(def ~app-var-name
+         (let [handler# ~handler
+               war-root# (-> (clojure.lang.RT/baseLoader) (.getResource ~war-root) .getFile)]
+           {:handler (wrap-file (environment-decorator handler#) war-root#)
+            :war-root war-root#}))))
 
 
 ;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
