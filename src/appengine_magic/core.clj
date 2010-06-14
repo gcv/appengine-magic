@@ -37,13 +37,13 @@
   (jetty/stop server))
 
 
-;;; TODO: Implement this.
+;;; TODO: Implement this. Leiningen plugin?
 (defn compile-to-servlet [appengine-app servlet-class-name])
 
 
-;;; TODO: Implement this.
+;;; TODO: Implement this. Leiningen plugin?
 (defn deploy [])
 
 
-;;; TODO: Implement this.
+;;; TODO: Implement this. Leiningen plugin?
 (defn rollback [])
