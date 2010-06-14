@@ -14,6 +14,13 @@
 ;;; servlet, or deploy to App Engine.
 
 
+(defn wrap-war-static [app #^String war-root]
+  (fn [req] (let [#^String uri (:uri req)]
+              (if (.startsWith uri "/WEB-INF")
+                  (app req)
+                  ((wrap-file app war-root) req)))))
+
+
 ;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
 ;;; syntax for keyword arguments, if it works with macros.
 (defmacro def-appengine-app [app-var-name handler & [args]]
@@ -21,7 +28,9 @@
     `(def ~app-var-name
          (let [handler# ~handler
                war-root# (-> (clojure.lang.RT/baseLoader) (.getResource ~war-root) .getFile)]
-           {:handler (wrap-file (environment-decorator handler#) war-root#)
+           {:handler (wrap-war-static
+                      (environment-decorator handler#)
+                      war-root#)
             :war-root war-root#}))))
 
 
@@ -30,7 +39,6 @@
 (defn start* [appengine-app {:keys [port join?] :or {port 8080 join? false}}]
   (let [handler-servlet (servlet (:handler appengine-app))]
     (app-engine-init (:war-root appengine-app))
-    ;; TODO: Also needs a static fallback into /war, excluding /war/WEB-INF.
     (jetty/start {"/" handler-servlet
                   "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)}
                  {:port port :join? join?})))
