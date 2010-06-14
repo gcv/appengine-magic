@@ -24,7 +24,7 @@
 
 ;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
 ;;; syntax for keyword arguments.
-(defn start [appengine-app {:keys [port join?] :or {port 8080 join? false}}]
+(defn start* [appengine-app {:keys [port join?] :or {port 8080 join? false}}]
   (let [handler-servlet (servlet (:handler appengine-app))]
     (app-engine-init (:war-root appengine-app))
     ;; TODO: Also needs a static fallback into /war, excluding /war/WEB-INF.
@@ -33,8 +33,23 @@
                  {:port port :join? join?})))
 
 
-(defn stop [server]
+(defn stop* [server]
   (jetty/stop server))
+
+
+;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
+;;; syntax for keyword arguments.
+(defmacro start [appengine-app & [args]]
+  (let [{:keys [server] :or {server '*server*}} args
+        args (dissoc args :server)]
+    `(do (defonce ~server (atom nil))
+         (reset! ~server (start* ~appengine-app ~args)))))
+
+
+;;; TODO: When Clojure 1.2 comes out, change this to use the destructuring
+;;; syntax for keyword arguments.
+(defmacro stop [{:keys [server] :or {server '*server*}}]
+  `(stop* @~server))
 
 
 ;;; TODO: Implement this. Leiningen plugin?
