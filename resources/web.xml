@@ -10,7 +10,7 @@
 
   <servlet>
     <servlet-name>app</servlet-name>
-    <servlet-class>app_servlet</servlet-class>
+    <servlet-class>com.example.app_servlet</servlet-class>
   </servlet>
 
   <servlet-mapping>
