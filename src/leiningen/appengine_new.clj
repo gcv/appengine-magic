@@ -29,8 +29,17 @@
 (defn appengine-new [project]
   (let [resources-dir (File. (:resources-path project))
         war-dir (File. resources-dir "war")
-        WEB-INF-dir (File. war-dir "WEB-INF")]
+        WEB-INF-dir (File. war-dir "WEB-INF")
+        prj-application (:appengine-application project)
+        prj-display-name (:appengine-display-name project)]
     (println "making new App Engine project")
+    ;; verify required entries
+    (when-not prj-application
+      (println ":appengine-application required in project.clj")
+      (System/exit 1))
+    (when-not prj-display-name
+      (println ":appengine-display-name required in project.clj")
+      (System/exit 1))
     ;; set up the required paths
     (when-not (.exists resources-dir)
       (.mkdir resources-dir)
@@ -50,12 +59,13 @@
           out-appengine-web-xml (File. WEB-INF-dir "appengine-web.xml")]
       (if (.exists out-web-xml)
           (println out-web-xml "already exists, not overwriting")
-          (do (xpath-replace-all in-web-xml out-web-xml "//display-name" "Coronado Bay")
+          (do (xpath-replace-all in-web-xml out-web-xml "//display-name" prj-display-name)
               (println "web.xml written to" (.getPath out-web-xml))))
       (if (.exists out-appengine-web-xml)
           (println out-appengine-web-xml "already exists, not overwriting")
           (do (xpath-replace-all in-appengine-web-xml out-appengine-web-xml
-                                 "//application" "coronado-bay")
+                                 "//application" prj-application)
               (println "appengine-web.xml written to" (.getPath out-appengine-web-xml)))))
     ;; done
-    (println "App Engine project" "Coronado Bay" "created; you should add it to source control")))
+    (println "App Engine project" prj-display-name
+             "created; you should add it to source control")))
