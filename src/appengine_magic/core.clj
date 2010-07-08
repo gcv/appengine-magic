@@ -61,15 +61,3 @@
 ;;; syntax for keyword arguments.
 (defmacro stop [{:keys [server] :or {server '*server*}}]
   `(stop* @~server))
-
-
-;;; TODO: Implement this. Leiningen plugin?
-(defn compile-to-servlet [appengine-app servlet-class-name])
-
-
-;;; TODO: Implement this. Leiningen plugin?
-(defn deploy [])
-
-
-;;; TODO: Implement this. Leiningen plugin?
-(defn rollback [])
