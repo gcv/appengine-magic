@@ -1,12 +1,7 @@
 (ns leiningen.appengine-new
   "Create the skeleton of a Google App Engine application."
-  (:import [java.io File FileInputStream FileWriter InputStream]
-           org.xml.sax.InputSource
-           javax.xml.parsers.DocumentBuilderFactory
-           [javax.xml.xpath XPathFactory XPathConstants]
-           javax.xml.transform.TransformerFactory
-           javax.xml.transform.dom.DOMSource
-           javax.xml.transform.stream.StreamResult))
+  (:use appengine-magic.utils)
+  (:import [java.io File FileWriter]))
 
 
 (def app-servlet-src
@@ -18,32 +13,6 @@
           "\n"
           ";; Replace the ... below with the var containing your appengine-app.\n"
           "(defservice ...)\n"))
-
-
-(defn dash_ [s]
-  (.replaceAll s "-" "_"))
-
-
-(defn _dash [s]
-  (.replaceAll s "_" "-"))
-
-
-(defn xpath-replace-all [input out-file expr-map]
-  (let [input (if (instance? String input) (File. input) input)
-        out-file (if (instance? String out-file) (File. out-file) out-file)
-        in-stream (if (instance? InputStream input) input (FileInputStream. input))
-        input-source (InputSource. in-stream)
-        doc (.parse (.. (DocumentBuilderFactory/newInstance) newDocumentBuilder) input-source)
-        xpath (.newXPath (XPathFactory/newInstance))]
-    (doseq [[xpath-raw-expr new-value] expr-map]
-      (let [xpath-expr (.compile xpath xpath-raw-expr)
-            xpath-expr-nodes (.evaluate xpath-expr doc XPathConstants/NODESET)]
-        (dotimes [i (.getLength xpath-expr-nodes)]
-          (.setTextContent (.item xpath-expr-nodes i) new-value))))
-    (let [source (DOMSource. doc)
-          result (StreamResult. out-file)
-          transformer (.newTransformer (TransformerFactory/newInstance))]
-      (.transform transformer source result))))
 
 
 (defn appengine-new [project]
@@ -92,18 +61,14 @@
                                    (.getResourceAsStream "appengine-web.xml"))
           out-web-xml (File. WEB-INF-dir "web.xml")
           out-appengine-web-xml (File. WEB-INF-dir "appengine-web.xml")]
-      (if (.exists out-web-xml)
-          (println out-web-xml "already exists, not overwriting")
-          (do (xpath-replace-all in-web-xml out-web-xml
-                                 {"//display-name" prj-display-name
-                                  "//servlet-class" (str (dash_ prj-application)
-                                                         "."
-                                                         (dash_ prj-servlet))})
-              (println "web.xml written to" (.getPath out-web-xml))))
-      (if (.exists out-appengine-web-xml)
-          (println out-appengine-web-xml "already exists, not overwriting")
-          (do (xpath-replace-all in-appengine-web-xml out-appengine-web-xml
-                                 {"//application" prj-application})
-              (println "appengine-web.xml written to" (.getPath out-appengine-web-xml)))))
-    ;; done
-    (println "Google App Engine skeleton for" prj-display-name "created")))
+      (when-not (.exists out-web-xml)
+        (xpath-replace-all in-web-xml out-web-xml
+                           {"//display-name" prj-display-name
+                            "//servlet-class" (str (dash_ prj-application)
+                                                   "."
+                                                   (dash_ prj-servlet))})
+        (println "web.xml written to" (.getPath out-web-xml)))
+      (when-not (.exists out-appengine-web-xml)
+        (xpath-replace-all in-appengine-web-xml out-appengine-web-xml
+                           {"//application" prj-application})
+        (println "appengine-web.xml written to" (.getPath out-appengine-web-xml))))))
