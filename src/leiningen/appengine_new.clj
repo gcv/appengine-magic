@@ -40,6 +40,9 @@
     (when-not (.exists WEB-INF-dir)
       (.mkdir WEB-INF-dir)
       (println "created WEB-INF directory" (.getPath WEB-INF-dir)))
+    ;; TODO: Write a .gitignore file here, with classes/, lib/,
+    ;; WEB-INF/classes/, and WEB-INF/lib/ as entries.
+    ;; ...
     ;; write a base entry point servlet file
     (let [src-dir (File. (:source-path project))
           src-base-namespace-dir (File. src-dir (dash_ prj-application))
