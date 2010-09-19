@@ -17,17 +17,19 @@
         target-classes-dir (File. WEB-INF-dir "classes")
         target-lib-dir (File. WEB-INF-dir "lib")
         prj-application (:appengine-application project)]
-    ;; step 1: compile all
+    ;; compile all
     (leiningen.compile/compile project)
-    ;; TODO: Delete existing content of target classes/ and lib/.
-    ;; step 2: copy the compiled app itself (only its namespace)
+    ;; delete existing content of target classes/ and lib/
+    (lancet/delete {:dir (.getPath target-classes-dir)})
+    (lancet/delete {:dir (.getPath target-lib-dir)})
+    ;; copy the compiled app itself
     (lancet/mkdir {:dir target-classes-dir})
     (lancet/mkdir {:dir target-lib-dir})
     (lancet/copy {:todir (.getPath target-classes-dir)}
                  (lancet/fileset
                   {:dir *compile-path*
                    :includes (str (-to_ prj-application) "/**")}))
-    ;; step 3: copy important dependencies into WEB-INF/lib
+    ;; copy important dependencies into WEB-INF/lib
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset
                   {:dir lib-dir
