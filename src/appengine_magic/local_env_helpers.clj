@@ -4,7 +4,7 @@
             LocalServerEnvironment]))
 
 
-(defn app-engine-init [#^File dir]
+(defn appengine-init [#^File dir]
   (let [proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
                       (getAppDir [] dir))
@@ -12,13 +12,13 @@
     (ApiProxy/setDelegate api-proxy)))
 
 
-(defn app-engine-clear []
+(defn appengine-clear []
   (ApiProxy/clearEnvironmentForCurrentThread)
   (.stop (ApiProxy/getDelegate)))
 
 
-(defmacro with-app-engine
-  ([body] `(with-app-engine env-proxy ~body))
+(defmacro with-appengine
+  ([body] `(with-appengine env-proxy ~body))
   ([proxy body]
      `(last (doall [(ApiProxy/setEnvironmentForCurrentThread ~proxy) ~body]))))
 
@@ -38,6 +38,6 @@
 
 (defn environment-decorator [application]
   (fn [req]
-    (with-app-engine (login-aware-proxy req)
+    (with-appengine (login-aware-proxy req)
       (application req))))
 

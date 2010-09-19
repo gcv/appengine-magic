@@ -38,7 +38,7 @@
 ;;; syntax for keyword arguments.
 (defn start* [appengine-app {:keys [port join?] :or {port 8080 join? false}}]
   (let [handler-servlet (servlet (:handler appengine-app))]
-    (app-engine-init (:war-root appengine-app))
+    (appengine-init (:war-root appengine-app))
     (jetty/start {"/" handler-servlet
                   "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)}
                  {:port port :join? join?})))
