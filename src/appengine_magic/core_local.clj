@@ -1,11 +1,10 @@
 (in-ns 'appengine-magic.core)
 
-
 (use 'appengine-magic.local-env-helpers
-     '(ring.middleware.file :only [wrap-file])
-     '(ring.util.servlet :only [servlet]))
+     '[ring.middleware.file :only [wrap-file]]
+     '[ring.util.servlet :only [servlet]])
 
-(require '(appengine-magic.jetty :as jetty))
+(require '[appengine-magic.jetty :as jetty])
 
 
 (defn wrap-war-static [app #^String war-root]
