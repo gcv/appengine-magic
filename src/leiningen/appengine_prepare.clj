@@ -26,14 +26,14 @@
     (lancet/copy {:todir (.getPath target-classes-dir)}
                  (lancet/fileset
                   {:dir *compile-path*
-                   :includes (str (dash_ prj-application) "/**")}))
+                   :includes (str (-to_ prj-application) "/**")}))
     ;; step 3: copy important dependencies into WEB-INF/lib
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset
                   {:dir lib-dir
                    :includes "*"
-                   :excludes "dev"}))
+                   :excludes "dev,appengine*,servlet-api*,swank-clojure*,jetty*"}))
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset
                   {:dir lib-dev-dir
-                   :includes "appengine-magic*,appengine-api-1.0-sdk*,appengine-api-labs*"}))))
+                   :includes "appengine-magic*,ring-core*,ring-servlet*"}))))
