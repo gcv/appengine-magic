@@ -6,17 +6,17 @@
 
 
 (defn appengine-prepare [project]
-  (println "preparing App Engine application" (:appengine-display-name project)
-           "for deployment")
-  (let [classes-dir *compile-path*
+  (let [prj-application (or (:appengine-application project) (:name project))
+        prj-display-name (or (:appengine-display-name project) (:name project))
+        classes-dir *compile-path*
         resources-dir (File. (:resources-path project))
         lib-dir (File. (:library-path project))
         lib-dev-dir (File. lib-dir "dev")
         war-dir (File. resources-dir "war")
         WEB-INF-dir (File. war-dir "WEB-INF")
         target-classes-dir (File. WEB-INF-dir "classes")
-        target-lib-dir (File. WEB-INF-dir "lib")
-        prj-application (:appengine-application project)]
+        target-lib-dir (File. WEB-INF-dir "lib")]
+    (println "preparing App Engine application" prj-display-name "for deployment")
     ;; compile all
     (leiningen.compile/compile project)
     ;; delete existing content of target classes/ and lib/

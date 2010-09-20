@@ -33,17 +33,10 @@
   (let [resources-dir (File. (:resources-path project))
         war-dir (File. resources-dir "war")
         WEB-INF-dir (File. war-dir "WEB-INF")
-        prj-application (:appengine-application project)
-        prj-display-name (:appengine-display-name project)
+        prj-application (or (:appengine-application project) (:name project))
+        prj-display-name (or (:appengine-display-name project) (:name project))
         prj-servlet "app_servlet"]
     (println "making a skeleton for a Google App Engine application")
-    ;; verify required entries
-    (when-not prj-application
-      (println ":appengine-application required in project.clj (a string usable as an identifier)")
-      (System/exit 1))
-    (when-not prj-display-name
-      (println ":appengine-display-name required in project.clj (a free-form string)")
-      (System/exit 1))
     ;; set up the required paths
     (when-not (.exists resources-dir)
       (.mkdir resources-dir)
