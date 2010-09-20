@@ -1,8 +1,8 @@
 (in-ns 'appengine-magic.core)
 
 (use 'appengine-magic.local-env-helpers
-     '[ring.middleware.file :only [wrap-file]]
-     '[ring.util.servlet :only [servlet]])
+     'appengine-magic.servlet
+     '[ring.middleware.file :only [wrap-file]])
 
 (require '[appengine-magic.jetty :as jetty])
 

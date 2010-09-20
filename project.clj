@@ -3,7 +3,6 @@
   :repositories {"maven-gae-plugin" "http://maven-gae-plugin.googlecode.com/svn/repository"}
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [ring/ring-core "0.3.0"]
-                 [ring/ring-servlet "0.3.0"]
                  [commons-codec "1.4"]
                  [commons-io "1.4"]
                  [org.mortbay.jetty/jetty "6.1.21"]

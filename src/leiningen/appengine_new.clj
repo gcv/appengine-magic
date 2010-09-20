@@ -8,9 +8,10 @@
      (str "(ns %s.%s\n"
           "  (:gen-class :extends javax.servlet.http.HttpServlet)\n"
           "  (:use %s.core)\n"
-          "  (:use [ring.util.servlet :only [defservice]]))\n"
+          "  (:use [appengine-magic.servlet :only [servlet]]))\n"
           "\n"
-          "(defservice %s-app)\n"))
+          "(defn -service [this request response]\n"
+          "  (servlet %s-app))\n"))
 
 
 (def app-core-ns-src
@@ -18,7 +19,7 @@
           "  (:require [appengine-magic.core :as am]))\n"
           "\n"
           "\n"
-          "(defn %s-app-handler [req]\n"
+          "(defn %s-app-handler [request]\n"
           "  {:status 200\n"
           "   :headers {\"Content-Type\" \"text/plain\"}\n"
           "   :body \"Hello, world!\"})\n"

@@ -38,4 +38,4 @@
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset
                   {:dir lib-dev-dir
-                   :includes "appengine-magic*,ring-core*,ring-servlet*"}))))
+                   :includes "appengine-magic*,ring-core*"}))))

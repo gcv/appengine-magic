@@ -1,5 +1,5 @@
 (ns appengine-magic.jetty
-  (:use [ring.util.servlet :only [servlet]])
+  (:use [appengine-magic.servlet :only [servlet]])
   (:import org.mortbay.jetty.handler.ContextHandlerCollection
            org.mortbay.jetty.Server
            javax.servlet.http.HttpServlet
