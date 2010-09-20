@@ -13,10 +13,6 @@ applications as natural as any other Clojure program.
 3. appengine-magic is also a Leiningen plugin, and adds several tasks which
    simplify preparing for App Engine deployment.
 
-NB: This is a pre-release of the library. appengine-magic applications do not
-currently work when deployed to the production App Engine. Please read the
-section below about deployment.
-
 
 
 ## Dependencies
@@ -40,10 +36,8 @@ functionality.
 2. `rm src/<project-name>/core.clj` to clean out the default `core.clj` file
    created by Leiningen. 
 3. Edit `project.clj`:
-   - add `:appengine-application`, a string which should match your project name
-   - add `:appengine-display-name`, a free-form string
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.1.0-SNAPSHOT"]` to your `dev-dependencies`
+   - add `[appengine-magic "0.1.0]` to your `dev-dependencies`
 4. `lein deps`
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`,
    `app_servlet.clj` (the entry point for the application),
@@ -99,11 +93,7 @@ you put a file called `index.html` there, it will become a default welcome file.
 
 ### Deployment to App Engine
 
-NB: This does not currently work because a dependency of appengine-magic loads
-java.net.Socket, a class blacklisted on App Engine. (In spite of this, the
-development server provided with the SDK works.)
-
-1. First of all, be careful. You are must manually maintain the version field in
+1. First of all, be careful. You must manually maintain the version field in
    `appengine-web.xml` and you should understand its implications.
 2. `lein appengine-prepare` prepares the `resources/war` directory with the latest
    classes and libraries for deployment.
@@ -114,9 +104,6 @@ development server provided with the SDK works.)
 
 ## Limitations
 
-As noted above, real deployment to App Engine is pending a solution to the
-blacklisted dependency problem.
-
 This is a very early cut of this library. It does not provide access to App
 Engine services (the datastore, email sending, authentication, and so
 on). Please see [`appengine-clj`](http://github.com/r0man/appengine-clj) for a
@@ -125,6 +112,17 @@ library which makes some of those services available in Clojure.
 Making App Engine services available requires enumerating the specialized `/_ah`
 URLs App Engine uses and figuring out which URL maps to which servlet provided
 by the App Engine SDK. Help in doing this work is welcome.
+
+
+
+## Warning
+
+Google App Engine maintains a whitelist of permitted Java classes. Other classes
+will cause your application to fail to deploy. Examples include threads and
+sockets. If you use those in your application, it will not work. More seriously,
+if one of your dependencies uses those, your application will also not
+work. For example, `clojure.java.io` (and its fore-runner, duck-streams from
+`clojure-contrib`), uses java.net.Socket, a forbidden class.
 
 
 
