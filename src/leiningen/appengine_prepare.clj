@@ -28,7 +28,7 @@
     (lancet/copy {:todir (.getPath target-classes-dir)}
                  (lancet/fileset
                   {:dir *compile-path*
-                   :includes (str (-to_ prj-application) "/**")}))
+                   :includes (str (dash_ prj-application) "/**")}))
     ;; copy important dependencies into WEB-INF/lib
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset

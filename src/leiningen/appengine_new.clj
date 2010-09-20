@@ -54,7 +54,7 @@
       (println "created WEB-INF directory" (.getPath WEB-INF-dir)))
     ;; write some base source files
     (let [src-dir (File. (:source-path project))
-          src-base-namespace-dir (File. src-dir (-to_ prj-application))
+          src-base-namespace-dir (File. src-dir (dash_ prj-application))
           entry-servlet-file (File. src-base-namespace-dir (str prj-servlet ".clj"))
           core-ns-file (File. src-base-namespace-dir "core.clj")]
       (when-not (.exists src-base-namespace-dir)
@@ -64,19 +64,19 @@
       (when-not (.exists entry-servlet-file)
         (with-open [writer (FileWriter. entry-servlet-file)]
           (.write writer (format app-servlet-src
-                                 (_to- prj-application)
+                                 (_dash prj-application)
                                  prj-servlet
-                                 (_to- prj-application)
-                                 (_to- prj-application))))
+                                 (_dash prj-application)
+                                 (_dash prj-application))))
         (println "created base entry point servlet" (.getPath entry-servlet-file)))
       ;; write a core namespace file
       (when-not (.exists core-ns-file)
         (with-open [writer (FileWriter. core-ns-file)]
           (.write writer (format app-core-ns-src
-                                 (_to- prj-application)
-                                 (_to- prj-application)
-                                 (_to- prj-application)
-                                 (_to- prj-application))))
+                                 (_dash prj-application)
+                                 (_dash prj-application)
+                                 (_dash prj-application)
+                                 (_dash prj-application))))
         (println "created core namespace file" (.getPath core-ns-file))))
     ;; add required configuration files
     (let [in-web-xml (-> (clojure.lang.RT/baseLoader)
@@ -88,9 +88,9 @@
       (when-not (.exists out-web-xml)
         (xpath-replace-all in-web-xml out-web-xml
                            {"//display-name" prj-display-name
-                            "//servlet-class" (str (-to_ prj-application)
+                            "//servlet-class" (str (dash_ prj-application)
                                                    "."
-                                                   (-to_ prj-servlet))})
+                                                   (dash_ prj-servlet))})
         (println "web.xml written to" (.getPath out-web-xml)))
       (when-not (.exists out-appengine-web-xml)
         (xpath-replace-all in-appengine-web-xml out-appengine-web-xml

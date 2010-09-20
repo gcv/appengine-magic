@@ -8,11 +8,11 @@
            javax.xml.transform.stream.StreamResult))
 
 
-(defn -to_ [s]
+(defn dash_ [s]
   (.replaceAll s "-" "_"))
 
 
-(defn _to- [s]
+(defn _dash [s]
   (.replaceAll s "_" "-"))
 
 
