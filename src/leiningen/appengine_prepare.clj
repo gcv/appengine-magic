@@ -34,7 +34,7 @@
                  (lancet/fileset
                   {:dir lib-dir
                    :includes "*"
-                   :excludes "dev,appengine*,servlet-api*,swank-clojure*,jetty*"}))
+                   :excludes "dev"}))
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset
                   {:dir lib-dev-dir
