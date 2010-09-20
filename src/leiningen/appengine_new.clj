@@ -8,10 +8,11 @@
      (str "(ns %s.%s\n"
           "  (:gen-class :extends javax.servlet.http.HttpServlet)\n"
           "  (:use %s.core)\n"
-          "  (:use [appengine-magic.servlet :only [servlet]]))\n"
+          "  (:use [appengine-magic.servlet :only [make-servlet-service-method]]))\n"
+          "\n"
           "\n"
           "(defn -service [this request response]\n"
-          "  (servlet %s-app))\n"))
+          "  ((make-servlet-service-method %s-app) this request response))\n"))
 
 
 (def app-core-ns-src
