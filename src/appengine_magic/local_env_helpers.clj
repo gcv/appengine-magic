@@ -1,4 +1,5 @@
 (ns appengine-magic.local-env-helpers
+  (:require [clojure.string :as str])
   (:import [com.google.apphosting.api ApiProxy ApiProxy$Environment]
            [com.google.appengine.tools.development ApiProxyLocalFactory ApiProxyLocalImpl
             LocalServerEnvironment]))
@@ -17,27 +18,26 @@
   (.stop (ApiProxy/getDelegate)))
 
 
-(defmacro with-appengine
-  ([body] `(with-appengine env-proxy ~body))
-  ([proxy body]
-     `(last (doall [(ApiProxy/setEnvironmentForCurrentThread ~proxy) ~body]))))
-
-
-(defn login-aware-proxy [req]
-  (let [email (:email (:session req))]
+(defn local-environment-proxy [req]
+  (let [servlet-cookies (:servlet-cookies req)
+        login-cookie (:value (get servlet-cookies "dev_appserver_login"))
+        [user-email user-admin _] (when login-cookie (str/split login-cookie #":"))]
     (proxy [ApiProxy$Environment] []
-      (isLoggedIn [] (boolean email))
+      (isLoggedIn [] (boolean user-email))
       (getAuthDomain [] "")
       (getRequestNamespace [] "")
       (getDefaultNamespace [] "")
       (getAttributes [] (java.util.HashMap.))
-      (getEmail [] (or email ""))
-      (isAdmin [] true)
+      (getEmail [] (or user-email ""))
+      (isAdmin [] user-admin)
       (getAppId [] "local"))))
+
+
+(defmacro with-appengine [proxy & body]
+  `(last (doall [(ApiProxy/setEnvironmentForCurrentThread ~proxy) ~@body])))
 
 
 (defn environment-decorator [application]
   (fn [req]
-    (with-appengine (login-aware-proxy req)
+    (with-appengine (local-environment-proxy req)
       (application req))))
-

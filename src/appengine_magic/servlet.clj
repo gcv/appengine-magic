@@ -9,22 +9,39 @@
            [javax.servlet.http HttpServlet HttpServletRequest HttpServletResponse]))
 
 
+(defrecord Cookie [comment domain max-age name path secure value version])
+
+
 (defn- get-headers [^HttpServletRequest request]
   (reduce (fn [headers, ^String name]
-            (assoc headers
-              (.toLowerCase name)
-              (.getHeader request name)))
+            (assoc headers (.toLowerCase name) (.getHeader request name)))
           {}
           (enumeration-seq (.getHeaderNames request))))
+
+
+(defn- get-cookies [^HttpServletRequest request]
+  (reduce (fn [cookies ^javax.servlet.http.Cookie new-cookie]
+            (assoc cookies (.getName new-cookie)
+                   (Cookie. (.getComment new-cookie)
+                            (.getDomain new-cookie)
+                            (.getMaxAge new-cookie)
+                            (.getName new-cookie)
+                            (.getPath new-cookie)
+                            (.getSecure new-cookie)
+                            (.getValue new-cookie)
+                            (.getVersion new-cookie))))
+          {}
+          (.getCookies request)))
 
 
 (defn- make-request-map [^HttpServlet servlet
                          ^HttpServletRequest request
                          ^HttpServletRespone response]
   {:servlet            servlet
-   :servlet-context    (.getServletContext servlet)
-   :request            request
    :response           response
+   :request            request
+   :servlet-context    (.getServletContext servlet)
+   :servlet-cookies    (get-cookies request)
    :server-port        (.getServerPort request)
    :server-name        (.getServerName request)
    :remote-addr        (.getRemoteAddr request)

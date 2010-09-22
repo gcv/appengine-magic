@@ -29,12 +29,14 @@
   (let [handler-servlet (servlet (:handler appengine-app))]
     (appengine-init (:war-root appengine-app))
     (jetty/start {"/" handler-servlet
-                  "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)}
+                  "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
+                  "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)}
                  :port port
                  :join? join?)))
 
 
 (defn stop* [server]
+  (appengine-clear)
   (jetty/stop server))
 
 
