@@ -6,6 +6,7 @@
 
 
 (defn appengine-init [#^File dir]
+  ;; TODO: This should read appengine-web.xml and extract, e.g., the application ID.
   (let [proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
                       (getAppDir [] dir))
