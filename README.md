@@ -37,7 +37,7 @@ functionality.
    created by Leiningen. 
 3. Edit `project.clj`:
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.1.0]` to your `dev-dependencies`
+   - add `[appengine-magic "0.1.1]` to your `dev-dependencies`
 4. `lein deps`
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`,
    `app_servlet.clj` (the entry point for the application),
@@ -76,7 +76,7 @@ Recompiling the functions which make up your Ring handler should produce
 instantaneous results.
 
 
-### Testing with `dev_appserver.sh`
+### Testing with dev_appserver.sh
 
 1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, then
    copies the necessary classes and library dependencies to your application's
@@ -102,16 +102,40 @@ you put a file called `index.html` there, it will become a default welcome file.
 
 
 
+## App Engine Services
+
+appengine-magic provides convenience wrappers for using App Engine services from
+Clojure.
+
+
+### User service
+
+The `appengine-magic.services.user` namespace (suggested alias: `ae-user`)
+provides the following functions for handling users.
+
+- `current-user`: returns the `com.google.appengine.api.users.User` for the
+  currently logged-in user.
+- `login-url` (optional keyword: `:destination`): returns the Google
+  authentication servlet URL, and forwards the user to the optional destination.
+- `logout-url` (optional keyword: `:destination`): performs logout, and forwards
+  the user to the optional destination.
+
+
+
 ## Limitations
 
-This is a very early cut of this library. It does not provide access to App
-Engine services (the datastore, email sending, authentication, and so
-on). Please see [`appengine-clj`](http://github.com/r0man/appengine-clj) for a
-library which makes some of those services available in Clojure.
+The following Google services are not yet supported:
 
-Making App Engine services available requires enumerating the specialized `/_ah`
-URLs App Engine uses and figuring out which URL maps to which servlet provided
-by the App Engine SDK. Help in doing this work is welcome.
+- Datastore
+- Blobstore
+- Images
+- Mail
+- Memcache
+- Multitenancy
+- OAuth
+- Task queues
+- URL fetch
+- XMPP
 
 
 
