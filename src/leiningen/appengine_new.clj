@@ -17,7 +17,7 @@
 
 (def app-core-ns-src
      (str "(ns %s.core\n"
-          "  (:require [appengine-magic.core :as am]))\n"
+          "  (:require [appengine-magic.core :as ae]))\n"
           "\n"
           "\n"
           "(defn %s-app-handler [request]\n"
@@ -26,7 +26,7 @@
           "   :body \"Hello, world!\"})\n"
           "\n"
           "\n"
-          "(am/def-appengine-app %s-app #'%s-app-handler)"))
+          "(ae/def-appengine-app %s-app #'%s-app-handler)"))
 
 
 (defn appengine-new [project]

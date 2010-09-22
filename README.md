@@ -67,10 +67,10 @@ using `appengine-magic.core/start` and `appengine-magic.core/stop`. Examples
 (assuming you are in your application's `core` namespace and your application is
 named `foo`):
 
-    (am/start foo-app)
-    (am/stop)
-    (am/start foo-app :port 8095)
-    (am/stop)
+    (ae/start foo-app)
+    (ae/stop)
+    (ae/start foo-app :port 8095)
+    (ae/stop)
 
 Recompiling the functions which make up your Ring handler should produce
 instantaneous results.
