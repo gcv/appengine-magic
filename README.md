@@ -24,7 +24,33 @@ applications as natural as any other Clojure program.
 
 
 
+## Overview
+
+To use appengine-magic effectively, you need the following:
+
+1. The `appengine-magic` jar available on the project classpath.
+2. A Ring handler for your main application. You may use any Ring-compatible
+   framework to make it. If your application does not yet have a `core.clj`
+   file, then the `lein appengine-new` task creates one for you with a simple
+   "hello world" Ring handler.
+3. A var defined by passing the Ring handler to the
+   `appengine-magic.core/def-appengine-app` macro. This makes the application
+   available both to interactive REPL development, and to App Engine itself.
+4. An entry point servlet. REPL development does not use it, but the standard
+   App Engine SDK `dev_appserver.sh` mode and production deployment both
+   do. This servlet must be AOT-compiled into a class file. This servlet
+   defaults to the name `app_servlet.clj`, and the `lein appengine-new` task
+   creates one for your project. The servlet must refer to the var defined by
+   `def-appengine-app`.
+5. Web application resources. This primarily includes web application
+   descriptors. `lein appengine-new` generates those and places them in the
+   `resources/war/WEB-INF` directory. You should also place all static files
+   that your application uses in `resources/war`.
+
+
+
 ## Getting Started
+
 
 ### Project setup
 
@@ -33,39 +59,47 @@ somewhere. appengine-magic cannot replace its `dev_appserver.sh` and `appcfg.sh`
 functionality.
 
 1. `lein new` <project-name>
-2. `rm src/<project-name>/core.clj` to clean out the default `core.clj` file
-   created by Leiningen. 
+2. Optional: `rm src/<project-name>/core.clj` to clean out the default
+   `core.clj` file created by Leiningen. You need to do this so that
+   appengine-magic can create a default file which correctly invokes the
+   `def-appengine-app` macro.
 3. Edit `project.clj`:
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.1.1]` to your `dev-dependencies`
-4. `lein deps`
-5. `lein appengine-new`. This sets up four files for your project: `core.clj`,
+   - add `[appengine-magic "0.1.2"]` to your `dev-dependencies`
+4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
+   tasks available.
+5. `lein appengine-new`. This sets up four files for your project: `core.clj`
+   (which has a sample Ring handler and uses the `def-appengine-app` macro),
    `app_servlet.clj` (the entry point for the application),
    `resources/war/WEB-INF/web.xml` (a servlet descriptor), and
    `resources/war/WEB-INF/appengine-web.xml` (an App Engine application
-   descriptor). These files should contain reasonable defaults for your
+   descriptor). These files should contain reasonable starting defaults for your
    application.
 
 The default `.gitignore` file produced by Leiningen works well with the
-resulting project, but do take a careful look at it.
+resulting project, but do take a careful look at it. In particular, you should
+avoid checking in `resources/war/WEB-INF/lib` or
+`resources/war/WEB-INF/classes`: let Leiningen take care of managing those
+directories.
 
 
 ### Development process
 
 Launch `lein swank` or `lein repl`, whichever you normally use. Once you have a
-working REPL, compile your application's `core.clj`.
+working REPL, compile your application's `core.clj` (or whatever other entry
+point file you use).
 
 The key construct provided by appengine-magic is the
 `appengine-magic.core/def-appengine-app` macro. It takes a Ring handler and
-defines a new `<project-name>-app` var. (If you want to rename this var,
-remember to update `app_servlet.clj`.) That's it: you may now write your
-application using any framework which produces a Ring-compatible handler. Then,
-just pass this handler to `def-appengine-app`.
+defines a new `<project-name>-app` var. If you want to rename this var, remember
+to update `app_servlet.clj`. That's it: you may now write your application using
+any framework which produces a Ring-compatible handler. Then, just pass the
+resulting Ring handler to `def-appengine-app`.
 
 To test your work interactively, you can control a Jetty instance from the REPL
 using `appengine-magic.core/start` and `appengine-magic.core/stop`. Examples
-(assuming you are in your application's `core` namespace and your application is
-named `foo`):
+(assuming you are in your application's `core` namespace, your application is
+named `foo`, and you aliased `appengine-magic.core` to `ae`):
 
     (ae/start foo-app)
     (ae/stop)
@@ -94,7 +128,8 @@ you put a file called `index.html` there, it will become a default welcome file.
 ### Deployment to App Engine
 
 1. First of all, be careful. You must manually maintain the version field in
-   `appengine-web.xml` and you should understand its implications.
+   `appengine-web.xml` and you should understand its implications. Refer to
+   Google App Engine documentation for more information.
 2. `lein appengine-prepare` prepares the `resources/war` directory with the latest
    classes and libraries for deployment.
 3. When you are ready to deploy, just run `appcfg.sh update` with a path to your
@@ -124,7 +159,14 @@ provides the following functions for handling users.
 
 ## Limitations
 
-The following Google services are not yet supported:
+When using the interactive REPL environment, some App Engine services are more
+limited than in `dev_appserver.sh` or in deployment. Because the App Engine
+SDK's jars are a mess, and many are not available in Maven repositories,
+providing the same functionality in an interactive Clojure environment is tricky
+and error-prone. In particular, the administration console, `/_ah/admin` is not
+available in the REPL environment.
+
+The following Google services are not yet tested in the REPL environment:
 
 - Datastore
 - Blobstore
@@ -137,16 +179,25 @@ The following Google services are not yet supported:
 - URL fetch
 - XMPP
 
+They may still work, but appengine-magic does not provide convenient Clojure
+interfaces for them, and may lack mappings for any necessary supporting URLs.
+
 
 
 ## Warning
 
-Google App Engine maintains a whitelist of permitted Java classes. Other classes
-will cause your application to fail to deploy. Examples include threads and
-sockets. If you use those in your application, it will not work. More seriously,
-if one of your dependencies uses those, your application will also not
-work. For example, `clojure.java.io` (and its fore-runner, duck-streams from
-`clojure-contrib`), uses java.net.Socket, a forbidden class.
+Google App Engine maintains a whitelist of permitted classes in Java's standard
+library. Other classes will cause your application to fail to deploy. Examples
+include threads and sockets. If you use those in your application, it will not
+work. This means that you cannot use Clojure's agents or futures. In addition,
+if one of your dependencies uses those, your application will also not work. For
+example, `clojure.java.io` (and its fore-runner, duck-streams from
+`clojure-contrib`), uses `java.net.Socket`, a forbidden class.
+
+Whenever you add a new dependency, no matter how innocuous, you should make sure
+your app still works. `dev_appserver.sh` is a good place to start, but you must
+also test in the main App Engine. The two do not always load classes the same
+way.
 
 
 
