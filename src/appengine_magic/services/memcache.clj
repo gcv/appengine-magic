@@ -1,10 +1,17 @@
 (ns appengine-magic.services.memcache
   (:refer-clojure :exclude (contains? get))
-  (:import [com.google.appengine.api.memcache MemcacheService MemcacheServiceFactory]))
+  (:import [com.google.appengine.api.memcache MemcacheService MemcacheServiceFactory
+            MemcacheService$SetPolicy]))
 
 
 (defonce *default-memcache-service* (atom nil))
 (defonce *namespaced-memcache-services* (atom {}))
+
+
+(defonce *policy-type-map*
+  {:always MemcacheService$SetPolicy/SET_ALWAYS
+   :add-if-not-present MemcacheService$SetPolicy/ADD_ONLY_IF_NOT_PRESENT
+   :replace-only MemcacheService$SetPolicy/REPLACE_ONLY_IF_PRESENT})
 
 
 (defn- get-memcache-service [& {:keys [service namespace]}]
@@ -76,6 +83,15 @@
         (.get service key))))
 
 
-(defn put [key value & {:keys [service namespace]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
-    (.put service key value)))
+(defn put [key value & {:keys [service namespace expiration policy]
+                        :or {policy :always}}]
+  (let [service (get-memcache-service :service service :namespace namespace)
+        policy (*policy-type-map* policy)]
+    (.put service key value expiration policy)))
+
+
+(defn put-map [values & {:keys [service namespace expiration policy]
+                         :or {policy :always}}]
+  (let [service (get-memcache-service :service service :namespace namespace)
+        policy (*policy-type-map* policy)]
+    (.putAll service values expiration policy)))
