@@ -65,7 +65,7 @@ functionality.
    `def-appengine-app` macro.
 3. Edit `project.clj`:
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.1.2"]` to your `dev-dependencies`
+   - add `[appengine-magic "0.1.3"]` to your `dev-dependencies`
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
@@ -156,6 +156,36 @@ provides the following functions for handling users.
   the user to the optional destination.
 
 
+### Memcache service
+
+The `appengine-magic.services.memcache` namespace (suggested alias:
+`ae-memcache`) provides the following functions for the App Engine memcache. See
+App Engine documentation for detailed explanations of the underlying Java API.
+
+- `statistics`: returns the current memcache statistics.
+- `clear-all`: wipes the entire cache for all namespaces.
+- `contains? <key>` (optional keyword: `:namespace`): checks if the given key
+  exists in the cache.
+- `delete <key>` (optional keywords: `:namespace`, `:millis-no-readd`): removes
+  the key from the cache, optionally refraining from adding it for the given
+  number of milliseconds. If the key argument is sequential, deletes all the
+  named keys.
+- `get <key>` (optional keyword: `:namespace`): returns the value for the given
+  key, but if the key argument is sequential, returns a map of key-value pairs
+  for each supplied key.
+- `put <key> <value>` (optional keywords: `:namespace`, `:expiration`,
+  `:policy`): saves the given value under the given key; expiration is an
+  instance of `com.google.appengine.api.memcache.Expiration`; policy is one of
+  `:always` (the default), `:add-if-not-present`, or `:replace-only`.
+- `put-map <key-value-map>` (optional keywords: `:namespace`, `:expiration`,
+  `:policy`): writes the key-value-map into the cache. Other keywords same as
+  for `put`.
+- `increment <key> <delta>` (optional keywords: `:namespace`, `:initial`):
+  atomically increments long integer values in the cache; if key is sequential,
+  it increments all keys by the given delta.
+- `increment-map <key-delta-map>` (optional keywords: `:namespace`, `:initial`):
+  atomically increments long integer values by deltas given in the argument map.
+
 
 ## Limitations
 
@@ -172,7 +202,6 @@ The following Google services are not yet tested in the REPL environment:
 - Blobstore
 - Images
 - Mail
-- Memcache
 - Multitenancy
 - OAuth
 - Task queues
