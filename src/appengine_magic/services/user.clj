@@ -5,26 +5,26 @@
 (defonce *default-user-service* (atom nil))
 
 
-(defn- ensure-user-service [user-service]
-  (when (nil? @user-service)
-    (reset! user-service (UserServiceFactory/getUserService))))
+(defn- get-user-service [& {:keys [service]}]
+  (if (nil? service)
+      (do (when (nil? @*default-user-service*)
+            (reset! *default-user-service* (UserServiceFactory/getUserService)))
+          @*default-user-service*)
+      service))
 
 
-(defn current-user [& {:keys [user-service]
-                       :or {user-service *default-user-service*}}]
-  (ensure-user-service user-service)
-  (.getCurrentUser @user-service))
+(defn current-user [& {:keys [service]}]
+  (let [service (get-user-service :service service)]
+    (.getCurrentUser service)))
 
 
-(defn login-url [& {:keys [user-service destination]
-                    :or {user-service *default-user-service*
-                         destination "/"}}]
-  (ensure-user-service user-service)
-  (.createLoginURL @user-service destination))
+(defn login-url [& {:keys [service destination]
+                    :or {destination "/"}}]
+  (let [service (get-user-service :service service)]
+    (.createLoginURL service destination)))
 
 
-(defn logout-url [& {:keys [user-service destination]
-                     :or {user-service *default-user-service*
-                          destination "/"}}]
-  (ensure-user-service user-service)
-  (.createLogoutURL @user-service destination))
+(defn logout-url [& {:keys [service destination]
+                     :or {destination "/"}}]
+  (let [service (get-user-service :service service)]
+    (.createLogoutURL service destination)))
