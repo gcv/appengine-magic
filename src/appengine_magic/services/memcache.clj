@@ -95,3 +95,23 @@
   (let [service (get-memcache-service :service service :namespace namespace)
         policy (*policy-type-map* policy)]
     (.putAll service values expiration policy)))
+
+
+(defn increment
+  "If (sequential? key), increment each key by the delta."
+  [key delta & {:keys [service namespace initial]}]
+  (let [service (get-memcache-service :service service :namespace namespace)]
+    (if initial
+        (if (sequential? key)
+            (.incrementAll service key delta (long initial))
+            (.increment service key delta (long initial)))
+        (if (sequential? key)
+            (.incrementAll service key delta)
+            (.increment service key delta)))))
+
+
+(defn increment-map [values & {:keys [service namespace initial]}]
+  (let [service (get-memcache-service :service service :namespace namespace)]
+    (if initial
+        (.incrementAll service values (long initial))
+        (.incrementAll service values))))
