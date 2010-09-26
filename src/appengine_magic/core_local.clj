@@ -27,7 +27,7 @@
 
 (defn start* [appengine-app & {:keys [port join?]}]
   (let [handler-servlet (servlet (:handler appengine-app))]
-    (appengine-init (:war-root appengine-app))
+    (appengine-init (java.io.File. (:war-root appengine-app)))
     (jetty/start
      {"/" handler-servlet
       ;; App Engine services
