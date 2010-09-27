@@ -24,24 +24,51 @@
 
 
 (defprotocol EntityProtocol
-  (create-key [this])
-  (save! [this]))
+  "Entities are Clojure records which conform to the EntityProtocol. Each Entity
+   must have a key. If an entity record field has a :key metadata tag, then that
+   field becomes the key. If a record has no :key metadata tags, then a key is
+   automatically generated for it. In either case, the key becomes part of the
+   entity's metadata. Entity retrieval operations must set the :key metadata on
+   returned entity records."
+  (get-key-object [this] "Returns nil if no tag is specified in the record
+                          definition, and no :key metadata exists. Otherwise
+                          returns a Key object.")
+  (get-key-value [this]  "Returns the Clojure value of the entity's Key object.")
+  (save! [this]          "Saves the entity to the datastore."))
 
 
-(defn entity-key-helper [entity-record parent key-info datastore-entity-name]
-  ;; TODO: Deal with parent entities.
-  (let [key-info (key-info entity-record)
-        key-object (if key-info
-                       (KeyFactory/createKey datastore-entity-name key-info)
-x                       ;; TODO: This looks really broken. Always 1?
-                       (.getStart (KeyRange. parent datastore-entity-name 1 1)))]
-    (clojure.pprint/pprint key-object)
-    key-object))
+(defn entity-get-key-object-helper [entity-record parent key-property datastore-entity-name]
+  ;; TODO: Handle parent entities.
+  (let [entity-record-metadata (meta entity-record)
+        metadata-key-value (when entity-record-metadata (:key entity-record-metadata))
+        key-property-value (when key-property (key-property entity-record))]
+    (cond
+     ;; neither exists: autogenerate
+     (and (nil? key-property-value) (nil? metadata-key-value))
+     nil
+     ;; key property exists
+     (not (nil? key-property-value))
+     (KeyFactory/createKey datastore-entity-name key-property-value)
+     ;; metadata key exists
+     (and (not (nil? metadata-key-value)) (instance? Key metadata-key-value))
+     metadata-key-value
+     ;; something's wrong
+     :else (throw (RuntimeException. "entity has no valid :key metadata, and has no fields marked :key")))))
 
 
-(defn entity-save-helper [entity-record]
-  (let [key-object (create-key entity-record)
-        entity (Entity. key-object)]
+(defn entity-get-key-value-helper [entity-record]
+  (let [key-object (get-key-object entity-record)]
+    (when key-object
+      (if-let [name (.getName key-object)]
+        name
+        (.getId key-object)))))
+
+
+(defn entity-save-helper [entity-record datastore-entity-name]
+  (let [key-object (get-key-object entity-record)
+        entity (if key-object
+                   (Entity. key-object)
+                   (Entity. datastore-entity-name))]
     (doseq [[property-kw value] entity-record]
       (let [property-name (.substring (str property-kw) 1)]
         (.setProperty entity property-name value)))
@@ -49,11 +76,14 @@ x                       ;; TODO: This looks really broken. Always 1?
     (.put (get-datastore-service) entity)))
 
 
-(defn retrieve [entity-record-type key-info &
+(defn retrieve [entity-record-type key-value &
                 {:keys [parent datastore-entity-name]
                  :or {datastore-entity-name (unqualified-name (.getName entity-record-type))}}]
   ;; TODO: Allow optional :service argument!
-  (let [key-object (KeyFactory/createKey datastore-entity-name key-info)
+  ;; TODO: Deal with parent entities.
+  (let [key-object (KeyFactory/createKey datastore-entity-name (if (integer? key-value)
+                                                                   (long key-value)
+                                                                   key-value))
         entity (.get (get-datastore-service) key-object)
         properties (into {} (.getProperties entity))
         kw-keys-properties (reduce (fn [m [k v]] (assoc m (keyword k) v)) {} properties)
@@ -62,29 +92,30 @@ x                       ;; TODO: This looks really broken. Always 1?
         ;; way to access any custom constructor defined by defentity, since that
         ;; constructor would be in a different namespace.
         entity-record (eval `(new ~entity-record-type ~@(repeat (count properties) nil)))]
-    (merge entity-record kw-keys-properties)))
+    (with-meta (merge entity-record kw-keys-properties) {:key (.getKey entity)})))
 
 
 (defmacro defentity [name properties &
-                     {:keys [parent key-fn datastore-entity-name]
+                     {:keys [parent datastore-entity-name]
                       :or {datastore-entity-name (unqualified-name name)}}]
   ;; All entities need keys. Verify that exactly one of the properties has a
-  ;; :key metadata tag, or a :key-fn optional parameter is given. :key metadata
-  ;; takes precedence over :key-fn.
+  ;; :key metadata tag.
   ;; TODO: This ain't checking for :tag :key!
-  (let [key-info (or (keyword (str (first (filter #(meta %) properties))))
-                     key-fn)]
-    (when-not key-info
-      (throw (RuntimeException. "either provide ^:key on one property, or a :key-fn")))
+  ;; FIXME: There are order-of-evaluation bugs here.
+  (let [key-property (keyword (str (first (filter #(meta %) properties))))]
     `(defrecord ~name ~properties
        EntityProtocol
-       (create-key [this#] (entity-key-helper this# ~parent ~key-info ~datastore-entity-name))
-       (save! [this#] (entity-save-helper this#)))))
+       (get-key-object [this#]
+         (entity-get-key-object-helper this# ~parent ~key-property ~datastore-entity-name))
+       (get-key-value [this#]
+         (entity-get-key-value-helper this#))
+       (save! [this#]
+         (entity-save-helper this# ~datastore-entity-name)))))
 
 
 ;; - Is type metadata necessary, or can it be determined at runtime?
 ;;   It helps with optional checking, improves error messages.
-;; - Either give a ^:key metadata to a property, or provide a key-fn.
+;;   Verify type behavior in general, e.g., dates.
 ;; - Implement transactions.
 
 
