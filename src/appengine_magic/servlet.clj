@@ -125,7 +125,7 @@
 
 (defn make-servlet-service-method [ring-handler]
   (fn [^HttpServlet servlet, ^HttpServletRequest request, ^HttpServletResponse response]
-    (let [response-map (ring-handler (make-request-map servlet request response))]
+    (let [response-map (doall (ring-handler (make-request-map servlet request response)))]
       (when-not response-map
         (throw (RuntimeException. "handler returned nil (no response map)")))
       (adapt-servlet-response response response-map))))
