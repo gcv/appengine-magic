@@ -98,11 +98,8 @@
 (defmacro defentity [name properties &
                      {:keys [parent datastore-entity-name]
                       :or {datastore-entity-name (unqualified-name name)}}]
-  ;; All entities need keys. Verify that exactly one of the properties has a
-  ;; :key metadata tag.
-  ;; TODO: This ain't checking for :tag :key!
-  ;; FIXME: There are order-of-evaluation bugs here.
-  (let [key-property (keyword (str (first (filter #(meta %) properties))))]
+  (let [key-property-name (first (filter #(= (:tag (meta %)) :key) properties))
+        key-property (if key-property-name (keyword (str key-property-name)) nil)]
     `(defrecord ~name ~properties
        EntityProtocol
        (get-key-object [this#]
