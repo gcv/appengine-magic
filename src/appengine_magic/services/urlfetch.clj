@@ -11,9 +11,6 @@
 (defn- urlify [url]
   (if (string? url) (java.net.URL. url) url))
 
-(defn fetch [url]
-  (.fetch (get-urlfetch-service) (urlify url)))
-
 (defrecord HTTPResponse [content
 			 final-url
 			 headers
@@ -29,6 +26,9 @@
 		 (.getFinalUrl r)
 		 (parse-headers (.getHeaders r))
 		 (.getResponseCode r)))
+
+(defn fetch [url]
+  (parse-response (.fetch (get-urlfetch-service) (urlify url))))
 
 (defn fetch-async [url]
   (let [f (.fetchAsync (urlify url))]
