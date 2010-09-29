@@ -27,6 +27,28 @@
   (if (integer? key-value) (long key-value) key-value))
 
 
+(defn- coerce-java-type [v]
+  (cond (instance? java.util.ArrayList v) (into [] v)
+        (instance? java.util.Map v) (into {} v)
+        (instance? java.util.Set v) (into #{} v)
+        :else v))
+
+
+(defn- coerce-clojure-type [v]
+  (let [to-java-hashmap (fn [m]
+                          (let [jhm (java.util.HashMap.)]
+                            (doseq [[k v] m] (.put jhm k v))
+                            jhm))
+        to-java-hashset (fn [s]
+                          (let [jhs (java.util.HashSet.)]
+                            (doseq [v s] (.add jhs v))
+                            jhs))]
+   (cond (instance? clojure.lang.APersistentMap v) (to-java-hashmap v) ; broken in GAE 1.3.7
+         (instance? clojure.lang.APersistentSet v) (to-java-hashset v) ; broken in GAE 1.3.7
+         (extends? EntityProtocol (class v)) (get-key-object v)
+         :else v)))
+
+
 (defprotocol EntityProtocol
   "Entities are Clojure records which conform to the EntityProtocol. Each Entity
    must have a key. If an entity record field has a :key metadata tag, then that
@@ -76,7 +98,7 @@
                    (Entity. datastore-entity-name))]
     (doseq [[property-kw value] entity-record]
       (let [property-name (.substring (str property-kw) 1)]
-        (.setProperty entity property-name value)))
+        (.setProperty entity property-name (coerce-clojure-type value))))
     (.put (get-datastore-service) entity)))
 
 
@@ -90,14 +112,19 @@
                        (KeyFactory/createKey datastore-entity-name
                                              (coerce-key-value-type key-value)))
         entity (.get (get-datastore-service) key-object)
-        properties (into {} (.getProperties entity))
-        kw-keys-properties (reduce (fn [m [k v]] (assoc m (keyword k) v)) {} properties)
+        raw-properties (into {} (.getProperties entity))
+        properties (reduce (fn [m [k v]]
+                             (assoc m
+                               (keyword k)
+                               (coerce-java-type v)))
+                           {}
+                           raw-properties)
         ;; XXX: No good choice but to use eval here. No way to know the number
         ;; of arguments to the record constructor at compile-time, and no clean
         ;; way to access any custom constructor defined by defentity, since that
         ;; constructor would be in a different namespace.
-        entity-record (eval `(new ~entity-record-type ~@(repeat (count properties) nil)))]
-    (with-meta (merge entity-record kw-keys-properties) {:key (.getKey entity)})))
+        entity-record (eval `(new ~entity-record-type ~@(repeat (count raw-properties) nil)))]
+    (with-meta (merge entity-record properties) {:key (.getKey entity)})))
 
 
 (defmacro defentity [name properties &
