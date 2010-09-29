@@ -31,7 +31,7 @@
   (parse-response (.fetch (get-urlfetch-service) (urlify url))))
 
 (defn fetch-async [url]
-  (let [f (.fetchAsync (urlify url))]
+  (let [f (.fetchAsync (get-urlfetch-service) (urlify url))]
     (reify
      clojure.lang.IDeref
       (deref [_] (parse-response (.get f)))
