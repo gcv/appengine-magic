@@ -4,15 +4,31 @@
             Entity]))
 
 
-(defonce *default-datastore-service* (atom nil))
+(defonce *datastore-service* (atom nil))
+
+(defonce *current-transaction* nil)
 
 
-(defn- get-datastore-service [& {:keys [service]}]
-  (if (nil? service)
-      (do (when (nil? @*default-datastore-service*)
-            (reset! *default-datastore-service* (DatastoreServiceFactory/getDatastoreService)))
-          @*default-datastore-service*)
-      service))
+(defn get-datastore-service []
+  (when (nil? @*datastore-service*)
+    (reset! *datastore-service* (DatastoreServiceFactory/getDatastoreService)))
+  @*datastore-service*)
+
+
+(defprotocol EntityProtocol
+  "Entities are Clojure records which conform to the EntityProtocol. Each Entity
+   must have a key. If an entity record field has a :key metadata tag, then that
+   field becomes the key. If a record has no :key metadata tags, then a key is
+   automatically generated for it. In either case, the key becomes part of the
+   entity's metadata. Entity retrieval operations must set the :key metadata on
+   returned entity records."
+  (get-key-object [this] [this parent]
+    "Returns nil if no tag is specified in the record definition, and no :key
+     metadata exists. Otherwise returns a Key object. Specify optional entity
+     group parent.")
+  (save! [this] [this parent]
+    "Writes the given entity to the data store. Specify optional entity group
+    parent."))
 
 
 (defn- unqualified-name [sym]
@@ -49,22 +65,6 @@
          :else v)))
 
 
-(defprotocol EntityProtocol
-  "Entities are Clojure records which conform to the EntityProtocol. Each Entity
-   must have a key. If an entity record field has a :key metadata tag, then that
-   field becomes the key. If a record has no :key metadata tags, then a key is
-   automatically generated for it. In either case, the key becomes part of the
-   entity's metadata. Entity retrieval operations must set the :key metadata on
-   returned entity records."
-  (get-key-object [this] [this parent]
-    "Returns nil if no tag is specified in the record definition, and no :key
-     metadata exists. Otherwise returns a Key object. Specify optional entity
-     group parent.")
-  (save! [this] [this parent]
-    "Writes the given entity to the data store. Specify optional entity group
-    parent."))
-
-
 (defn get-key-object-helper [entity-record key-property datastore-entity-name &
                              {:keys [parent]}]
   (let [entity-record-metadata (meta entity-record)
@@ -75,14 +75,14 @@
      ;; neither exists: autogenerate
      (and (nil? key-property-value) (nil? metadata-key-value))
      nil
+     ;; metadata key exists
+     (and (not (nil? metadata-key-value)) (instance? Key metadata-key-value))
+     metadata-key-value
      ;; key property exists
      (not (nil? key-property-value))
      (if parent
          (KeyFactory/createKey (get-key-object parent) datastore-entity-name key-property-value)
          (KeyFactory/createKey datastore-entity-name key-property-value))
-     ;; metadata key exists
-     (and (not (nil? metadata-key-value)) (instance? Key metadata-key-value))
-     metadata-key-value
      ;; something's wrong
      :else (throw (RuntimeException.
                    "entity has no valid :key metadata, and has no fields marked :key")))))
@@ -142,3 +142,17 @@
          (save!-helper this# ~datastore-entity-name))
        (save! [this# parent#]
          (save!-helper this# ~datastore-entity-name :parent parent#)))))
+
+
+;;; Note that the code relies on the API's implicit transaction tracking, and
+;;; the *current-transaction* value is not used. Making it available just in
+;;; case.
+(defmacro with-transaction [& body]
+  `(binding [*current-transaction* (.beginTransaction (get-datastore-service))]
+     (try
+       (let [body-result# ~@body]
+         (.commit *current-transaction*)
+         body-result#)
+       (catch Throwable err#
+         (do (.rollback *current-transaction*)
+             (throw err#))))))
