@@ -150,7 +150,7 @@
 (defmacro with-transaction [& body]
   `(binding [*current-transaction* (.beginTransaction (get-datastore-service))]
      (try
-       (let [body-result# ~@body]
+       (let [body-result# (do ~@body)]
          (.commit *current-transaction*)
          body-result#)
        (catch Throwable err#
