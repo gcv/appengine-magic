@@ -65,7 +65,7 @@
          :else v)))
 
 
-(defn get-key-object-helper [entity-record key-property datastore-entity-name &
+(defn get-key-object-helper [entity-record key-property kind &
                              {:keys [parent]}]
   (let [entity-record-metadata (meta entity-record)
         metadata-key-value (when entity-record-metadata (:key entity-record-metadata))
@@ -81,21 +81,21 @@
      ;; key property exists
      (not (nil? key-property-value))
      (if parent
-         (KeyFactory/createKey (get-key-object parent) datastore-entity-name key-property-value)
-         (KeyFactory/createKey datastore-entity-name key-property-value))
+         (KeyFactory/createKey (get-key-object parent) kind key-property-value)
+         (KeyFactory/createKey kind key-property-value))
      ;; something's wrong
      :else (throw (RuntimeException.
                    "entity has no valid :key metadata, and has no fields marked :key")))))
 
 
-(defn save!-helper [entity-record datastore-entity-name &
+(defn save!-helper [entity-record kind &
                     {:keys [parent]}]
   (let [key-object (if parent
                        (get-key-object entity-record parent)
                        (get-key-object entity-record))
         entity (if key-object
                    (Entity. key-object)
-                   (Entity. datastore-entity-name))]
+                   (Entity. kind))]
     (doseq [[property-kw value] entity-record]
       (let [property-name (.substring (str property-kw) 1)]
         (.setProperty entity property-name (coerce-clojure-type value))))
@@ -103,13 +103,13 @@
 
 
 (defn retrieve [entity-record-type key-value &
-                {:keys [parent datastore-entity-name]
-                 :or {datastore-entity-name (unqualified-name (.getName entity-record-type))}}]
+                {:keys [parent kind]
+                 :or {kind (unqualified-name (.getName entity-record-type))}}]
   (let [key-object (if parent
                        (KeyFactory/createKey (get-key-object parent)
-                                             datastore-entity-name
+                                             kind
                                              (coerce-key-value-type key-value))
-                       (KeyFactory/createKey datastore-entity-name
+                       (KeyFactory/createKey kind
                                              (coerce-key-value-type key-value)))
         entity (.get (get-datastore-service) key-object)
         raw-properties (into {} (.getProperties entity))
@@ -128,20 +128,20 @@
 
 
 (defmacro defentity [name properties &
-                     {:keys [datastore-entity-name]
-                      :or {datastore-entity-name (unqualified-name name)}}]
+                     {:keys [kind]
+                      :or {kind (unqualified-name name)}}]
   (let [key-property-name (first (filter #(= (:tag (meta %)) :key) properties))
         key-property (if key-property-name (keyword (str key-property-name)) nil)]
     `(defrecord ~name ~properties
        EntityProtocol
        (get-key-object [this#]
-         (get-key-object-helper this# ~key-property ~datastore-entity-name))
+         (get-key-object-helper this# ~key-property ~kind))
        (get-key-object [this# parent#]
-         (get-key-object-helper this# ~key-property ~datastore-entity-name :parent parent#))
+         (get-key-object-helper this# ~key-property ~kind :parent parent#))
        (save! [this#]
-         (save!-helper this# ~datastore-entity-name))
+         (save!-helper this# ~kind))
        (save! [this# parent#]
-         (save!-helper this# ~datastore-entity-name :parent parent#)))))
+         (save!-helper this# ~kind :parent parent#)))))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking, and
