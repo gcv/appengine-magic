@@ -74,9 +74,8 @@
     "Returns nil if no tag is specified in the record definition, and no :key
      metadata exists. Otherwise returns a Key object. Specify optional entity
      group parent.")
-  (save! [this] [this parent]
-    "Writes the given entity to the data store. Specify optional entity group
-    parent."))
+  (save! [this]
+    "Writes the given entity to the data store."))
 
 
 (defn- unqualified-name [sym]
@@ -129,18 +128,17 @@
      ;; key property exists
      (not (nil? key-property-value))
      (if parent
-         (KeyFactory/createKey (get-key-object parent) kind key-property-value)
+         (if (instance? Key parent)
+             (KeyFactory/createKey parent kind key-property-value)
+             (KeyFactory/createKey (get-key-object parent) kind key-property-value))
          (KeyFactory/createKey kind key-property-value))
      ;; something's wrong
      :else (throw (RuntimeException.
                    "entity has no valid :key metadata, and has no fields marked :key")))))
 
 
-(defn save!-helper [entity-record kind &
-                    {:keys [parent]}]
-  (let [key-object (if parent
-                       (get-key-object entity-record parent)
-                       (get-key-object entity-record))
+(defn save!-helper [entity-record kind]
+  (let [key-object (get-key-object entity-record)
         entity (if key-object
                    (Entity. key-object)
                    (Entity. kind))]
@@ -187,9 +185,16 @@
        (get-key-object [this# parent#]
          (get-key-object-helper this# ~key-property ~kind :parent parent#))
        (save! [this#]
-         (save!-helper this# ~kind))
-       (save! [this# parent#]
-         (save!-helper this# ~kind :parent parent#)))))
+         (save!-helper this# ~kind)))))
+
+
+(defmacro new* [entity-record-type property-values & {:keys [parent]}]
+  (if parent
+      `(let [parent# ~parent
+             entity# (new ~entity-record-type ~@property-values)]
+         (if (nil? parent#)
+             entity#
+             (with-meta entity# {:key (get-key-object entity# parent#)})))))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
