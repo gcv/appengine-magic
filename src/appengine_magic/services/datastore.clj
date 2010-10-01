@@ -173,6 +173,14 @@
     (with-meta (merge entity-record properties) {:key (.getKey entity)})))
 
 
+(defn delete! [target]
+  (let [target (if (sequential? target) target [target])
+        key (if (every? #(instance? Key %) target)
+                target
+                (map get-key-object target))]
+    (.delete (get-datastore-service) key)))
+
+
 (defmacro defentity [name properties &
                      {:keys [kind]
                       :or {kind (unqualified-name name)}}]
