@@ -2,6 +2,7 @@
   (:import [com.google.appengine.api.datastore DatastoreService DatastoreServiceFactory
             Key KeyFactory KeyRange
             Entity
+            FetchOptions$Builder
             Query Query$FilterOperator Query$SortDirection]))
 
 
@@ -162,9 +163,9 @@
          (save!-helper this# ~kind :parent parent#)))))
 
 
-;;; Note that the code relies on the API's implicit transaction tracking, and
-;;; the *current-transaction* value is not used. Making it available just in
-;;; case.
+;;; Note that the code relies on the API's implicit transaction tracking
+;;; wherever possible, but the *current-transaction* value is still used for
+;;; query construction.
 (defmacro with-transaction [& body]
   `(binding [*current-transaction* (.beginTransaction (get-datastore-service))]
      (try
@@ -176,8 +177,7 @@
              (throw err#))))))
 
 
-(defn query [& {:keys [kind ancestor filter sort keys-only]
-                :or {keys-only false, filter [[]], sort [[]]}}]
+(defn- make-query-object [kind ancestor filter sort keys-only]
   (let [kind (cond (nil? kind) kind
                    (string? kind) kind
                    (extends? EntityProtocol kind) (unqualified-name kind)
@@ -225,3 +225,29 @@
        ;; invalid sort
        :else (throw (RuntimeException. "invalid sort specified in query"))))
     query-object))
+
+
+(defn query [& {:keys [kind ancestor filter sort keys-only
+                       count-only? in-transaction?
+                       limit offset
+                       start-cursor end-cursor ; TODO: Implement this.
+                       prefetch-size chunk-size]
+                :or {keys-only false, filter [[]], sort [[]],
+                     count-only? false, in-transaction? false}}]
+  (let [query-object (make-query-object kind ancestor filter sort keys-only)
+        fetch-options-object (FetchOptions$Builder/withDefaults)]
+    (when limit
+      (.limit fetch-options-object limit))
+    (when offset
+      (.offset fetch-options-object offset))
+    (when prefetch-size
+      (.prefetchSize prefetch-size))
+    (when chunk-size
+      (.chunkSize chunk-size))
+    (let [prepared-query (if (and in-transaction? *current-transaction*)
+                             (.prepare (get-datastore-service) *current-transaction*
+                                       query-object)
+                             (.prepare (get-datastore-service) query-object))]
+      (if count-only?
+          (.countEntities prepared-query)
+          (seq (.asIterable prepared-query fetch-options-object))))))
