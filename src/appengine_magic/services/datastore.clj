@@ -1,6 +1,8 @@
 (ns appengine-magic.services.datastore
   (:import [com.google.appengine.api.datastore DatastoreService DatastoreServiceFactory
-            Key KeyFactory KeyRange
+            DatastoreServiceConfig DatastoreServiceConfig$Builder
+            ReadPolicy ReadPolicy$Consistency ImplicitTransactionManagementPolicy
+            Key KeyFactory
             Entity
             FetchOptions$Builder
             Query Query$FilterOperator Query$SortDirection]))
@@ -8,6 +10,16 @@
 
 (defonce *datastore-service* (atom nil))
 (defonce *current-transaction* nil)
+
+
+(defonce *datastore-read-policy-map*
+  {:eventual ReadPolicy$Consistency/EVENTUAL
+   :strong ReadPolicy$Consistency/STRONG})
+
+
+(defonce *datastore-implicit-transaction-policy-map*
+  {:auto ImplicitTransactionManagementPolicy/AUTO
+   :none ImplicitTransactionManagementPolicy/NONE})
 
 
 (defonce *filter-operator-map*
@@ -32,6 +44,23 @@
   (when (nil? @*datastore-service*)
     (reset! *datastore-service* (DatastoreServiceFactory/getDatastoreService)))
   @*datastore-service*)
+
+
+(defn init-datastore-service [& {:keys [deadline read-policy implicit-transaction-policy]}]
+  (let [datastore-config-object (DatastoreServiceConfig$Builder/withDefaults)]
+    (when deadline
+      (.deadline datastore-config-object deadline))
+    (when read-policy
+      (.readPolicy
+       datastore-config-object
+       (ReadPolicy. (get *datastore-read-policy-map* read-policy))))
+    (when implicit-transaction-policy
+      (.implicitTransactionManagementPolicy
+       datastore-config-object
+       (get *datastore-implicit-transaction-policy-map* implicit-transaction-policy)))
+    (reset! *datastore-service*
+            (DatastoreServiceFactory/getDatastoreService datastore-config-object))
+    @*datastore-service*))
 
 
 (defprotocol EntityProtocol
