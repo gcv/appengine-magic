@@ -177,7 +177,7 @@
              (throw err#))))))
 
 
-(defn- make-query-object [kind ancestor filter sort keys-only]
+(defn- make-query-object [kind ancestor filter sort keys-only?]
   (let [kind (cond (nil? kind) kind
                    (string? kind) kind
                    (extends? EntityProtocol kind) (unqualified-name kind)
@@ -193,7 +193,7 @@
         filter (if (every? sequential? filter) filter (vector filter))
         ;; normalize sort criteria into a vector (even if there's just one)]
         sort (if (every? sequential? sort) sort (vector sort))]
-    (when keys-only
+    (when keys-only?
       (.setKeysOnly query-object))
     (doseq [[filter-operator filter-property-kw filter-value] filter]
       (cond
@@ -227,14 +227,14 @@
     query-object))
 
 
-(defn query [& {:keys [kind ancestor filter sort keys-only
+(defn query [& {:keys [kind ancestor filter sort keys-only?
                        count-only? in-transaction?
                        limit offset
                        start-cursor end-cursor ; TODO: Implement this.
                        prefetch-size chunk-size]
-                :or {keys-only false, filter [[]], sort [[]],
+                :or {keys-only? false, filter [[]], sort [[]],
                      count-only? false, in-transaction? false}}]
-  (let [query-object (make-query-object kind ancestor filter sort keys-only)
+  (let [query-object (make-query-object kind ancestor filter sort keys-only?)
         fetch-options-object (FetchOptions$Builder/withDefaults)]
     (when limit
       (.limit fetch-options-object limit))
