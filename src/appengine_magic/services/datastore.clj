@@ -238,29 +238,50 @@
 ;;; user functions and macros
 ;;; ----------------------------------------------------------------------------
 
-(defn retrieve [entity-record-type key-value &
+(defn retrieve [entity-record-type key-value-or-values &
                 {:keys [parent kind]
                  :or {kind (unqualified-name (.getName entity-record-type))}}]
-  (let [key-object (if parent
-                       (KeyFactory/createKey (get-key-object parent)
-                                             kind
-                                             (coerce-key-value-type key-value))
-                       (KeyFactory/createKey kind
-                                             (coerce-key-value-type key-value)))
-        entity (.get (get-datastore-service) key-object)
-        raw-properties (into {} (.getProperties entity))
-        properties (reduce (fn [m [k v]]
-                             (assoc m
-                               (keyword k)
-                               (coerce-java-type v)))
-                           {}
-                           raw-properties)
-        ;; XXX: No good choice but to use eval here. No way to know the number
-        ;; of arguments to the record constructor at compile-time, and no clean
-        ;; way to access any custom constructor defined by defentity, since that
-        ;; constructor would be in a different namespace.
-        entity-record (eval `(new ~entity-record-type ~@(repeat (count raw-properties) nil)))]
-    (with-meta (merge entity-record properties) {:key (.getKey entity)})))
+  (let [make-key-from-value (fn [key-value real-parent]
+                              (if real-parent
+                                  (KeyFactory/createKey (get-key-object real-parent)
+                                                        kind
+                                                        (coerce-key-value-type key-value))
+                                  (KeyFactory/createKey kind
+                                                        (coerce-key-value-type key-value))))
+        make-blank (fn [num-fields]
+                     ;; XXX: No good choice but to use eval here. No way to know the number
+                     ;; of arguments to the record constructor at compile-time, and no clean
+                     ;; way to access any custom constructor defined by defentity, since that
+                     ;; constructor would be in a different namespace.
+                     (eval `(new ~entity-record-type ~@(repeat num-fields nil))))
+        to-clj-properties (fn [raw-properties]
+                            (reduce (fn [m [k v]]
+                                      (assoc m
+                                        (keyword k)
+                                        (coerce-java-type v)))
+                                    {}
+                                    raw-properties))]
+    (if (sequential? key-value-or-values)
+        ;; handles sequences of values
+        (let [key-objects (map (fn [kv] (if (sequential? kv)
+                                            (make-key-from-value (first kv) (second kv))
+                                            (make-key-from-value kv nil)))
+                               key-value-or-values)
+              entities (.get (get-datastore-service) key-objects)
+              model-record (make-blank (count (.. (first entities) getValue getProperties)))]
+          (map #(let [v (.getValue %)]
+                  (with-meta
+                    (merge model-record (to-clj-properties (.getProperties v)))
+                    {:key (.getKey v)}))
+               entities))
+        ;; handles singleton values
+        (let [key-object (make-key-from-value key-value-or-values parent)
+              entity (.get (get-datastore-service) key-object)
+              raw-properties (into {} (.getProperties entity))
+              entity-record (make-blank (count raw-properties))]
+          (with-meta
+            (merge entity-record (to-clj-properties raw-properties))
+            {:key (.getKey entity)})))))
 
 
 (defn delete! [target]
