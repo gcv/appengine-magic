@@ -74,6 +74,8 @@
     "Returns nil if no tag is specified in the record definition, and no :key
      metadata exists. Otherwise returns a Key object. Specify optional entity
      group parent.")
+  (get-entity-object [this]
+    "Returns a datastore Entity object instance for the record.")
   (save! [this]
     "Writes the given entity to the data store."))
 
@@ -112,6 +114,10 @@
          :else v)))
 
 
+(defn- coerce-to-key-seq [any-seq]
+  (map #(if (instance? Key %) % (get-key-object %)) any-seq))
+
+
 (defn get-key-object-helper [entity-record key-property kind &
                              {:keys [parent]}]
   (let [entity-record-metadata (meta entity-record)
@@ -137,7 +143,7 @@
                    "entity has no valid :key metadata, and has no fields marked :key")))))
 
 
-(defn save!-helper [entity-record kind]
+(defn get-entity-object-helper [entity-record kind]
   (let [key-object (get-key-object entity-record)
         entity (if key-object
                    (Entity. key-object)
@@ -145,7 +151,21 @@
     (doseq [[property-kw value] entity-record]
       (let [property-name (.substring (str property-kw) 1)]
         (.setProperty entity property-name (coerce-clojure-type value))))
-    (.put (get-datastore-service) entity)))
+    entity))
+
+
+(defn save!-helper [entity-record]
+  (.put (get-datastore-service) (get-entity-object entity-record)))
+
+
+(defn- save-many-helper! [entity-record-seq]
+  (let [entities (map get-entity-object entity-record-seq)]
+    (.put (get-datastore-service) entities)))
+
+
+(extend-type Iterable
+  EntityProtocol
+  (save! [this] (save-many-helper! this)))
 
 
 (defn retrieve [entity-record-type key-value &
@@ -175,9 +195,7 @@
 
 (defn delete! [target]
   (let [target (if (sequential? target) target [target])
-        key (if (every? #(instance? Key %) target)
-                target
-                (map get-key-object target))]
+        key (coerce-to-key-seq target)]
     (.delete (get-datastore-service) key)))
 
 
@@ -192,8 +210,10 @@
          (get-key-object-helper this# ~key-property ~kind))
        (get-key-object [this# parent#]
          (get-key-object-helper this# ~key-property ~kind :parent parent#))
+       (get-entity-object [this#]
+         (get-entity-object-helper this# ~kind))
        (save! [this#]
-         (save!-helper this# ~kind)))))
+         (save!-helper this#)))))
 
 
 (defmacro new* [entity-record-type property-values & {:keys [parent]}]
