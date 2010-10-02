@@ -8,6 +8,11 @@
             Query Query$FilterOperator Query$SortDirection]))
 
 
+
+;;; ----------------------------------------------------------------------------
+;;; helper variables and constants
+;;; ----------------------------------------------------------------------------
+
 (defonce *datastore-service* (atom nil))
 (defonce *current-transaction* nil)
 
@@ -40,6 +45,11 @@
    :desc Query$SortDirection/DESCENDING})
 
 
+
+;;; ----------------------------------------------------------------------------
+;;; datastore service management functions; use directly if necessary
+;;; ----------------------------------------------------------------------------
+
 (defn get-datastore-service []
   (when (nil? @*datastore-service*)
     (reset! *datastore-service* (DatastoreServiceFactory/getDatastoreService)))
@@ -63,6 +73,11 @@
     @*datastore-service*))
 
 
+
+;;; ----------------------------------------------------------------------------
+;;; protocol for dealing with Clojure entity records
+;;; ----------------------------------------------------------------------------
+
 (defprotocol EntityProtocol
   "Entities are Clojure records which conform to the EntityProtocol. Each Entity
    must have a key. If an entity record field has a :key metadata tag, then that
@@ -79,6 +94,11 @@
   (save! [this]
     "Writes the given entity to the data store."))
 
+
+
+;;; ----------------------------------------------------------------------------
+;;; helper functions; do not use these directly
+;;; ----------------------------------------------------------------------------
 
 (defn- unqualified-name [sym]
   (let [s (str sym)
@@ -163,10 +183,60 @@
     (.put (get-datastore-service) entities)))
 
 
-(extend-type Iterable
-  EntityProtocol
-  (save! [this] (save-many-helper! this)))
+(defn- make-query-object [kind ancestor filter sort keys-only?]
+  (let [kind (cond (nil? kind) kind
+                   (string? kind) kind
+                   (extends? EntityProtocol kind) (unqualified-name kind)
+                   :else (throw (RuntimeException. "invalid kind specified in query")))
+        ancestor-key-object (cond (instance? Key ancestor) ancestor
+                                  (extends? EntityProtocol ancestor) (get-key-object ancestor)
+                                  :else nil)
+        query-object (cond (and (nil? kind) (nil? ancestor-key-object)) (Query.)
+                           (nil? kind) (Query. ancestor-key-object)
+                           (nil? ancestor-key-object) (Query. kind)
+                           :else (Query. kind ancestor-key-object))
+        ;; normalize filter criteria into a vector (even if there's just one)
+        filter (if (every? sequential? filter) filter (vector filter))
+        ;; normalize sort criteria into a vector (even if there's just one)]
+        sort (if (every? sequential? sort) sort (vector sort))]
+    (when keys-only?
+      (.setKeysOnly query-object))
+    (doseq [[filter-operator filter-property-kw filter-value] filter]
+      (cond
+       ;; valid filter provided
+       (and (not (nil? filter-operator))
+            (not (nil? filter-property-kw))
+            (not (nil? filter-value))
+            (keyword? filter-property-kw))
+       (let [op-object (get *filter-operator-map* filter-operator)
+             filter-property (.substring (str filter-property-kw) 1)]
+         (.addFilter query-object filter-property op-object filter-value))
+       ;; no filter definition
+       (and (nil? filter-operator) (nil? filter-property-kw) (nil? filter-value))
+       nil
+       ;; invalid filter
+       :else (throw (RuntimeException. "invalid filter specified in query"))))
+    (doseq [[sort-property-kw sort-direction] sort]
+      (cond
+       ;; valid sort provided
+       (and (not (nil? sort-property-kw))
+            (not (nil? sort-direction))
+            (keyword? sort-property-kw))
+       (let [sort-property (.substring (str sort-property-kw) 1)
+             sort-direction-object (get *sort-direction-map* sort-direction)]
+         (.addSort query-object sort-property sort-direction-object))
+       ;; no sort definition
+       (and (nil? sort-property-kw) (nil? sort-direction))
+       nil
+       ;; invalid sort
+       :else (throw (RuntimeException. "invalid sort specified in query"))))
+    query-object))
 
+
+
+;;; ----------------------------------------------------------------------------
+;;; user functions and macros
+;;; ----------------------------------------------------------------------------
 
 (defn retrieve [entity-record-type key-value &
                 {:keys [parent kind]
@@ -216,6 +286,11 @@
          (save!-helper this#)))))
 
 
+(extend-type Iterable
+  EntityProtocol
+  (save! [this] (save-many-helper! this)))
+
+
 (defmacro new* [entity-record-type property-values & {:keys [parent]}]
   (if parent
       `(let [parent# ~parent
@@ -237,56 +312,6 @@
        (catch Throwable err#
          (do (.rollback *current-transaction*)
              (throw err#))))))
-
-
-(defn- make-query-object [kind ancestor filter sort keys-only?]
-  (let [kind (cond (nil? kind) kind
-                   (string? kind) kind
-                   (extends? EntityProtocol kind) (unqualified-name kind)
-                   :else (throw (RuntimeException. "invalid kind specified in query")))
-        ancestor-key-object (cond (instance? Key ancestor) ancestor
-                                  (extends? EntityProtocol ancestor) (get-key-object ancestor)
-                                  :else nil)
-        query-object (cond (and (nil? kind) (nil? ancestor-key-object)) (Query.)
-                           (nil? kind) (Query. ancestor-key-object)
-                           (nil? ancestor-key-object) (Query. kind)
-                           :else (Query. kind ancestor-key-object))
-        ;; normalize filter criteria into a vector (even if there's just one)
-        filter (if (every? sequential? filter) filter (vector filter))
-        ;; normalize sort criteria into a vector (even if there's just one)]
-        sort (if (every? sequential? sort) sort (vector sort))]
-    (when keys-only?
-      (.setKeysOnly query-object))
-    (doseq [[filter-operator filter-property-kw filter-value] filter]
-      (cond
-       ;; valid filter provided
-       (and (not (nil? filter-operator))
-            (not (nil? filter-property-kw))
-            (not (nil? filter-value))
-            (keyword? filter-property-kw))
-       (let [op-object (get *filter-operator-map* filter-operator)
-             filter-property (.substring (str filter-property-kw) 1)]
-         (.addFilter query-object filter-property op-object filter-value))
-       ;; no filter definition
-       (and (nil? filter-operator) (nil? filter-property-kw) (nil? filter-value))
-       nil
-       ;; invalid filter
-       :else (throw (RuntimeException. "invalid filter specified in query"))))
-    (doseq [[sort-property-kw sort-direction] sort]
-      (cond
-       ;; valid sort provided
-       (and (not (nil? sort-property-kw))
-            (not (nil? sort-direction))
-            (keyword? sort-property-kw))
-       (let [sort-property (.substring (str sort-property-kw) 1)
-             sort-direction-object (get *sort-direction-map* sort-direction)]
-         (.addSort query-object sort-property sort-direction-object))
-       ;; no sort definition
-       (and (nil? sort-property-kw) (nil? sort-direction))
-       nil
-       ;; invalid sort
-       :else (throw (RuntimeException. "invalid sort specified in query"))))
-    query-object))
 
 
 (defn query [& {:keys [kind ancestor filter sort keys-only?
