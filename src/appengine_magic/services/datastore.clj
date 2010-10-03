@@ -233,6 +233,15 @@
     query-object))
 
 
+(defn- make-fetch-options-object [limit offset prefetch-size chunk-size]
+  (let [fetch-options-object (FetchOptions$Builder/withDefaults)]
+    (when limit (.limit fetch-options-object limit))
+    (when offset (.offset fetch-options-object offset))
+    (when prefetch-size (.prefetchSize prefetch-size))
+    (when chunk-size (.chunkSize chunk-size))
+    fetch-options-object))
+
+
 
 ;;; ----------------------------------------------------------------------------
 ;;; user functions and macros
@@ -343,19 +352,11 @@
                 :or {keys-only? false, filter [[]], sort [[]],
                      count-only? false, in-transaction? false}}]
   (let [query-object (make-query-object kind ancestor filter sort keys-only?)
-        fetch-options-object (FetchOptions$Builder/withDefaults)]
-    (when limit
-      (.limit fetch-options-object limit))
-    (when offset
-      (.offset fetch-options-object offset))
-    (when prefetch-size
-      (.prefetchSize prefetch-size))
-    (when chunk-size
-      (.chunkSize chunk-size))
-    (let [prepared-query (if (and in-transaction? *current-transaction*)
-                             (.prepare (get-datastore-service) *current-transaction*
-                                       query-object)
-                             (.prepare (get-datastore-service) query-object))]
-      (if count-only?
-          (.countEntities prepared-query)
-          (seq (.asIterable prepared-query fetch-options-object))))))
+        fetch-options-object (make-fetch-options-object limit offset prefetch-size chunk-size)
+        prepared-query (if (and in-transaction? *current-transaction*)
+                           (.prepare (get-datastore-service) *current-transaction*
+                                     query-object)
+                           (.prepare (get-datastore-service) query-object))]
+    (if count-only?
+        (.countEntities prepared-query)
+        (seq (.asIterable prepared-query fetch-options-object)))))
