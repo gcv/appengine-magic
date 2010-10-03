@@ -1,4 +1,5 @@
 (ns appengine-magic.services.datastore
+  (:use appengine-magic.utils)
   (:import [com.google.appengine.api.datastore DatastoreService DatastoreServiceFactory
             DatastoreServiceConfig DatastoreServiceConfig$Builder
             ReadPolicy ReadPolicy$Consistency ImplicitTransactionManagementPolicy
@@ -239,6 +240,15 @@
     fetch-options-object))
 
 
+(defn- entity->properties [raw-properties]
+  (reduce (fn [m [k v]]
+            (assoc m
+              (keyword k)
+              (coerce-java-type v)))
+          {}
+          raw-properties))
+
+
 
 ;;; ----------------------------------------------------------------------------
 ;;; user functions and macros
@@ -253,20 +263,7 @@
                                                         kind
                                                         (coerce-key-value-type key-value))
                                   (KeyFactory/createKey kind
-                                                        (coerce-key-value-type key-value))))
-        make-blank (fn [num-fields]
-                     ;; XXX: No good choice but to use eval here. No way to know the number
-                     ;; of arguments to the record constructor at compile-time, and no clean
-                     ;; way to access any custom constructor defined by defentity, since that
-                     ;; constructor would be in a different namespace.
-                     (eval `(new ~entity-record-type ~@(repeat num-fields nil))))
-        to-clj-properties (fn [raw-properties]
-                            (reduce (fn [m [k v]]
-                                      (assoc m
-                                        (keyword k)
-                                        (coerce-java-type v)))
-                                    {}
-                                    raw-properties))]
+                                                        (coerce-key-value-type key-value))))]
     (if (sequential? key-value-or-values)
         ;; handles sequences of values
         (let [key-objects (map (fn [kv] (if (sequential? kv)
@@ -274,19 +271,19 @@
                                             (make-key-from-value kv nil)))
                                key-value-or-values)
               entities (.get (get-datastore-service) key-objects)
-              model-record (make-blank (count (.. (first entities) getValue getProperties)))]
+              model-record (record entity-record-type)]
           (map #(let [v (.getValue %)]
                   (with-meta
-                    (merge model-record (to-clj-properties (.getProperties v)))
+                    (merge model-record (entity->properties (.getProperties v)))
                     {:key (.getKey v)}))
                entities))
         ;; handles singleton values
         (let [key-object (make-key-from-value key-value-or-values parent)
               entity (.get (get-datastore-service) key-object)
               raw-properties (into {} (.getProperties entity))
-              entity-record (make-blank (count raw-properties))]
+              entity-record (record entity-record-type)]
           (with-meta
-            (merge entity-record (to-clj-properties raw-properties))
+            (merge entity-record (entity->properties raw-properties))
             {:key (.getKey entity)})))))
 
 
@@ -345,25 +342,47 @@
               count-only? in-transaction?
               limit offset
               start-cursor end-cursor
-              prefetch-size chunk-size]
+              prefetch-size chunk-size
+              entity-record-type]
   (let [query-object (make-query-object kind ancestor filters sorts keys-only?)
         fetch-options-object (make-fetch-options-object limit offset prefetch-size chunk-size)
         prepared-query (if (and in-transaction? *current-transaction*)
-                           (.prepare (get-datastore-service) *current-transaction*
-                                     query-object)
-                           (.prepare (get-datastore-service) query-object))]
-    (if count-only?
-        (.countEntities prepared-query)
-        (seq (.asIterable prepared-query fetch-options-object)))))
+                           (.prepare (get-datastore-service) *current-transaction* query-object)
+                           (.prepare (get-datastore-service) query-object))
+        result-type (if (and (instance? Class kind) (extends? EntityProtocol kind))
+                        kind
+                        entity-record-type)
+        result-count (.countEntities prepared-query)]
+    (cond count-only? result-count
+          (zero? result-count) (list)
+          :else (let [results (seq (.asIterable prepared-query fetch-options-object))]
+                  (if-not result-type
+                      ;; no valid result type given; just return raw Entity objects
+                      results
+                      ;; convert into EntityProtocol records
+                      (let [model-record (record result-type)]
+                        (map #(with-meta
+                                (merge model-record (entity->properties (.getProperties %)))
+                                {:key (.getKey %)})
+                             results)))))))
 
 
-(defmacro query [& {:keys [kind ancestor filter sort keys-only?
-                           count-only? in-transaction?
-                           limit offset
-                           start-cursor end-cursor ; TODO: Implement this.
-                           prefetch-size chunk-size]
-                    :or {keys-only? false, filter [], sort [],
-                         count-only? false, in-transaction? false}}]
+(defmacro query
+  "TODO: Document this better.
+   :kind - Either a Clojure entity record type, or a string naming a datastore
+     entity kind. If this is a string, :entity-record-type must be given, must
+     be an entity record type, and will contain the results of the query.
+   :entity-record-type - Unless :kind is given and is an entity record type,
+     will contain the results of the query. Otherwise, the type of :kind is
+     used."
+  [& {:keys [kind ancestor filter sort keys-only?
+             count-only? in-transaction?
+             limit offset
+             start-cursor end-cursor ; TODO: Implement this.
+             prefetch-size chunk-size
+             entity-record-type]
+      :or {keys-only? false, filter [], sort [],
+           count-only? false, in-transaction? false}}]
   ;; Normalize :filter and :sort keywords (into lists, even if only one is gen),
   ;; then turn them into QueryFilter and QuerySort objects.
   (let [filter (if (every? sequential? filter) filter (vector filter))
@@ -398,4 +417,5 @@
                ~count-only? ~in-transaction?
                ~limit ~offset
                ~start-cursor ~end-cursor
-               ~prefetch-size ~chunk-size))))
+               ~prefetch-size ~chunk-size
+               ~entity-record-type))))

@@ -8,6 +8,16 @@
            javax.xml.transform.stream.StreamResult))
 
 
+;;; From: http://groups.google.com/group/clojure/msg/5206fac13144ea99
+(defmacro record
+  "Dynamic factory for Clojure record objects."
+  ([name] `(record ~name {}))
+  ([name vals-map]
+     `(let [con# (first (.getDeclaredConstructors ~name))
+            num# (alength (.getParameterTypes con#))]
+        (merge (.newInstance con# (make-array Object num#)) ~vals-map))))
+
+
 (defn dash_ [s]
   (.replaceAll s "-" "_"))
 
