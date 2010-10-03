@@ -310,6 +310,9 @@
          (save!-helper this#)))))
 
 
+(defentity EntityBase [])
+
+
 (extend-type Iterable
   EntityProtocol
   (save! [this] (save-many-helper! this)))
@@ -355,16 +358,16 @@
         result-count (.countEntities prepared-query)]
     (cond count-only? result-count
           (zero? result-count) (list)
-          :else (let [results (seq (.asIterable prepared-query fetch-options-object))]
-                  (if-not result-type
-                      ;; no valid result type given; just return raw Entity objects
-                      results
-                      ;; convert into EntityProtocol records
-                      (let [model-record (record result-type)]
-                        (map #(with-meta
-                                (merge model-record (entity->properties (.getProperties %)))
-                                {:key (.getKey %)})
-                             results)))))))
+          :else (let [results (seq (.asIterable prepared-query fetch-options-object))
+                      model-record (if result-type
+                                       ;; we know this type; good
+                                       (record result-type)
+                                       ;; unknown type; just use a basic EntityProtocol
+                                       (EntityBase.))]
+                  (map #(with-meta
+                          (merge model-record (entity->properties (.getProperties %)))
+                          {:key (.getKey %)})
+                       results)))))
 
 
 (defmacro query
