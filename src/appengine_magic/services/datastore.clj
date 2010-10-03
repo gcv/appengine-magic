@@ -184,7 +184,8 @@
                    (extends? EntityProtocol kind) (unqualified-name kind)
                    :else (throw (RuntimeException. "invalid kind specified in query")))
         ancestor-key-object (cond (instance? Key ancestor) ancestor
-                                  (extends? EntityProtocol ancestor) (get-key-object ancestor)
+                                  (extends? EntityProtocol
+                                            (class ancestor)) (get-key-object ancestor)
                                   :else nil)
         query-object (cond (and (nil? kind) (nil? ancestor-key-object)) (Query.)
                            (nil? kind) (Query. ancestor-key-object)
