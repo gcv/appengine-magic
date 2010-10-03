@@ -14,6 +14,8 @@
 ;;; ----------------------------------------------------------------------------
 
 (defonce *datastore-service* (atom nil))
+
+
 (defonce *current-transaction* nil)
 
 
@@ -25,24 +27,6 @@
 (defonce *datastore-implicit-transaction-policy-map*
   {:auto ImplicitTransactionManagementPolicy/AUTO
    :none ImplicitTransactionManagementPolicy/NONE})
-
-
-(defonce *filter-operator-map*
-  {:eq Query$FilterOperator/EQUAL
-   :gt Query$FilterOperator/GREATER_THAN
-   :ge Query$FilterOperator/GREATER_THAN_OR_EQUAL
-   :in Query$FilterOperator/IN
-   :lt Query$FilterOperator/LESS_THAN
-   :le Query$FilterOperator/LESS_THAN_OR_EQUAL
-   :ne Query$FilterOperator/NOT_EQUAL})
-
-
-(defonce *sort-direction-map*
-  {:ascending Query$SortDirection/ASCENDING
-   :asc Query$SortDirection/ASCENDING
-   :descending Query$SortDirection/DESCENDING
-   :dsc Query$SortDirection/DESCENDING
-   :desc Query$SortDirection/DESCENDING})
 
 
 
@@ -183,7 +167,18 @@
     (.put (get-datastore-service) entities)))
 
 
-(defn- make-query-object [kind ancestor filter sort keys-only?]
+
+;;; ----------------------------------------------------------------------------
+;;; query helper objects and functions
+;;; ----------------------------------------------------------------------------
+
+(defrecord QueryFilter [operator property value])
+
+
+(defrecord QuerySort [property direction])
+
+
+(defn- make-query-object [kind ancestor filters sorts keys-only?]
   (let [kind (cond (nil? kind) kind
                    (string? kind) kind
                    (extends? EntityProtocol kind) (unqualified-name kind)
@@ -194,42 +189,43 @@
         query-object (cond (and (nil? kind) (nil? ancestor-key-object)) (Query.)
                            (nil? kind) (Query. ancestor-key-object)
                            (nil? ancestor-key-object) (Query. kind)
-                           :else (Query. kind ancestor-key-object))
-        ;; normalize filter criteria into a vector (even if there's just one)
-        filter (if (every? sequential? filter) filter (vector filter))
-        ;; normalize sort criteria into a vector (even if there's just one)]
-        sort (if (every? sequential? sort) sort (vector sort))]
+                           :else (Query. kind ancestor-key-object))]
     (when keys-only?
       (.setKeysOnly query-object))
-    (doseq [[filter-operator filter-property-kw filter-value] filter]
-      (cond
-       ;; valid filter provided
-       (and (not (nil? filter-operator))
-            (not (nil? filter-property-kw))
-            (not (nil? filter-value))
-            (keyword? filter-property-kw))
-       (let [op-object (get *filter-operator-map* filter-operator)
-             filter-property (.substring (str filter-property-kw) 1)]
-         (.addFilter query-object filter-property op-object filter-value))
-       ;; no filter definition
-       (and (nil? filter-operator) (nil? filter-property-kw) (nil? filter-value))
-       nil
-       ;; invalid filter
-       :else (throw (RuntimeException. "invalid filter specified in query"))))
-    (doseq [[sort-property-kw sort-direction] sort]
-      (cond
-       ;; valid sort provided
-       (and (not (nil? sort-property-kw))
-            (not (nil? sort-direction))
-            (keyword? sort-property-kw))
-       (let [sort-property (.substring (str sort-property-kw) 1)
-             sort-direction-object (get *sort-direction-map* sort-direction)]
-         (.addSort query-object sort-property sort-direction-object))
-       ;; no sort definition
-       (and (nil? sort-property-kw) (nil? sort-direction))
-       nil
-       ;; invalid sort
-       :else (throw (RuntimeException. "invalid sort specified in query"))))
+    ;; prepare filters
+    (doseq [current-filter filters]
+      (let [filter-operator (:operator current-filter)
+            filter-property-kw (:property current-filter)
+            filter-value (:value current-filter)]
+        (cond
+         ;; valid filter provided
+         (and (not (nil? filter-operator))
+              (not (nil? filter-property-kw))
+              (not (nil? filter-value))
+              (keyword? filter-property-kw))
+         (let [filter-property (.substring (str filter-property-kw) 1)]
+           (.addFilter query-object filter-property filter-operator filter-value))
+         ;; no filter definition
+         (and (nil? filter-operator) (nil? filter-property-kw) (nil? filter-value))
+         nil
+         ;; invalid filter
+         :else (throw (RuntimeException. "invalid filter specified in query")))))
+    ;; prepare sorts
+    (doseq [current-sort sorts]
+      (let [sort-property-kw (:property current-sort)
+            sort-direction (:direction current-sort)]
+        (cond
+         ;; valid sort provided
+         (and (not (nil? sort-property-kw))
+              (not (nil? sort-direction))
+              (keyword? sort-property-kw))
+         (let [sort-property (.substring (str sort-property-kw) 1)]
+           (.addSort query-object sort-property sort-direction))
+         ;; no sort definition
+         (and (nil? sort-property-kw) (nil? sort-direction))
+         nil
+         ;; invalid sort
+         :else (throw (RuntimeException. "invalid sort specified in query")))))
     query-object))
 
 
@@ -344,14 +340,12 @@
              (throw err#))))))
 
 
-(defn query [& {:keys [kind ancestor filter sort keys-only?
-                       count-only? in-transaction?
-                       limit offset
-                       start-cursor end-cursor ; TODO: Implement this.
-                       prefetch-size chunk-size]
-                :or {keys-only? false, filter [[]], sort [[]],
-                     count-only? false, in-transaction? false}}]
-  (let [query-object (make-query-object kind ancestor filter sort keys-only?)
+(defn query* [kind ancestor filters sorts keys-only?
+              count-only? in-transaction?
+              limit offset
+              start-cursor end-cursor
+              prefetch-size chunk-size]
+  (let [query-object (make-query-object kind ancestor filters sorts keys-only?)
         fetch-options-object (make-fetch-options-object limit offset prefetch-size chunk-size)
         prepared-query (if (and in-transaction? *current-transaction*)
                            (.prepare (get-datastore-service) *current-transaction*
@@ -360,3 +354,47 @@
     (if count-only?
         (.countEntities prepared-query)
         (seq (.asIterable prepared-query fetch-options-object)))))
+
+
+(defmacro query [& {:keys [kind ancestor filter sort keys-only?
+                           count-only? in-transaction?
+                           limit offset
+                           start-cursor end-cursor ; TODO: Implement this.
+                           prefetch-size chunk-size]
+                    :or {keys-only? false, filter [], sort [],
+                         count-only? false, in-transaction? false}}]
+  ;; Normalize :filter and :sort keywords (into lists, even if only one is gen),
+  ;; then turn them into QueryFilter and QuerySort objects.
+  (let [filter (if (every? sequential? filter) filter (vector filter))
+        filter `(list ~@(map (fn [[op k v]] `(list (keyword '~op) ~k ~v)) filter))
+        sort (if (sequential? sort) sort (vector sort))]
+    `(let [filter# (map (fn [[sym# prop-kw# prop-val#]]
+                          (QueryFilter. (condp = sym#
+                                            := Query$FilterOperator/EQUAL
+                                            :> Query$FilterOperator/GREATER_THAN
+                                            :>= Query$FilterOperator/GREATER_THAN_OR_EQUAL
+                                            :in Query$FilterOperator/IN
+                                            :< Query$FilterOperator/LESS_THAN
+                                            :<= Query$FilterOperator/LESS_THAN_OR_EQUAL
+                                            :! Query$FilterOperator/NOT_EQUAL
+                                            :!= Query$FilterOperator/NOT_EQUAL
+                                            :<> Query$FilterOperator/NOT_EQUAL)
+                                        prop-kw# prop-val#))
+                        ~filter)
+           sort# (map (fn [sort-spec#]
+                        (if (sequential? sort-spec#)
+                            (let [[sort-property# sort-dir-spec#] sort-spec#
+                                  sort-dir# (condp = sort-dir-spec#
+                                                :asc Query$SortDirection/ASCENDING
+                                                :ascending Query$SortDirection/ASCENDING
+                                                :dsc Query$SortDirection/DESCENDING
+                                                :desc Query$SortDirection/DESCENDING
+                                                :descending Query$SortDirection/DESCENDING)]
+                              (QuerySort. sort-property# sort-dir#))
+                            (QuerySort. sort-spec# Query$SortDirection/ASCENDING)))
+                      ~sort)]
+       (query* ~kind ~ancestor filter# sort# ~keys-only?
+               ~count-only? ~in-transaction?
+               ~limit ~offset
+               ~start-cursor ~end-cursor
+               ~prefetch-size ~chunk-size))))
