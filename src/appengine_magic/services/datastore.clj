@@ -321,12 +321,11 @@
 
 
 (defmacro new* [entity-record-type property-values & {:keys [parent]}]
-  (if parent
-      `(let [parent# ~parent
-             entity# (new ~entity-record-type ~@property-values)]
-         (if (nil? parent#)
-             entity#
-             (with-meta entity# {:key (get-key-object entity# parent#)})))))
+  `(let [parent# ~parent
+         entity# (new ~entity-record-type ~@property-values)]
+     (if (nil? parent#)
+         entity#
+         (with-meta entity# {:key (get-key-object entity# parent#)}))))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
