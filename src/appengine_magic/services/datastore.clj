@@ -123,8 +123,7 @@
   (map #(if (instance? Key %) % (get-key-object %)) any-seq))
 
 
-(defn get-key-object-helper [entity-record key-property kind &
-                             {:keys [parent]}]
+(defn get-key-object-helper [entity-record key-property kind parent]
   (let [entity-record-metadata (meta entity-record)
         metadata-key-value (when entity-record-metadata (:key entity-record-metadata))
         key-property-value (coerce-key-value-type
@@ -304,9 +303,9 @@
     `(defrecord ~name ~properties
        EntityProtocol
        (get-key-object [this#]
-         (get-key-object-helper this# ~key-property ~kind))
+         (get-key-object-helper this# ~key-property ~kind nil))
        (get-key-object [this# parent#]
-         (get-key-object-helper this# ~key-property ~kind :parent parent#))
+         (get-key-object-helper this# ~key-property ~kind parent#))
        (get-entity-object [this#]
          (get-entity-object-helper this# ~kind))
        (save! [this#]
