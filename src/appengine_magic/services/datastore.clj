@@ -205,7 +205,10 @@
               (not (nil? filter-property-kw))
               (not (nil? filter-value))
               (keyword? filter-property-kw))
-         (let [filter-property (.substring (str filter-property-kw) 1)]
+         (let [filter-property (.substring (str filter-property-kw) 1)
+               filter-value (if (extends? EntityProtocol (class filter-value))
+                                (get-key-object filter-value)
+                                filter-value)]
            (.addFilter query-object filter-property filter-operator filter-value))
          ;; no filter definition
          (and (nil? filter-operator) (nil? filter-property-kw) (nil? filter-value))
