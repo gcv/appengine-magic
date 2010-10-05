@@ -197,7 +197,7 @@ App Engine documentation for detailed explanations of the underlying Java API.
 The `appengine-magic.services.datastore` namespace (suggested alias: `ae-ds`)
 provides a fairly complete interface for the App Engine datastore.
 
-A simple example will probably help here:
+A few simple examples:
 
     (ae-ds/defentity Author [^:key name, birthday])
     (ae-ds/defentity Book [^:key isbn, title, author])
@@ -271,7 +271,7 @@ A simple example will probably help here:
     query returns generic `EntityBase` records.
   * `:filter`: one filter clause, or a list of clauses. Each consists of a
     symbol specifying the filter operation, a property name, and a target
-    property value. See examples.
+    property value. See example.
   * `:sort`: one sort criterion, or a list of criteria. Each specified criterion
     defaults to ascending sort order, but may also sort in descending order.
 - `with-transaction <body>`: wraps the body in a transaction. Can be
