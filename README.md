@@ -13,6 +13,11 @@ applications as natural as any other Clojure program.
 3. appengine-magic is also a Leiningen plugin, and adds several tasks which
    simplify preparing for App Engine deployment.
 
+Using appengine-magic still requires familiarity with Google App Engine. This
+README file tries to describe everything you need to know to use App Engine with
+Clojure, but does not explain the details of App Engine semantics. Please refer
+to Google's official documentation for details.
+
 
 
 ## Dependencies
@@ -65,7 +70,7 @@ functionality.
    `def-appengine-app` macro.
 3. Edit `project.clj`:
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.1.3"]` to your `dev-dependencies`
+   - add `[appengine-magic "0.2.0"]` to your `dev-dependencies`
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
@@ -187,6 +192,96 @@ App Engine documentation for detailed explanations of the underlying Java API.
   atomically increments long integer values by deltas given in the argument map.
 
 
+### Datastore
+
+The `appengine-magic.services.datastore` namespace (suggested alias: `ae-ds`)
+provides a fairly complete interface for the App Engine datastore.
+
+A few simple examples:
+
+    (ae-ds/defentity Author [^:key name, birthday])
+    (ae-ds/defentity Book [^:key isbn, title, author])
+
+    ;; Writes three authors to the datastore.
+    (let [will (Author. "Shakespeare, William" nil)
+          geoff (Author. "Chaucer, Geoffrey" "1343")
+          oscar (Author. "Wilde, Oscar" "1854-10-16")]
+      ;; First, just write Will, without a birthday.
+      (ae-ds/save! will)
+      ;; Now overwrite Will with an entity containing a birthday, and also
+      ;; write the other two authors.
+      (ae-ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
+
+    ;; Retrieves two authors and writes book entites.
+    (let [will (first (ae-ds/query :kind Author :filter (= :name "Shakespeare, William")))
+          geoff (first (ae-ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
+                                                          (= :birthday "1343")]))]
+      (ae-ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
+      (ae-ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
+      (ae-ds/save! (Book. "0393039854" "The First Folio" will)))
+
+    ;; Retrieves all Chaucer books in the datastore, sorting by descending title and
+    ;; then by ISBN.
+    (let [geoff (ae-ds/retrieve Author "Chaucer, Geoffrey")]
+      (ae-ds/query :kind Book
+                   :filter (= :author geoff)
+                   :sort [[title :dsc] :isbn]))
+
+    ;; Deletes all books by Chaucer.
+    (let [geoff (ae-ds/retrieve Author "Chaucer, Geoffrey")]
+      (ae-ds/delete! (ae-ds/query :kind Book :filter (= :author geoff))))
+
+- `defentity` (optional keyword: `:kind`): defines an entity record type
+  suitable for storing in the App Engine datastore. These entities work just
+  like Clojure records. Internally, they implement an additional protocol,
+  EntityProtocol, which provides the `save!` method. When defining an entity,
+  you may specify `^:key` metadata on any one field of the record, and the
+  datastore will use this as the primary key. Omitting the key will make the
+  datastore assign an automatic primary key to the entity. Specifying the
+  optional `:kind` keyword (a string value) causes App Engine to save the entity
+  under the given "kind" name — like a datastore table. This allows kinds to
+  remain disjoint from entity record types.
+- `new*`: instantiates a datastore entity record. You may also use standard
+  Clojure conventions to instantiate entity records, but creating entities
+  destined for entity groups requires using `new*`. To put the new entity into a
+  group, use the `:parent` keyword with the parent entity. Instantiating an
+  entity does not automatically write it to the datastore.
+- `get-key-object`: this returns the primary Key object of the given entity. For
+  a newly-instantiated entity lacking an explicit primary key, this method
+  returns nil. Entities properly brought under entity groups using `new*` will
+  have hierarchical keys. You should rarely need to use this explicitly.
+- `save!`: calling this method on an entity writes it to the datastore, using
+  the primary key returned by calling `get-key-object` on the entity. May be
+  called on a sequence of entities.
+- `delete!`: removes an entity. May be called on a sequence of entities.
+- `retrieve <entity-record-type> <primary-key>` (optional keywords: `:parent`,
+  `:kind`): this is a low-level entity retrieval function. It returns a record
+  of the given type with the given primary key value. If the target entity
+  belongs to an entity group, specify the parent using the optional keyword. If
+  the target entity was stored with a different kind from the entity record
+  type, specify the actual kind using the optional keyword.
+- `query` (optional keywords: `:kind`, `:ancestor`, `:filter`, `:sort`,
+  `:keys-only?`, `:count-only?`, `:in-transaction?`, `:limit`, `:offset`,
+  `:prefetch-size`, `:chunk-size`, `:entity-record-type`): runs a query with the
+  given parameters.
+  * `:kind`: primarily identifies the App Engine entity kind. If given as an
+    entity record type (recommended), the query returns a sequence of entity
+    records of that type. If given as a string, it then checks to see if
+    `:entity-record-type` is given, and uses that type if so; otherwise, the
+    query returns generic `EntityBase` records.
+  * `:filter`: one filter clause, or a list of clauses. Each consists of a
+    symbol specifying the filter operation, a property name, and a target
+    property value. See example.
+  * `:sort`: one sort criterion, or a list of criteria. Each specified criterion
+    defaults to ascending sort order, but may also sort in descending order.
+- `with-transaction <body>`: wraps the body in a transaction. Can be
+  nested. (Keep the limitations of App Engine's transaction system in mind when
+  using this.)
+- `init-datastore-service`: not normally needed. Only use this method if you
+  want to modify the the read consistency and implicit transaction policies of
+  the datastore service.
+
+
 ## Limitations
 
 When using the interactive REPL environment, some App Engine services are more
@@ -198,7 +293,6 @@ available in the REPL environment.
 
 The following Google services are not yet tested in the REPL environment:
 
-- Datastore
 - Blobstore
 - Images
 - Mail

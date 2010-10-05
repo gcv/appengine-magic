@@ -4,7 +4,7 @@
             MemcacheService$SetPolicy]))
 
 
-(defonce *default-memcache-service* (atom nil))
+(defonce *memcache-service* (atom nil))
 (defonce *namespaced-memcache-services* (atom {}))
 
 
@@ -14,20 +14,17 @@
    :replace-only MemcacheService$SetPolicy/REPLACE_ONLY_IF_PRESENT})
 
 
-(defn- get-memcache-service [& {:keys [service namespace]}]
-  (cond (and (nil? service) (nil? namespace))
-          (do (when (nil? @*default-memcache-service*)
-                (reset! *default-memcache-service* (MemcacheServiceFactory/getMemcacheService)))
-              @*default-memcache-service*)
-        (not (nil? service))
-          service
-        (not (nil? namespace))
-          (let [s (@*namespaced-memcache-services* namespace)]
-            (if-not (nil? s)
-                s
-                ((swap! *namespaced-memcache-services* assoc
-                        namespace (MemcacheServiceFactory/getMemcacheService namespace))
-                 namespace)))))
+(defn get-memcache-service [& {:keys [namespace]}]
+  (if (nil? namespace)
+      (do (when (nil? @*memcache-service*)
+            (reset! *memcache-service* (MemcacheServiceFactory/getMemcacheService)))
+          @*memcache-service*)
+      (let [s (@*namespaced-memcache-services* namespace)]
+        (if-not (nil? s)
+            s
+            ((swap! *namespaced-memcache-services* assoc
+                    namespace (MemcacheServiceFactory/getMemcacheService namespace))
+             namespace)))))
 
 
 (defrecord Statistics [bytes-returned-for-hits
@@ -38,9 +35,8 @@
                        total-item-bytes])
 
 
-(defn statistics [& {:keys [service namespace]}]
-  (let [service (get-memcache-service :service service :namespace namespace)
-        stats (.getStatistics service)]
+(defn statistics [& {:keys [namespace]}]
+  (let [stats (.getStatistics (get-memcache-service :namespace namespace))]
     (Statistics. (.getBytesReturnedForHits stats)
                  (.getHitCount stats)
                  (.getItemCount stats)
@@ -51,67 +47,65 @@
 
 (defn clear-all
   "Clears the entire cache. Does not respect namespaces!"
-  [& {:keys [service namespace]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
-    (.clearAll service)))
+  []
+  (.clearAll (get-memcache-service)))
 
 
-(defn contains? [key & {:keys [service namespace]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
-    (.contains service key)))
+(defn contains? [key & {:keys [namespace]}]
+  (.contains (get-memcache-service :namespace namespace) key))
 
 
 (defn delete
-  "If (sequential? key), deletes in batch."
-  [key & {:keys [service namespace millis-no-readd]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
+  "If (sequential? key-or-keys), deletes in batch."
+  [key-or-keys & {:keys [namespace millis-no-readd]}]
+  (let [service (get-memcache-service :namespace namespace)]
     (if millis-no-readd
-        (if (sequential? key)
-            (.deletAll service key millis-no-readd)
-            (.delete service key millis-no-readd))
-        (if (sequential? key)
-            (.deleteAll service key)
-            (.delete service key)))))
+        (if (sequential? key-or-keys)
+            (.deletAll service key-or-keys millis-no-readd)
+            (.delete service key-or-keys millis-no-readd))
+        (if (sequential? key-or-keys)
+            (.deleteAll service key-or-keys)
+            (.delete service key-or-keys)))))
 
 
 (defn get
-  "If (sequential? key), returns values as a map."
-  [key & {:keys [service namespace]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
-    (if (sequential? key)
-        (into {} (.getAll service key))
-        (.get service key))))
+  "If (sequential? key-or-keys), returns values as a map."
+  [key-or-keys & {:keys [namespace]}]
+  (let [service (get-memcache-service :namespace namespace)]
+    (if (sequential? key-or-keys)
+        (into {} (.getAll service key-or-keys))
+        (.get service key-or-keys))))
 
 
-(defn put [key value & {:keys [service namespace expiration policy]
+(defn put [key value & {:keys [namespace expiration policy]
                         :or {policy :always}}]
-  (let [service (get-memcache-service :service service :namespace namespace)
+  (let [service (get-memcache-service :namespace namespace)
         policy (*policy-type-map* policy)]
     (.put service key value expiration policy)))
 
 
-(defn put-map [values & {:keys [service namespace expiration policy]
+(defn put-map [values & {:keys [namespace expiration policy]
                          :or {policy :always}}]
-  (let [service (get-memcache-service :service service :namespace namespace)
+  (let [service (get-memcache-service :namespace namespace)
         policy (*policy-type-map* policy)]
     (.putAll service values expiration policy)))
 
 
 (defn increment
-  "If (sequential? key), increment each key by the delta."
-  [key delta & {:keys [service namespace initial]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
+  "If (sequential? key-or-keys), increment each key by the delta."
+  [key-or-keys delta & {:keys [namespace initial]}]
+  (let [service (get-memcache-service :namespace namespace)]
     (if initial
-        (if (sequential? key)
-            (.incrementAll service key delta (long initial))
-            (.increment service key delta (long initial)))
-        (if (sequential? key)
-            (.incrementAll service key delta)
-            (.increment service key delta)))))
+        (if (sequential? key-or-keys)
+            (.incrementAll service key-or-keys delta (long initial))
+            (.increment service key-or-keys delta (long initial)))
+        (if (sequential? key-or-keys)
+            (.incrementAll service key-or-keys delta)
+            (.increment service key-or-keys delta)))))
 
 
-(defn increment-map [values & {:keys [service namespace initial]}]
-  (let [service (get-memcache-service :service service :namespace namespace)]
+(defn increment-map [values & {:keys [namespace initial]}]
+  (let [service (get-memcache-service :namespace namespace)]
     (if initial
         (.incrementAll service values (long initial))
         (.incrementAll service values))))
