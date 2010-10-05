@@ -70,7 +70,7 @@ functionality.
    `def-appengine-app` macro.
 3. Edit `project.clj`:
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.1.3"]` to your `dev-dependencies`
+   - add `[appengine-magic "0.2.0"]` to your `dev-dependencies`
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
