@@ -61,7 +61,7 @@
   (let [service (get-memcache-service :namespace namespace)]
     (if millis-no-readd
         (if (sequential? key-or-keys)
-            (.deletAll service key-or-keys millis-no-readd)
+            (.deleteAll service key-or-keys millis-no-readd)
             (.delete service key-or-keys millis-no-readd))
         (if (sequential? key-or-keys)
             (.deleteAll service key-or-keys)
