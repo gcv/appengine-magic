@@ -45,7 +45,7 @@
                  (.getTotalItemBytes stats))))
 
 
-(defn clear-all
+(defn clear-all!
   "Clears the entire cache. Does not respect namespaces!"
   []
   (.clearAll (get-memcache-service)))
@@ -55,7 +55,7 @@
   (.contains (get-memcache-service :namespace namespace) key))
 
 
-(defn delete
+(defn delete!
   "If (sequential? key-or-keys), deletes in batch."
   [key-or-keys & {:keys [namespace millis-no-readd]}]
   (let [service (get-memcache-service :namespace namespace)]
@@ -77,21 +77,21 @@
         (.get service key-or-keys))))
 
 
-(defn put [key value & {:keys [namespace expiration policy]
-                        :or {policy :always}}]
+(defn put! [key value & {:keys [namespace expiration policy]
+                         :or {policy :always}}]
   (let [service (get-memcache-service :namespace namespace)
         policy (*policy-type-map* policy)]
     (.put service key value expiration policy)))
 
 
-(defn put-map [values & {:keys [namespace expiration policy]
-                         :or {policy :always}}]
+(defn put-map! [values & {:keys [namespace expiration policy]
+                          :or {policy :always}}]
   (let [service (get-memcache-service :namespace namespace)
         policy (*policy-type-map* policy)]
     (.putAll service values expiration policy)))
 
 
-(defn increment
+(defn increment!
   "If (sequential? key-or-keys), increment each key by the delta."
   [key-or-keys delta & {:keys [namespace initial]}]
   (let [service (get-memcache-service :namespace namespace)]
@@ -104,7 +104,7 @@
             (.increment service key-or-keys delta)))))
 
 
-(defn increment-map [values & {:keys [namespace initial]}]
+(defn increment-map! [values & {:keys [namespace initial]}]
   (let [service (get-memcache-service :namespace namespace)]
     (if initial
         (.incrementAll service values (long initial))
