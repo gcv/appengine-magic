@@ -3,7 +3,7 @@
 
 (defonce *urlfetch-service* (atom nil))
 
-(defn- get-urlfetch-service []
+(defn get-urlfetch-service []
   (do (when (nil? @*urlfetch-service*)
 	(reset! *urlfetch-service* (URLFetchServiceFactory/getURLFetchService)))
       @*urlfetch-service*))

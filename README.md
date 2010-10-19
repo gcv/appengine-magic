@@ -168,10 +168,10 @@ The `appengine-magic.services.memcache` namespace (suggested alias:
 App Engine documentation for detailed explanations of the underlying Java API.
 
 - `statistics`: returns the current memcache statistics.
-- `clear-all`: wipes the entire cache for all namespaces.
+- `clear-all!`: wipes the entire cache for all namespaces.
 - `contains? <key>` (optional keyword: `:namespace`): checks if the given key
   exists in the cache.
-- `delete <key>` (optional keywords: `:namespace`, `:millis-no-readd`): removes
+- `delete! <key>` (optional keywords: `:namespace`, `:millis-no-readd`): removes
   the key from the cache, optionally refraining from adding it for the given
   number of milliseconds. If the key argument is sequential, deletes all the
   named keys.
