@@ -5,7 +5,8 @@
             FetchOptions$Builder
             HTTPRequest
             HTTPMethod])
-  (:require [clojure.contrib.string :as string]))
+  (:require [clojure.contrib.string :as string]
+            [appengine-magic.services.memcache :as memcache]))
 
 (defonce *urlfetch-service* (atom nil))
 
@@ -13,6 +14,8 @@
   (do (when (nil? @*urlfetch-service*)
 	(reset! *urlfetch-service* (URLFetchServiceFactory/getURLFetchService)))
       @*urlfetch-service*))
+
+(defn- urlify [url] (if (string? url) (java.net.URL. url) url))
 
 (defrecord HTTPResponse [content
 			 final-url
@@ -55,7 +58,7 @@
       (.followRedirects fetch-options)
       (.doNotFollowRedirects fetch-options))
     (.setDeadline fetch-options deadline)
-    (let [url-obj    (if (string? url) (java.net.URL. url) url)
+    (let [url-obj    (urlify url)
           method-obj (method {:delete HTTPMethod/DELETE
                               :get    HTTPMethod/GET
                               :head   HTTPMethod/HEAD
@@ -101,3 +104,36 @@
       (isCancelled [_] (.isCancelled f))
       (isDone [_] (.isDone f))
       (cancel [_ interrupt?] (.cancel f interrupt?)))))
+
+(def *memcache-namespace* "appengine-magic.services.urlfetch")
+(def *memory-cache* (atom {}))
+(defn cache-response [url response]
+  ;; save unnecessary memcache calls by checking for relevant headers
+  (if (or (:Last-Modified (:headers response))
+          (:ETag (:headers response)))
+    (do (swap! assoc url response)
+        (memcache/put! url response :namespace *memcache-namespace*)
+        response)))
+(defn uncache-response [url]
+  (if-let [response (@*memory-cache* url)]
+    response
+    (memcache/get url :namespace *memcache-namespace*)))
+
+(defn memcached-fetch
+  "Like fetch, but caches its results in memcache and uses ETag or
+   Last-Modified headers to avoid doing full-fetches when possible."
+  [url & opts]
+  (let [request (apply make-request url opts)
+        url     (.getURL request)]
+    (if-let [old-response (uncache-response url)]
+      (do
+        (if-let [etag (:ETag (:headers old-response))]
+          (.setHeader request "If-None-Match" etag)
+          (if-let [last-modified (:Last-Modified (:headers old-response))]
+            (.setHeader request "If-Modified-Since" last-modified)))
+        (let [response (parse-response (.fetch (get-urlfetch-service) request))]
+          (if (= 304 (:response-code response))
+            old-response
+            (cache-response url response))))
+      ;; if no cache, do a regular fetch
+      (cache-response (apply fetch url opts)))))
