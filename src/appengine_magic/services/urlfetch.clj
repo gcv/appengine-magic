@@ -3,6 +3,7 @@
             URLFetchServiceFactory
             FetchOptions
             FetchOptions$Builder
+            HTTPHeader
             HTTPRequest
             HTTPMethod])
   (:require [clojure.contrib.string :as string]
@@ -58,13 +59,12 @@
       (.followRedirects fetch-options)
       (.doNotFollowRedirects fetch-options))
     (.setDeadline fetch-options deadline)
-    (let [url-obj    (urlify url)
-          method-obj (method {:delete HTTPMethod/DELETE
+    (let [method-obj (method {:delete HTTPMethod/DELETE
                               :get    HTTPMethod/GET
                               :head   HTTPMethod/HEAD
                               :post   HTTPMethod/POST
                               :put    HTTPMethod/PUT})
-          request    (HTTPRequest. url-obj method-obj fetch-options)]
+          request    (HTTPRequest. url method-obj fetch-options)]
       (doseq [h (make-headers headers)] (.addHeader request h))
       (when-not (nil? payload)
         (.setPayload request payload))
@@ -89,51 +89,76 @@
   
   [url & opts]
   (parse-response (.fetch (get-urlfetch-service)
-                          (apply make-request url opts))))
+                          (apply make-request (urlify url) opts))))
+
+(defn- derefify-future
+  "Cribbed from clojure.core/future-call, but returns the result of a
+   custom function of no-args for deref."  
+  [f deref-fn]
+  (reify
+   clojure.lang.IDeref
+   (deref [_] (deref-fn))
+   java.util.concurrent.Future
+   (get [_] (.get f))
+   (get [_ timeout unit] (.get f timeout unit))
+   (isCancelled [_] (.isCancelled f))
+   (isDone [_] (.isDone f))
+   (cancel [_ interrupt?] (.cancel f interrupt?))))
 
 (defn fetch-async
   "Just like fetch, but returns a future-like object."
   [url & opts]
-  (let [f (.fetchAsync (get-urlfetch-service) (apply make-request url opts))]
-    (reify
-     clojure.lang.IDeref
-      (deref [_] (parse-response (.get f)))
-     java.util.concurrent.Future
-      (get [_] (.get f))
-      (get [_ timeout unit] (.get f timeout unit))
-      (isCancelled [_] (.isCancelled f))
-      (isDone [_] (.isDone f))
-      (cancel [_ interrupt?] (.cancel f interrupt?)))))
+  (let [f (.fetchAsync (get-urlfetch-service)
+                       (apply make-request (urlify url) opts))]
+    (derefify-future f #(parse-response (.get f)))))
 
+;; A 2-level cache for fetch results; first in memory, then memcache.
 (def *memcache-namespace* "appengine-magic.services.urlfetch")
 (def *memory-cache* (atom {}))
-(defn cache-response [url response]
+(defn- cache-response [url response]
   ;; save unnecessary memcache calls by checking for relevant headers
   (if (or (:Last-Modified (:headers response))
           (:ETag (:headers response)))
-    (do (swap! assoc url response)
+    (do (swap! *memory-cache* assoc url response)
         (memcache/put! url response :namespace *memcache-namespace*)
         response)))
-(defn uncache-response [url]
+(defn- uncache-response [url]
   (if-let [response (@*memory-cache* url)]
     response
     (memcache/get url :namespace *memcache-namespace*)))
+
+(defn- make-cache-sensitive-request [old-response url & opts]
+  (let [request (apply make-request url opts)]
+    (if old-response
+      (if-let [etag (:ETag (:headers old-response))]
+        (.setHeader request (HTTPHeader. "If-None-Match" etag))
+        (if-let [last-modified (:Last-Modified (:headers old-response))]
+          (.setHeader request
+                      (HTTPHeader. "If-Modified-Since" last-modified)))))
+    request))
 
 (defn memcached-fetch
   "Like fetch, but caches its results in memcache and uses ETag or
    Last-Modified headers to avoid doing full-fetches when possible."
   [url & opts]
-  (let [request (apply make-request url opts)
-        url     (.getURL request)]
-    (if-let [old-response (uncache-response url)]
-      (do
-        (if-let [etag (:ETag (:headers old-response))]
-          (.setHeader request "If-None-Match" etag)
-          (if-let [last-modified (:Last-Modified (:headers old-response))]
-            (.setHeader request "If-Modified-Since" last-modified)))
-        (let [response (parse-response (.fetch (get-urlfetch-service) request))]
-          (if (= 304 (:response-code response))
-            old-response
-            (cache-response url response))))
-      ;; if no cache, do a regular fetch
-      (cache-response (apply fetch url opts)))))
+  (let [url          (urlify url)
+        old-response (uncache-response url)
+        request      (apply make-cache-sensitive-request old-response url opts)
+        response     (parse-response (.fetch (get-urlfetch-service) request))]
+    (if (= 304 (:response-code response))
+      old-response
+      (cache-response url response))))
+
+(defn memcached-fetch-async
+  "Like fetch-async, but caches its results like memcached-fetch."
+  [url & opts]
+  (let [url          (urlify url)
+        old-response (uncache-response url)
+        request      (apply make-cache-sensitive-request old-response url opts)
+        responsef    (.fetchAsync (get-urlfetch-service) request)]
+    (derefify-future responsef
+                     (fn []
+                       (let [response (parse-response (.get responsef))]
+                         (if (= 304 (:response-code response))
+                           old-response
+                           (cache-response url response)))))))
