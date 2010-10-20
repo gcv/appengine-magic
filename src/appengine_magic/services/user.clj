@@ -15,6 +15,14 @@
   (.getCurrentUser (get-user-service)))
 
 
+(defn user-logged-in? []
+  (.isUserLoggedIn (get-user-service)))
+
+
+(defn user-admin? []
+  (.isUserAdmin (get-user-service)))
+
+
 (defn login-url [& {:keys [destination]
                     :or {destination "/"}}]
   (.createLoginURL (get-user-service) destination))
