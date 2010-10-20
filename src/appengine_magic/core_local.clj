@@ -18,7 +18,10 @@
                              {:keys [war-root] :or {war-root "war"}}]
   `(def ~app-var-name
         (let [handler# ~handler
-              war-root# (-> (clojure.lang.RT/baseLoader) (.getResource ~war-root) .getFile)]
+              war-root# (-> (clojure.lang.RT/baseLoader)
+                            (.getResource ~war-root)
+                            .getFile
+                            java.net.URLDecoder/decode)]
           {:handler (wrap-war-static
                      (environment-decorator handler#)
                      war-root#)
