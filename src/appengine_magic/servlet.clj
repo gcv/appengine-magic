@@ -42,7 +42,7 @@
 
 (defn- make-request-map [^HttpServlet servlet
                          ^HttpServletRequest request
-                         ^HttpServletRespone response]
+                         ^HttpServletResponse response]
   {:servlet            servlet
    :response           response
    :request            request
