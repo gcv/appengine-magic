@@ -1,4 +1,4 @@
-(defproject appengine-magic "0.2.1"
+(defproject appengine-magic "0.2.2-SNAPSHOT"
   :description "Google App Engine library for Clojure."
   :repositories {"maven-gae-plugin" "http://maven-gae-plugin.googlecode.com/svn/repository"}
   :dependencies [[org.clojure/clojure "1.2.0"]
