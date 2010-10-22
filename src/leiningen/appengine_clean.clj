@@ -7,8 +7,7 @@
 (defn appengine-clean [project]
   (let [prj-application (or (:appengine-application project) (:name project))
         resources-dir (File. (:resources-path project))
-        war-dir (File. resources-dir "war")
-        WEB-INF-dir (File. war-dir "WEB-INF")
+        WEB-INF-dir (File. resources-dir "WEB-INF")
         target-classes-dir (File. WEB-INF-dir "classes")
         target-lib-dir (File. WEB-INF-dir "lib")]
     (println "cleaning out App Engine application" prj-application)

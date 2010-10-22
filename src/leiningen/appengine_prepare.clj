@@ -12,8 +12,7 @@
         resources-dir (File. (:resources-path project))
         lib-dir (File. (:library-path project))
         lib-dev-dir (File. lib-dir "dev")
-        war-dir (File. resources-dir "war")
-        WEB-INF-dir (File. war-dir "WEB-INF")
+        WEB-INF-dir (File. resources-dir "WEB-INF")
         target-classes-dir (File. WEB-INF-dir "classes")
         target-lib-dir (File. WEB-INF-dir "lib")]
     (println "preparing App Engine application" prj-display-name "for deployment")
