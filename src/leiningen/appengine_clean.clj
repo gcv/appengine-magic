@@ -1,5 +1,5 @@
 (ns leiningen.appengine-clean
-  "Cleans out appengine compiled class and library areas."
+  "Cleans out appengine library area."
   (:require lancet)
   (:import java.io.File))
 
@@ -8,9 +8,6 @@
   (let [prj-application (or (:appengine-application project) (:name project))
         resources-dir (File. (:resources-path project))
         WEB-INF-dir (File. resources-dir "WEB-INF")
-        target-classes-dir (File. WEB-INF-dir "classes")
         target-lib-dir (File. WEB-INF-dir "lib")]
     (println "cleaning out App Engine application" prj-application)
-    ;; delete existing content of target classes/ and lib/
-    (lancet/delete {:dir (.getPath target-classes-dir)})
     (lancet/delete {:dir (.getPath target-lib-dir)})))
