@@ -6,6 +6,12 @@
 
 (require '[appengine-magic.jetty :as jetty])
 
+(import java.io.File)
+
+
+(defn open-resource-stream [resource-name]
+  (-> (ClassLoader/getSystemClassLoader) (.getResourceAsStream resource-name)))
+
 
 (defn wrap-war-static [app #^String war-root]
   (fn [req] (let [#^String uri (:uri req)]
@@ -14,14 +20,18 @@
                   ((wrap-file app war-root) req)))))
 
 
-(defmacro def-appengine-app [app-var-name handler &
-                             {:keys [war-root] :or {war-root "war"}}]
+(defmacro def-appengine-app [app-var-name handler & {:keys [war-root]}]
   `(def ~app-var-name
         (let [handler# ~handler
-              war-root# (-> (clojure.lang.RT/baseLoader)
-                            (.getResource ~war-root)
-                            .getFile
-                            java.net.URLDecoder/decode)]
+              war-root-arg# ~war-root
+              war-root# (if (nil? war-root-arg#)
+                            (-> (clojure.lang.RT/baseLoader)
+                                (.getResource ".")
+                                .getFile
+                                java.net.URLDecoder/decode
+                                (File. "../resources")
+                                .getAbsolutePath)
+                            war-root-arg#)]
           {:handler (wrap-war-static
                      (environment-decorator handler#)
                      war-root#)
