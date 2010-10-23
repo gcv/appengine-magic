@@ -1,6 +1,8 @@
 ## 0.3.0 (???)
 
-* Support for general classpath resources with the
+* Speeded up production deployment by packaging compiled application .class
+  files into a .jar. Eliminated the WEB-INF/classes/ directory.
+* Added support for general classpath resources with the
   `appengine-magic/open-resource-stream` function.
 * Breaking change: moved the web application from `resources/war/` to
   `resources/`. This provides better support for using general classpath
