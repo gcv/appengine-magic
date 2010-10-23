@@ -9,6 +9,10 @@
 (import java.io.File)
 
 
+(defn open-resource-stream [resource-name]
+  (-> (ClassLoader/getSystemClassLoader) (.getResourceAsStream resource-name)))
+
+
 (defn wrap-war-static [app #^String war-root]
   (fn [req] (let [#^String uri (:uri req)]
               (if (.startsWith uri "/WEB-INF")
