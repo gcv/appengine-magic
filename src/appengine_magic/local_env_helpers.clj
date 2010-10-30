@@ -38,7 +38,7 @@
       (getDefaultNamespace [] "")
       (getAttributes [] (java.util.HashMap.))
       (getEmail [] (or user-email ""))
-      (isAdmin [] user-admin)
+      (isAdmin [] (Boolean/parseBoolean user-admin))
       (getAppId [] @*current-app-id*))))
 
 

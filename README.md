@@ -18,6 +18,9 @@ README file tries to describe everything you need to know to use App Engine with
 Clojure, but does not explain the details of App Engine semantics. Please refer
 to Google's official documentation for details.
 
+Please read the (HISTORY)[HISTORY.md] file to learn what changed in recent
+releases.
+
 
 
 ## Dependencies
@@ -49,8 +52,8 @@ To use appengine-magic effectively, you need the following:
    `def-appengine-app`.
 5. Web application resources. This primarily includes web application
    descriptors. `lein appengine-new` generates those and places them in the
-   `resources/war/WEB-INF` directory. You should also place all static files
-   that your application uses in `resources/war`.
+   `resources/WEB-INF/` directory. You should also place all static files that
+   your application uses in `resources/`.
 
 
 
@@ -70,22 +73,21 @@ functionality.
    `def-appengine-app` macro.
 3. Edit `project.clj`:
    - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.2.0"]` to your `dev-dependencies`
+   - add `[appengine-magic "0.3.0"]` to your `:dev-dependencies`
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
    (which has a sample Ring handler and uses the `def-appengine-app` macro),
    `app_servlet.clj` (the entry point for the application),
-   `resources/war/WEB-INF/web.xml` (a servlet descriptor), and
-   `resources/war/WEB-INF/appengine-web.xml` (an App Engine application
+   `resources/WEB-INF/web.xml` (a servlet descriptor), and
+   `resources/WEB-INF/appengine-web.xml` (an App Engine application
    descriptor). These files should contain reasonable starting defaults for your
    application.
 
 The default `.gitignore` file produced by Leiningen works well with the
 resulting project, but do take a careful look at it. In particular, you should
-avoid checking in `resources/war/WEB-INF/lib` or
-`resources/war/WEB-INF/classes`: let Leiningen take care of managing those
-directories.
+avoid checking in `resources/WEB-INF/lib/` or `resources/WEB-INF/classes/`: let
+Leiningen take care of managing those directories.
 
 
 ### Development process
@@ -119,15 +121,26 @@ instantaneous results.
 
 1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, then
    copies the necessary classes and library dependencies to your application's
-   `resources/war/WEB-INF/classes` and `resources/war/WEB-INF/lib` directories.
-2. Run `dev_appserver.sh` with a path to your application's `resources/war`
+   `resources/WEB-INF/classes/` and `resources/WEB-INF/lib/` directories.
+2. Run `dev_appserver.sh` with a path to your application's `resources/`
    directory.
 
 
 ### Static resources
 
-Just put all static files into your application's `resources/war` directory. If
-you put a file called `index.html` there, it will become a default welcome file.
+Just put all static files into your application's `resources/` directory. If you
+put a file called `index.html` there, it will become a default welcome file.
+
+
+### Classpath resources
+
+Put all classpath resources you expect to need at runtime in `resources/`. You
+can then access them using the `appengine-magic/open-resource-stream`, which
+returns a `java.io.BufferedInputStream` instance. Please note that, by default,
+App Engine then makes these resources available as static files. To change this
+behavior, you need to modify `appengine-web.xml` file. See [Google
+documentation](http://code.google.com/appengine/docs/java/config/appconfig.html)
+for details.
 
 
 ### Deployment to App Engine
@@ -135,10 +148,26 @@ you put a file called `index.html` there, it will become a default welcome file.
 1. First of all, be careful. You must manually maintain the version field in
    `appengine-web.xml` and you should understand its implications. Refer to
    Google App Engine documentation for more information.
-2. `lein appengine-prepare` prepares the `resources/war` directory with the latest
+2. `lein appengine-prepare` prepares the `resources/` directory with the latest
    classes and libraries for deployment.
 3. When you are ready to deploy, just run `appcfg.sh update` with a path to your
-   application's `resources/war` directory.
+   application's `resources/` directory.
+
+
+### Automatic testing code
+
+The `clojure.test` system works well for testing `appengine-magic` applications,
+but all tests must bootstrap App Engine services in order to run. The
+`appengine-magic.testing` namespace provides several functions usable as
+`clojure.test` fixtures to help you do so. The easiest way to get started is:
+
+    (use 'clojure.test)
+    (require '[appengine-magic.testing :as ae-testing])
+
+    (use-fixtures :each (ae-testing/local-services :all))
+
+Then, write `deftest` forms normally; you can use App Engine services just as you
+would in application code.
 
 
 
@@ -155,6 +184,8 @@ provides the following functions for handling users.
 
 - `current-user`: returns the `com.google.appengine.api.users.User` for the
   currently logged-in user.
+- `user-logged-in?`
+- `user-admin?`
 - `login-url` (optional keyword: `:destination`): returns the Google
   authentication servlet URL, and forwards the user to the optional destination.
 - `logout-url` (optional keyword: `:destination`): performs logout, and forwards
@@ -178,17 +209,17 @@ App Engine documentation for detailed explanations of the underlying Java API.
 - `get <key>` (optional keyword: `:namespace`): returns the value for the given
   key, but if the key argument is sequential, returns a map of key-value pairs
   for each supplied key.
-- `put <key> <value>` (optional keywords: `:namespace`, `:expiration`,
+- `put! <key> <value>` (optional keywords: `:namespace`, `:expiration`,
   `:policy`): saves the given value under the given key; expiration is an
   instance of `com.google.appengine.api.memcache.Expiration`; policy is one of
   `:always` (the default), `:add-if-not-present`, or `:replace-only`.
-- `put-map <key-value-map>` (optional keywords: `:namespace`, `:expiration`,
+- `put-map! <key-value-map>` (optional keywords: `:namespace`, `:expiration`,
   `:policy`): writes the key-value-map into the cache. Other keywords same as
   for `put`.
-- `increment <key> <delta>` (optional keywords: `:namespace`, `:initial`):
+- `increment! <key> <delta>` (optional keywords: `:namespace`, `:initial`):
   atomically increments long integer values in the cache; if key is sequential,
   it increments all keys by the given delta.
-- `increment-map <key-delta-map>` (optional keywords: `:namespace`, `:initial`):
+- `increment-map! <key-delta-map>` (optional keywords: `:namespace`, `:initial`):
   atomically increments long integer values by deltas given in the argument map.
 
 
