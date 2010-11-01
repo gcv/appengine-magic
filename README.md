@@ -119,9 +119,9 @@ instantaneous results.
 
 ### Testing with dev_appserver.sh
 
-1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, then
-   copies the necessary classes and library dependencies to your application's
-   `resources/WEB-INF/classes/` and `resources/WEB-INF/lib/` directories.
+1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, makes a
+   jar of your application, and copies it, along with all your library
+   dependencies, to your application's `resources/WEB-INF/lib/` directories.
 2. Run `dev_appserver.sh` with a path to your application's `resources/`
    directory.
 
@@ -317,7 +317,11 @@ A few simple examples:
   the datastore service.
 
 
+
 ## Limitations
+
+
+### Incomplete features
 
 When using the interactive REPL environment, some App Engine services are more
 limited than in `dev_appserver.sh` or in deployment. Because the App Engine
@@ -339,6 +343,16 @@ The following Google services are not yet tested in the REPL environment:
 
 They may still work, but appengine-magic does not provide convenient Clojure
 interfaces for them, and may lack mappings for any necessary supporting URLs.
+
+
+### Resource duplication
+
+The `appengine-prepare` task currently copies all your static files and other
+resources into the jar file containing your application. This means that these
+resources deploy to App Engine both as separate files, and inside the jar. This
+should not cause problems for the time being (except for increased space), and
+will be fixed when Leiningen 1.4 comes out (which supports a `:jar-exclusions`
+project property).
 
 
 
