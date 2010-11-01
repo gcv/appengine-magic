@@ -142,6 +142,10 @@ behavior, you need to modify `appengine-web.xml` file. See [Google
 documentation](http://code.google.com/appengine/docs/java/config/appconfig.html)
 for details.
 
+Do not use direct methods like `java.io.File` or
+`ClassLoader/getSystemClassLoader` to access classpath resources; they do not
+work consistently across all App Engine environments.
+
 
 ### Deployment to App Engine
 
