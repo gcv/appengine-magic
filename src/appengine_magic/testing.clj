@@ -1,6 +1,8 @@
 (ns appengine-magic.testing
   (:import [com.google.appengine.tools.development.testing LocalServiceTestHelper
-            LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit]))
+            LocalServiceTestConfig
+            LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
+            LocalDatastoreServiceTestConfig]))
 
 
 (def *memcache-size-units*
@@ -24,9 +26,26 @@
     lmstc))
 
 
+(defn datastore [& {:keys [storage? store-delay-ms
+                           max-txn-lifetime-ms max-query-lifetime-ms
+                           backing-store-location]
+                    :or {storage? false}}]
+  (let [ldstc (LocalDatastoreServiceTestConfig.)]
+    (.setNoStorage ldstc (not storage?))
+    (when-not (nil? store-delay-ms)
+      (.setStoreDelayMs ldstc store-delay-ms))
+    (when-not (nil? max-txn-lifetime-ms)
+      (.setMaxTxnLifetimeMs ldstc max-txn-lifetime-ms))
+    (when-not (nil? max-query-lifetime-ms)
+      (.setMaxQueryLifetimeMs ldstc max-query-lifetime-ms))
+    (when-not (nil? backing-store-location)
+      (.setBackingStoreLocation ldstc backing-store-location))
+    ldstc))
+
+
 (defn- make-local-services-fixture-fn [services]
   (fn [test-fn]
-    (let [helper (LocalServiceTestHelper. (into-array services))]
+    (let [helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services))]
       (.setUp helper)
       (test-fn)
       (.tearDown helper))))
@@ -34,7 +53,7 @@
 
 (defn- local-services-helper
   ([]
-     [(memcache)])
+     [(memcache) (datastore)])
   ([services override]
      (let [services (if (= :all services) (local-services-helper) services)]
        (if (nil? override)
