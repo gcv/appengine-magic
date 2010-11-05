@@ -1,23 +1,31 @@
 (ns appengine-magic.jetty
   (:use [appengine-magic.servlet :only [servlet]])
   (:import org.mortbay.jetty.handler.ContextHandlerCollection
-           org.mortbay.jetty.Server
+           [org.mortbay.jetty Server Handler]
            javax.servlet.http.HttpServlet
-           [org.mortbay.jetty.servlet Context ServletHolder]))
+           javax.servlet.Filter
+           [org.mortbay.jetty.servlet Context ServletHolder FilterHolder]))
 
 
 (defn- proxy-multihandler
   "Returns a Jetty Handler implementation for the given map of relative URLs to
    handlers. Each handler may be a Ring handler or an HttpServlet instance."
-  [handlers]
+  [all-handlers]
   (let [all-contexts (ContextHandlerCollection.)]
-    (doseq [[relative-url handler] handlers]
-      (let [context (Context. all-contexts relative-url)
-            handler-servlet (if (instance? HttpServlet handler)
-                                handler
-                                (servlet handler))
-            servlet-holder (ServletHolder. handler-servlet)]
-        (.addServlet context servlet-holder "/*")))
+    (doseq [[relative-url url-handlers] all-handlers]
+      (let [url-handlers (if (sequential? url-handlers) url-handlers [url-handlers])
+            context (Context. all-contexts relative-url Context/SESSIONS)]
+        (doseq [handler url-handlers]
+          (cond
+           ;; plain servlets
+           (instance? HttpServlet handler)
+           (.addServlet context (ServletHolder. handler) "/*")
+           ;; plain filters
+           (instance? Filter handler)
+           (.addFilter context (FilterHolder. handler) "/*" Handler/ALL)
+           ;; a Ring handler
+           :else
+           (.addServlet context (ServletHolder. (servlet handler)) "/*")))))
     all-contexts))
 
 
