@@ -260,12 +260,18 @@
                 {:keys [parent kind]
                  :or {kind (unqualified-name (.getName entity-record-type))}}]
   (let [make-key-from-value (fn [key-value real-parent]
-                              (if real-parent
-                                  (KeyFactory/createKey (get-key-object real-parent)
-                                                        kind
-                                                        (coerce-key-value-type key-value))
-                                  (KeyFactory/createKey kind
-                                                        (coerce-key-value-type key-value))))]
+                              (cond
+                               ;; already a Key object
+                               (instance? Key key-value) key-value
+                               ;; parent provided
+                               real-parent
+                               (KeyFactory/createKey (get-key-object real-parent)
+                                                     kind
+                                                     (coerce-key-value-type key-value))
+                               ;; no parent provided
+                               :else
+                               (KeyFactory/createKey kind
+                                                     (coerce-key-value-type key-value))))]
     (if (sequential? key-value-or-values)
         ;; handles sequences of values
         (let [key-objects (map (fn [kv] (if (sequential? kv)
