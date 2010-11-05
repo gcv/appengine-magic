@@ -47,8 +47,10 @@
   (let [handler-servlet (servlet (:handler appengine-app))]
     (appengine-init (java.io.File. (:war-root appengine-app)))
     (jetty/start
-     {"/" handler-servlet
-      ;; App Engine services
+     {"/" [(com.google.apphosting.utils.servlet.TransactionCleanupFilter.)
+           (com.google.appengine.api.blobstore.dev.ServeBlobFilter.)
+           ;;(com.google.appengine.tools.development.StaticFileFilter.)
+           handler-servlet]
       "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
       "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)
       ;;"/_ah/upload/*" (com.google.appengine.api.blobstore.dev.UploadBlobServlet.)
