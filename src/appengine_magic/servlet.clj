@@ -115,12 +115,14 @@
 
 
 (defn- adapt-servlet-response [^HttpServletResponse response,
-                               {:keys [status headers body] :as response-map}]
-  (if status
-      (.setStatus response status)
-      (throw (RuntimeException. "handler response status not set")))
-  (when headers (set-response-headers response headers))
-  (when body (set-response-body response body)))
+                               {:keys [commit? status headers body]
+                                :or {commit? true}}]
+  (when commit?
+    (if status
+        (.setStatus response status)
+        (throw (RuntimeException. "handler response status not set")))
+    (when headers (set-response-headers response headers))
+    (when body (set-response-body response body))))
 
 
 (defn make-servlet-service-method [ring-handler]
