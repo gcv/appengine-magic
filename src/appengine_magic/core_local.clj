@@ -9,15 +9,25 @@
 (import java.io.File)
 
 
+(defn default-war-root []
+  (-> (clojure.lang.RT/baseLoader)
+      (.getResource ".")
+      .getFile
+      java.net.URLDecoder/decode
+      (File. "../resources")
+      .getAbsolutePath))
+
+
 (defn open-resource-stream [resource-name]
   (-> (ClassLoader/getSystemClassLoader) (.getResourceAsStream resource-name)))
 
 
-(defn wrap-war-static [app #^String war-root]
-  (fn [req] (let [#^String uri (:uri req)]
-              (if (.startsWith uri "/WEB-INF")
-                  (app req)
-                  ((wrap-file app war-root) req)))))
+(defn wrap-war-static [app, #^String war-root]
+  (fn [req]
+    (let [#^String uri (:uri req)]
+      (if (.startsWith uri "/WEB-INF")
+          (app req)
+          ((wrap-file app war-root) req)))))
 
 
 (defmacro def-appengine-app [app-var-name handler & {:keys [war-root]}]
@@ -25,16 +35,11 @@
         (let [handler# ~handler
               war-root-arg# ~war-root
               war-root# (if (nil? war-root-arg#)
-                            (-> (clojure.lang.RT/baseLoader)
-                                (.getResource ".")
-                                .getFile
-                                java.net.URLDecoder/decode
-                                (File. "../resources")
-                                .getAbsolutePath)
+                            (default-war-root)
                             war-root-arg#)]
-          {:handler (wrap-war-static
-                     (environment-decorator handler#)
-                     war-root#)
+          {:handler (-> handler#
+                        environment-decorator
+                        (wrap-war-static war-root#))
            :war-root war-root#})))
 
 
