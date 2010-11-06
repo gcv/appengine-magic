@@ -2,9 +2,11 @@
 
 (use 'appengine-magic.local-env-helpers
      '[appengine-magic.servlet :only [servlet]]
-     '[ring.middleware.file :only [wrap-file]])
+     '[ring.middleware.file :only [wrap-file]]
+     '[ring.middleware.multipart-params :only [wrap-multipart-params]])
 
-(require '[appengine-magic.jetty :as jetty])
+(require '[appengine-magic.jetty :as jetty]
+         '[appengine-magic.local-blobstore :as local-blobstore])
 
 (import java.io.File)
 
@@ -44,17 +46,18 @@
 
 
 (defn start* [appengine-app & {:keys [port join?]}]
-  (let [handler-servlet (servlet (:handler appengine-app))]
-    (appengine-init (java.io.File. (:war-root appengine-app)))
+  (let [war-root (java.io.File. (:war-root appengine-app))
+        handler-servlet (servlet (:handler appengine-app))]
+    (appengine-init war-root)
     (jetty/start
      {"/" [(com.google.apphosting.utils.servlet.TransactionCleanupFilter.)
            (com.google.appengine.api.blobstore.dev.ServeBlobFilter.)
-           ;;(com.google.appengine.tools.development.StaticFileFilter.)
            handler-servlet]
       "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
       "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)
-      ;;"/_ah/upload/*" (com.google.appengine.api.blobstore.dev.UploadBlobServlet.)
-      ;;"/_ah/img/*" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
+      "/_ah/upload" (servlet (wrap-multipart-params
+                              (local-blobstore/make-blob-upload-handler war-root)))
+      ;;"/_ah/img" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
       "/_ah/channel/jsapi" (com.google.appengine.api.channel.dev.ServeScriptServlet.)
       "/_ah/channel/dev" (com.google.appengine.api.channel.dev.LocalChannelServlet.)
       ;; These other mappings are in webdefault.xml in in
