@@ -37,11 +37,23 @@
       (BlobKey. x)))
 
 
-(defn serve
+(defn- serve-helper
   ([blob-key, ^:HttpServletResponse response]
      (.serve (get-blobstore-service) (make-blob-key blob-key) response))
   ([blob-key, start, end, ^:HttpServletResponse response]
      (.serve (get-blobstore-service) (make-blob-key blob-key) (ByteRange. start end) response)))
+
+
+(defn serve [request blob-key]
+  (serve-helper blob-key (:response request))
+  ;; This returns a special Ring response map. The serve-helper primes the HTTP
+  ;; response object, but this response must not be committed by the running servlet.
+  {:commit? false})
+
+
+(defn callback-complete [request destination]
+  (.sendRedirect (:response request) destination)
+  {:commit? false})
 
 
 (if (core/in-appengine-interactive-mode?)
