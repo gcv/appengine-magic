@@ -6,7 +6,7 @@
      '[ring.middleware.multipart-params :only [wrap-multipart-params]])
 
 (require '[appengine-magic.jetty :as jetty]
-         '[appengine-magic.local-blobstore :as local-blobstore])
+         '[appengine-magic.blobstore-upload :as blobstore-upload])
 
 (import java.io.File)
 
@@ -56,7 +56,7 @@
       "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
       "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)
       "/_ah/upload" (servlet (wrap-multipart-params
-                              (local-blobstore/make-blob-upload-handler war-root)))
+                              (blobstore-upload/make-blob-upload-handler war-root)))
       ;;"/_ah/img" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
       "/_ah/channel/jsapi" (com.google.appengine.api.channel.dev.ServeScriptServlet.)
       "/_ah/channel/dev" (com.google.appengine.api.channel.dev.LocalChannelServlet.)

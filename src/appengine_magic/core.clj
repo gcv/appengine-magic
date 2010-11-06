@@ -1,7 +1,7 @@
 (ns appengine-magic.core)
 
 
-(defn- in-appengine-interactive-mode? []
+(defn in-appengine-interactive-mode? []
   (try
     (let [stack-trace (.getStackTrace (Thread/currentThread))]
       (some #(or (.contains (.toString %) "swank.core")

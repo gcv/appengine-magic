@@ -1,4 +1,4 @@
-(ns appengine-magic.local-blobstore
+(ns appengine-magic.blobstore-upload
   (:require [appengine-magic.services.datastore :as ae-ds]
             [clojure.java.io :as io])
   (:import java.io.File
@@ -14,23 +14,24 @@
   :kind "__BlobUploadSession__")
 
 
-;; This multipart entry needs to hit the callback:
-;; Content-Disposition: form-data; name="symphony"; filename="annie.jpg"
-;; Content-Type: message/external-body; blob-key=XCJ9FrVYgLer1Wt0H5QE3g
-
-;;  "content-type"
-;;  "multipart/form-data; boundary=----WebKitFormBoundaryHfTi6TPHWk2ieYB6",
+(defn- make-clean-uuid []
+  (.replaceAll (str (java.util.UUID/randomUUID)) "-" ""))
 
 
-(defn- hit-callback [req blob-info success-path]
+;; {symphony #<BlobKey <BlobKey: -2IhXr2qCjiwVvE069nsvQ>>}
+
+(defn- hit-callback [req upload-name blob-info success-path]
   (let [url (URL. "http" (:server-name req) (:server-port req) success-path)
         cxn (cast HttpURLConnection (.openConnection url))]
     (doto cxn
+      (.setDoOutput true)
       (.setRequestMethod "POST")
       (.setUseCaches false)
       (.setInstanceFollowRedirects false)
-      (.setRequestProperty "Content-Type" "multipart/form-data")
-      (.setRequestProperty "X-AppEngine-BlobUpload" "true"))
+      (.setRequestProperty "Content-Type" "text/plain")
+      (.setRequestProperty "X-AppEngine-BlobUpload" "true")
+      (.setRequestProperty "X-AppEngine-BlobUpload-Name" upload-name)
+      (.setRequestProperty "X-AppEngine-BlobUpload-BlobKey" (:blob-key blob-info)))
     (doseq [header ["User-Agent" "Cookie" "Origin" "Referer"]]
       (let [lc-header (.toLowerCase header)]
         (.setRequestProperty cxn header (get (:headers req) lc-header))))
@@ -58,14 +59,14 @@
             key-object (KeyFactory/stringToKey key-string)
             upload-session (ae-ds/retrieve BlobUploadSession key-object
                                            :kind "__BlobUploadSession__")
-            upload-info (second (first (:multipart-params req)))
+            [upload-name upload-info] (first (:multipart-params req))
             {:keys [filename size content-type tempfile]} upload-info
-            blob-key (str (java.util.UUID/randomUUID))
+            blob-key (make-clean-uuid)
             blob-info (BlobInfo. blob-key content-type (java.util.Date.) filename size)
             blob-file (File. appengine-generated-dir blob-key)]
         (io/copy tempfile blob-file)
         (ae-ds/delete! upload-session)
         (ae-ds/save! blob-info)
-        (let [resp (hit-callback req blob-info (:success_path upload-session))]
+        (let [resp (hit-callback req upload-name blob-info (:success_path upload-session))]
           ;; just return it to the user's browser
           resp)))))

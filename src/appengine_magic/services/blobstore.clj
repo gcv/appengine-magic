@@ -1,4 +1,5 @@
 (ns appengine-magic.services.blobstore
+  (:require [appengine-magic.core :as core])
   (:import [com.google.appengine.api.blobstore ByteRange BlobKey
             BlobstoreService BlobstoreServiceFactory]
            [javax.servlet.http HttpServletRequest HttpServletResponse]))
@@ -30,10 +31,6 @@
   (.getByteRange (get-blobstore-service) request))
 
 
-(defn uploaded-blobs [^:HttpServletRequest request]
-  (into {} (.getUploadedBlobs (get-blobstore-service) request)))
-
-
 (defn- make-blob-key [x]
   (if (instance? BlobKey x)
       x
@@ -45,3 +42,8 @@
      (.serve (get-blobstore-service) (make-blob-key blob-key) response))
   ([blob-key, start, end, ^:HttpServletResponse response]
      (.serve (get-blobstore-service) (make-blob-key blob-key) (ByteRange. start end) response)))
+
+
+(if (core/in-appengine-interactive-mode?)
+    (load "blobstore_local")
+    (load "blobstore_google"))
