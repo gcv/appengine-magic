@@ -321,6 +321,47 @@ A few simple examples:
   the datastore service.
 
 
+### Blobstore
+
+The `appengine-magic.services.blobstore` namespace (suggested alias:
+`ae-blobss`) helps with the App Engine Blobstore service, designed for hosting
+large files. Note that the production App Engine only enables the Blobstore
+service for applications with billing enabled.
+
+Using the Blobstore generally requires three components: an upload session, an
+HTTP `multipart/form-data` file upload (usually initiated through an HTML form),
+and an upload callback.
+
+1. Your application must first initiate an upload session; this gives it a URL
+   to use for the corresponding HTTP POST request.
+2. Your application must provide a proper upload form, with the `action`
+   pointing to the URL of the upload session, the `method` set to `post`, and
+   `enctype` set to `multipart/form-data`; each uploaded file must have a `name`
+   attribute.
+3. Your application must provide an upload callback URL. App Engine will make an
+   HTTP POST request to that URL once the file upload completes. This callback's
+   request will contain information about the uploaded files. The callback
+   should save this data in some way that makes sense for the application. The
+   callback implementation must end with an invocation of the
+   `callback-complete` function. Do not attempt to return a Ring response map
+   from an upload handler.
+4. A Ring handler which serves up a blob must end with an invocation of the
+   `serve` function. Do not attempt to return a Ring response map from a
+   blob-serving handler.
+
+NB: In the REPL environment and in `dev_appserver.sh`, using the Blobstore
+writes entities into the datastore: `__BlobInfo__` and
+`__BlobUploadSession__`. This does not happen in the production environment.
+
+- `upload-url <success-path>`: initializes an upload session and returns its
+  URL. `success-path` is the URL of the upload callback.
+- `delete! <blob-keys>`: deletes the given blobs by their keys.
+- `serve <ring-request-map> <blob-key>`: modifies the given Ring request map to
+  serve up the given blob.
+- `callback-complete <ring-request-map> <destination>`: redirects the uploading
+  HTTP client to the given destination.
+
+
 
 ## Limitations
 
@@ -349,7 +390,6 @@ available in the REPL environment.
 
 The following Google services are not yet tested in the REPL environment:
 
-- Blobstore
 - Images
 - Mail
 - Multitenancy
