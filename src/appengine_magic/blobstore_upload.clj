@@ -1,7 +1,7 @@
 (ns appengine-magic.blobstore-upload
   (:require [appengine-magic.services.datastore :as ae-ds]
             [clojure.java.io :as io])
-  (:import java.io.File
+  (:import [java.io File OutputStreamWriter]
            [java.net URL HttpURLConnection]
            com.google.appengine.api.datastore.KeyFactory
            com.google.appengine.api.blobstore.BlobKey))
@@ -18,9 +18,7 @@
   (.replaceAll (str (java.util.UUID/randomUUID)) "-" ""))
 
 
-;; {symphony #<BlobKey <BlobKey: -2IhXr2qCjiwVvE069nsvQ>>}
-
-(defn- hit-callback [req upload-name blob-info success-path]
+(defn- hit-callback [req uploads success-path]
   (let [url (URL. "http" (:server-name req) (:server-port req) success-path)
         cxn (cast HttpURLConnection (.openConnection url))]
     (doto cxn
@@ -29,12 +27,12 @@
       (.setUseCaches false)
       (.setInstanceFollowRedirects false)
       (.setRequestProperty "Content-Type" "text/plain")
-      (.setRequestProperty "X-AppEngine-BlobUpload" "true")
-      (.setRequestProperty "X-AppEngine-BlobUpload-Name" upload-name)
-      (.setRequestProperty "X-AppEngine-BlobUpload-BlobKey" (:blob-key blob-info)))
+      (.setRequestProperty "X-AppEngine-BlobUpload" "true"))
     (doseq [header ["User-Agent" "Cookie" "Origin" "Referer"]]
       (let [lc-header (.toLowerCase header)]
         (.setRequestProperty cxn header (get (:headers req) lc-header))))
+    (with-open [cxn-writer (-> cxn .getOutputStream OutputStreamWriter.)]
+      (.write cxn-writer (prn-str uploads)))
     (.connect cxn)
     (let [resp-code (.getResponseCode cxn)
           headers (reduce (fn [acc [header-key header-value]]
@@ -50,6 +48,17 @@
       {:commit? false})))
 
 
+(defn- save-upload! [upload-name upload-info target-dir]
+  (let [{:keys [filename size content-type tempfile]} upload-info
+        blob-key (make-clean-uuid)
+        blob-info (BlobInfo. blob-key content-type (java.util.Date.) filename size)
+        blob-file (File. target-dir blob-key)]
+    (io/copy tempfile blob-file)
+    (ae-ds/save! blob-info)
+    ;; Return the blob-key for later use.
+    blob-key))
+
+
 (defn make-blob-upload-handler [war-root]
   (let [web-inf-dir (File. war-root "WEB-INF")
         appengine-generated-dir (File. web-inf-dir "appengine-generated")]
@@ -59,14 +68,14 @@
             key-object (KeyFactory/stringToKey key-string)
             upload-session (ae-ds/retrieve BlobUploadSession key-object
                                            :kind "__BlobUploadSession__")
-            [upload-name upload-info] (first (:multipart-params req))
-            {:keys [filename size content-type tempfile]} upload-info
-            blob-key (make-clean-uuid)
-            blob-info (BlobInfo. blob-key content-type (java.util.Date.) filename size)
-            blob-file (File. appengine-generated-dir blob-key)]
-        (io/copy tempfile blob-file)
+            raw-uploads (:multipart-params req)
+            uploads (reduce (fn [acc [upload-name upload-info]]
+                              (assoc acc upload-name
+                                     (save-upload! upload-name
+                                                   upload-info appengine-generated-dir)))
+                            {}
+                            raw-uploads)]
         (ae-ds/delete! upload-session)
-        (ae-ds/save! blob-info)
-        (let [resp (hit-callback req upload-name blob-info (:success_path upload-session))]
+        (let [resp (hit-callback req uploads (:success_path upload-session))]
           ;; just return it to the user's browser
           resp)))))

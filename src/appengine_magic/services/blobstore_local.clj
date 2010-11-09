@@ -2,5 +2,10 @@
 
 
 (defn uploaded-blobs [^:HttpServletRequest request]
-  {(.getHeader request "X-AppEngine-BlobUpload-Name")
-   (BlobKey. (.getHeader request "X-AppEngine-BlobUpload-BlobKey"))})
+  (let [raw-uploaded-blobs (slurp (.getInputStream request))
+        uploaded-blobs (read-string raw-uploaded-blobs)
+        processed-blobs (reduce (fn [acc [upload-name blob-key-str]]
+                                  (assoc acc upload-name (BlobKey. blob-key-str)))
+                                {}
+                                uploaded-blobs)]
+    processed-blobs))
