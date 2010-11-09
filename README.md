@@ -89,6 +89,10 @@ resulting project, but do take a careful look at it. In particular, you should
 avoid checking in `resources/WEB-INF/lib/` or `resources/WEB-INF/classes/`: let
 Leiningen take care of managing those directories.
 
+NB: When editing the Leiningen `project.clj` file, do not point `:compile-path`
+or `:library-path` to `resources/WEB-INF/classes/` and
+`resources/WEB-INF/lib/`. This will interfere with deployment.
+
 
 ### Development process
 
@@ -319,6 +323,19 @@ A few simple examples:
 
 
 ## Limitations
+
+
+### Using App Engine API calls
+
+Most App Engine services do not work when invoked without an initialized App
+Engine context. For the time being, this context only exists (1) inside an
+application's Ring handlers, and (2) in the automatic testing environment
+provided by `appengine-magic.testing`. This means that you cannot directly
+invoke most App Engine API functions from the REPL.
+
+This limitation will be addressed in the future. (In the meanwhile, avoid tight
+coupling between your application code and App Engine services.)
+
 
 
 ### Incomplete features
