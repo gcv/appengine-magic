@@ -361,6 +361,54 @@ writes entities into the datastore: `__BlobInfo__` and
 - `callback-complete <ring-request-map> <destination>`: redirects the uploading
   HTTP client to the given destination.
 
+This is confusing, but a Compojure example will help.
+
+    (use 'compojure.core)
+
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.datastore :as ae-ds]
+             '[appengine-magic.services.blobstore :as ae-blobs])
+
+    (ae-ds/defentity UploadedFile [^:key blob-key])
+
+    (defroutes upload-demo-app-handler
+      ;; HTML upload form; note the upload-url call
+      (GET "/upload" _
+           {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (str "<html><body>"
+                       "<form action=\""
+                       (ae-blobs/upload-url "/done")
+                       "\" method=\"post\" enctype=\"multipart/form-data\">"
+                       "<input type=\"file\" name=\"file1\">"
+                       "<input type=\"file\" name=\"file2\">"
+                       "<input type=\"file\" name=\"file3\">"
+                       "<input type=\"submit\" value=\"Submit\">"
+                       "</form>"
+                       "</body></html>")})
+      ;; success callback
+      (POST "/done" req
+           (let [blob-map (ae-blobs/uploaded-blobs (:request req))
+                 dest (str "/serve/" (.getKeyString (blob-map "file1")))]
+             (ae-ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
+                           (UploadedFile. (.getKeyString (blob-map "file2")))
+                           (UploadedFile. (.getKeyString (blob-map "file3")))])
+             (ae-blobs/callback-complete req "/list")))
+      ;; a list of all uploaded files with links
+      (GET "/list" _
+           {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (apply str `["<html><body>"
+                               ~@(map #(format " <a href=\"/serve/%s\">file</a>"
+                                               (:blob-key %))
+                                      (ae-ds/query :kind UploadedFile))
+                               "</body></html>"])})
+      ;; serves the given blob by key
+      (GET "/serve/:blob-key" {{:strs [blob-key]} :params :as req}
+           (ae-blobs/serve req blob-key)))
+
+    (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
+
 
 
 ## Limitations
