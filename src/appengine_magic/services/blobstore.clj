@@ -14,13 +14,19 @@
   @*blobstore-service*)
 
 
+(defn- make-blob-key [x]
+  (if (instance? BlobKey x)
+      x
+      (BlobKey. x)))
+
+
 (defn upload-url [success-path]
   (.createUploadUrl (get-blobstore-service) success-path))
 
 
-(defn delete! [& args]
-  ;; TODO: Implement this.
-  )
+(defn delete! [& blobs]
+  (let [blobs (map make-blob-key blobs)]
+    (.delete (get-blobstore-service) (into-array blobs))))
 
 
 (defn fetch-data [^:BlobKey blob-key, start-index, end-index]
@@ -29,12 +35,6 @@
 
 (defn byte-range [^:HttpServletRequest request]
   (.getByteRange (get-blobstore-service) request))
-
-
-(defn- make-blob-key [x]
-  (if (instance? BlobKey x)
-      x
-      (BlobKey. x)))
 
 
 (defn- serve-helper
