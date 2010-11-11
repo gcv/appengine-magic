@@ -3,7 +3,7 @@
 
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
 
-  <application>gae-template</application>
+  <application>app-engine-template</application>
   <version>1</version>
   <static-files/>
   <resource-files/>
