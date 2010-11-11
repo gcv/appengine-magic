@@ -1,5 +1,5 @@
 (ns appengine-magic.blobstore-upload
-  (:require [appengine-magic.services.datastore :as ae-ds]
+  (:require [appengine-magic.services.datastore :as ds]
             [clojure.java.io :as io])
   (:import [java.io File OutputStreamWriter]
            [java.net URL HttpURLConnection]
@@ -7,10 +7,10 @@
            com.google.appengine.api.blobstore.BlobKey))
 
 
-(ae-ds/defentity BlobInfo [^:key blob-key, content_type, creation, filename, size]
+(ds/defentity BlobInfo [^:key blob-key, content_type, creation, filename, size]
   :kind "__BlobInfo__")
 
-(ae-ds/defentity BlobUploadSession [success_path] ; XXX: underscore (_), not hyphen (-)
+(ds/defentity BlobUploadSession [success_path] ; XXX: underscore (_), not hyphen (-)
   :kind "__BlobUploadSession__")
 
 
@@ -54,7 +54,7 @@
         blob-info (BlobInfo. blob-key content-type (java.util.Date.) filename size)
         blob-file (File. target-dir blob-key)]
     (io/copy tempfile blob-file)
-    (ae-ds/save! blob-info)
+    (ds/save! blob-info)
     ;; Return the blob-key for later use.
     blob-key))
 
@@ -66,8 +66,8 @@
       (let [uri (:uri req)
             key-string (.substring uri (inc (.lastIndexOf uri "/")))
             key-object (KeyFactory/stringToKey key-string)
-            upload-session (ae-ds/retrieve BlobUploadSession key-object
-                                           :kind "__BlobUploadSession__")
+            upload-session (ds/retrieve BlobUploadSession key-object
+                                        :kind "__BlobUploadSession__")
             raw-uploads (:multipart-params req)
             uploads (reduce (fn [acc [upload-name upload-info]]
                               (assoc acc upload-name
@@ -75,7 +75,7 @@
                                                    upload-info appengine-generated-dir)))
                             {}
                             raw-uploads)]
-        (ae-ds/delete! upload-session)
+        (ds/delete! upload-session)
         (let [resp (hit-callback req uploads (:success_path upload-session))]
           ;; just return it to the user's browser
           resp)))))
