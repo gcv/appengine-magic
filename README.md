@@ -109,8 +109,10 @@ resulting Ring handler to `def-appengine-app`.
 
 To test your work interactively, you can control a Jetty instance from the REPL
 using `appengine-magic.core/start` and `appengine-magic.core/stop`. Examples
-(assuming you are in your application's `core` namespace, your application is
-named `foo`, and you aliased `appengine-magic.core` to `ae`):
+(assuming you are in your application's `core` namespace and your application is
+named `foo`):
+
+    (require '[appengine-magic.core :as ae])
 
     (ae/start foo-app)
     (ae/stop)
@@ -187,8 +189,8 @@ Clojure.
 
 ### User service
 
-The `appengine-magic.services.user` namespace (suggested alias: `ae-user`)
-provides the following functions for handling users.
+The `appengine-magic.services.user` namespace provides the following functions
+for handling users.
 
 - `current-user`: returns the `com.google.appengine.api.users.User` for the
   currently logged-in user.
@@ -202,9 +204,9 @@ provides the following functions for handling users.
 
 ### Memcache service
 
-The `appengine-magic.services.memcache` namespace (suggested alias:
-`ae-memcache`) provides the following functions for the App Engine memcache. See
-App Engine documentation for detailed explanations of the underlying Java API.
+The `appengine-magic.services.memcache` namespace provides the following
+functions for the App Engine memcache. See App Engine documentation for detailed
+explanations of the underlying Java API.
 
 - `statistics`: returns the current memcache statistics.
 - `clear-all!`: wipes the entire cache for all namespaces.
@@ -233,42 +235,44 @@ App Engine documentation for detailed explanations of the underlying Java API.
 
 ### Datastore
 
-The `appengine-magic.services.datastore` namespace (suggested alias: `ae-ds`)
-provides a fairly complete interface for the App Engine datastore.
+The `appengine-magic.services.datastore` namespace provides a fairly complete
+interface for the App Engine datastore.
 
 A few simple examples:
 
-    (ae-ds/defentity Author [^:key name, birthday])
-    (ae-ds/defentity Book [^:key isbn, title, author])
+    (require '[appengine-magic.services.datastore :as ds])
+
+    (ds/defentity Author [^:key name, birthday])
+    (ds/defentity Book [^:key isbn, title, author])
 
     ;; Writes three authors to the datastore.
     (let [will (Author. "Shakespeare, William" nil)
           geoff (Author. "Chaucer, Geoffrey" "1343")
           oscar (Author. "Wilde, Oscar" "1854-10-16")]
       ;; First, just write Will, without a birthday.
-      (ae-ds/save! will)
+      (ds/save! will)
       ;; Now overwrite Will with an entity containing a birthday, and also
       ;; write the other two authors.
-      (ae-ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
+      (ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
 
     ;; Retrieves two authors and writes book entites.
-    (let [will (first (ae-ds/query :kind Author :filter (= :name "Shakespeare, William")))
-          geoff (first (ae-ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
-                                                          (= :birthday "1343")]))]
-      (ae-ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
-      (ae-ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
-      (ae-ds/save! (Book. "0393039854" "The First Folio" will)))
+    (let [will (first (ds/query :kind Author :filter (= :name "Shakespeare, William")))
+          geoff (first (ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
+                                                       (= :birthday "1343")]))]
+      (ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
+      (ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
+      (ds/save! (Book. "0393039854" "The First Folio" will)))
 
     ;; Retrieves all Chaucer books in the datastore, sorting by descending title and
     ;; then by ISBN.
-    (let [geoff (ae-ds/retrieve Author "Chaucer, Geoffrey")]
-      (ae-ds/query :kind Book
-                   :filter (= :author geoff)
-                   :sort [[title :dsc] :isbn]))
+    (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
+      (ds/query :kind Book
+                :filter (= :author geoff)
+                :sort [[title :dsc] :isbn]))
 
     ;; Deletes all books by Chaucer.
-    (let [geoff (ae-ds/retrieve Author "Chaucer, Geoffrey")]
-      (ae-ds/delete! (ae-ds/query :kind Book :filter (= :author geoff))))
+    (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
+      (ds/delete! (ds/query :kind Book :filter (= :author geoff))))
 
 - `defentity` (optional keyword: `:kind`): defines an entity record type
   suitable for storing in the App Engine datastore. These entities work just
@@ -323,10 +327,10 @@ A few simple examples:
 
 ### Blobstore
 
-The `appengine-magic.services.blobstore` namespace (suggested alias:
-`ae-blobss`) helps with the App Engine Blobstore service, designed for hosting
-large files. Note that the production App Engine only enables the Blobstore
-service for applications with billing enabled.
+The `appengine-magic.services.blobstore` namespace helps with the App Engine
+Blobstore service, designed for hosting large files. Note that the production
+App Engine only enables the Blobstore service for applications with billing
+enabled.
 
 Using the Blobstore generally requires three components: an upload session, an
 HTTP `multipart/form-data` file upload (usually initiated through an HTML form),
@@ -366,10 +370,10 @@ This is confusing, but a Compojure example will help.
     (use 'compojure.core)
 
     (require '[appengine-magic.core :as ae]
-             '[appengine-magic.services.datastore :as ae-ds]
-             '[appengine-magic.services.blobstore :as ae-blobs])
+             '[appengine-magic.services.datastore :as ds]
+             '[appengine-magic.services.blobstore :as blobs])
 
-    (ae-ds/defentity UploadedFile [^:key blob-key])
+    (ds/defentity UploadedFile [^:key blob-key])
 
     (defroutes upload-demo-app-handler
       ;; HTML upload form; note the upload-url call
@@ -378,7 +382,7 @@ This is confusing, but a Compojure example will help.
             :headers {"Content-Type" "text/html"}
             :body (str "<html><body>"
                        "<form action=\""
-                       (ae-blobs/upload-url "/done")
+                       (blobs/upload-url "/done")
                        "\" method=\"post\" enctype=\"multipart/form-data\">"
                        "<input type=\"file\" name=\"file1\">"
                        "<input type=\"file\" name=\"file2\">"
@@ -388,12 +392,12 @@ This is confusing, but a Compojure example will help.
                        "</body></html>")})
       ;; success callback
       (POST "/done" req
-           (let [blob-map (ae-blobs/uploaded-blobs (:request req))
+           (let [blob-map (blobs/uploaded-blobs (:request req))
                  dest (str "/serve/" (.getKeyString (blob-map "file1")))]
-             (ae-ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
-                           (UploadedFile. (.getKeyString (blob-map "file2")))
-                           (UploadedFile. (.getKeyString (blob-map "file3")))])
-             (ae-blobs/callback-complete req "/list")))
+             (ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
+                        (UploadedFile. (.getKeyString (blob-map "file2")))
+                        (UploadedFile. (.getKeyString (blob-map "file3")))])
+             (blobs/callback-complete req "/list")))
       ;; a list of all uploaded files with links
       (GET "/list" _
            {:status 200
@@ -401,11 +405,11 @@ This is confusing, but a Compojure example will help.
             :body (apply str `["<html><body>"
                                ~@(map #(format " <a href=\"/serve/%s\">file</a>"
                                                (:blob-key %))
-                                      (ae-ds/query :kind UploadedFile))
+                                      (ds/query :kind UploadedFile))
                                "</body></html>"])})
       ;; serves the given blob by key
       (GET "/serve/:blob-key" {{:strs [blob-key]} :params :as req}
-           (ae-blobs/serve req blob-key)))
+           (blobs/serve req blob-key)))
 
     (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
 
