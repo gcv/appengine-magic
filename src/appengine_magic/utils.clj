@@ -1,5 +1,7 @@
 (ns appengine-magic.utils
-  (:import [java.io File FileInputStream FileWriter InputStream]
+  (:import [java.io File FileInputStream FileWriter InputStream OutputStream]
+           java.nio.ByteBuffer
+           [java.nio.channels Channel Channels ReadableByteChannel WritableByteChannel]
            org.xml.sax.InputSource
            javax.xml.parsers.DocumentBuilderFactory
            [javax.xml.xpath XPathFactory XPathConstants]
@@ -15,6 +17,23 @@
   `(let [con# (first (.getDeclaredConstructors ~name))
          num# (alength (.getParameterTypes con#))]
      (merge (.newInstance con# (make-array Object num#)) ~vals-map)))
+
+
+(defn copy-stream [^InputStream input, ^OutputStream output]
+  (with-open [^ReadableByteChannel in-channel (Channels/newChannel input)
+              ^WritableByteChannel out-channel (Channels/newChannel output)]
+    (let [^ByteBuffer buf (ByteBuffer/allocateDirect (* 4 1024))]
+      (loop []
+        (when-not (= -1 (.read in-channel buf))
+          (.flip buf)
+          (.write out-channel buf)
+          (.compact buf)
+          (recur)))
+      (.flip buf)
+      (loop [] ; drain the buffer
+        (when (.hasRemaining buf)
+          (.write out-channel buf)
+          (recur))))))
 
 
 (defn dash_ [s]

@@ -9,9 +9,8 @@
 
 
 (ns appengine-magic.servlet
+  (:use [appengine-magic.utils :only [copy-stream]])
   (:import [java.io File FileInputStream InputStream OutputStream]
-           java.nio.ByteBuffer
-           [java.nio.channels Channel Channels ReadableByteChannel WritableByteChannel]
            [javax.servlet.http HttpServlet HttpServletRequest HttpServletResponse]))
 
 
@@ -72,23 +71,6 @@
   (.setCharacterEncoding response "UTF-8")
   (when-let [content-type (get headers "Content-Type")]
     (.setContentType response content-type)))
-
-
-(defn- copy-stream [^InputStream input, ^OutputStream output]
-  (with-open [^ReadableByteChannel in-channel (Channels/newChannel input)
-              ^WritableByteChannel out-channel (Channels/newChannel output)]
-    (let [^ByteBuffer buf (ByteBuffer/allocateDirect (* 4 1024))]
-      (loop []
-        (when-not (= -1 (.read in-channel buf))
-          (.flip buf)
-          (.write out-channel buf)
-          (.compact buf)
-          (recur)))
-      (.flip buf)
-      (loop [] ; drain the buffer
-        (when (.hasRemaining buf)
-          (.write out-channel buf)
-          (recur))))))
 
 
 (defn- set-response-body [^HttpServletResponse response, body]
