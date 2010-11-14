@@ -1,5 +1,6 @@
 ## 0.3.0 (???)
 
+* Added the Mail service.
 * Added the Blobstore service.
 * Speeded up production deployment by packaging compiled application .class
   files into a .jar. Eliminated the WEB-INF/classes/ directory.

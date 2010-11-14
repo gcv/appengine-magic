@@ -414,6 +414,67 @@ This is confusing, but a Compojure example will help.
     (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
 
 
+### Mail
+
+The `appengine-magic.services.mail` namespace provides helper functions for
+sending and receiving mail in an App Engine application.
+
+To send an mail message, construct it using `make-message` and `make-attachment`
+functions, and send it using the `send` function.
+
+To receive incoming mail, first read and understand the relevant section in
+(Google's official
+documentation)[http://code.google.com/appengine/docs/java/mail/receiving.html]. You
+need to modify your application's `appengine-web.xml`, and you should add a
+security constraint for `/_ah/mail/*` URLs in your `web.xml`. In your
+application add a Ring handler for POST methods for URLs which begin with
+`/_ah/mail`.
+
+- `make-attachment <filename> <bytes>`: constructs an attachment object for a
+  file with the given filename and consisting of the given bytes.
+- `make-message`: this function has many keyword parameters, and constructs a
+  message object. The parameters are self-explanatory: `:from`, `:to` (takes a
+  string or a vector), `:subject`, `:cc` (takes a string or a vector), `:bcc`
+  (takes a string or a vector), `:reply-to` (takes a string or a vector),
+  `:text-body`, `:html-body`, and `:attachments` (takes a vector).
+- `send <msg>`: sends the given message.
+- `parse-message <request-map>`: returns a Clojure record of type
+  `appengine-magic.services.mail.MailMessage`. Call this function inside the
+  POST handler for `/_ah/mail/*`, and it will return the message sent in the
+  given HTTP request.
+
+NB: With Compojure, the only route which seems to work in the production App
+Engine for handling mail is `/_ah/mail/*`.
+
+    (use 'compojure.core)
+
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.mail :as mail])
+
+    (defroutes mail-demo-app-handler
+      ;; sending
+      (GET "/mail" _
+           (let [att1 (mail/make-attachment "hello.txt" (.getBytes "hello world"))
+                 att2 (mail/make-attachment "jk.txt" (.getBytes "just kidding"))
+                 msg (mail/make-message :from "one@example.com"
+                                        :to "two@example.com"
+                                        :cc ["three@example.com" "four@example.com"]
+                                        :subject "Test message."
+                                        :text-body "Sent from appengine-magic."
+                                        :attachments [att1 att2])]
+             (mail/send msg)
+             {:status 200
+              :headers {"Content-Type" "text/plain"}
+              :body "sent"}))
+      ;; receiving
+      (POST "/_ah/mail/*" req
+           (let [msg (mail/parse-message req)]
+             ;; use the resulting MailMessage object
+             {:status 200})))
+
+    (ae/def-appengine-app mail-demo-app #'mail-demo-app-handler)
+
+
 
 ## Limitations
 
@@ -443,7 +504,6 @@ available in the REPL environment.
 The following Google services are not yet tested in the REPL environment:
 
 - Images
-- Mail
 - Multitenancy
 - OAuth
 - Task queues
