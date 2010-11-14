@@ -2,6 +2,7 @@
   (:import [com.google.appengine.tools.development.testing LocalServiceTestHelper
             LocalServiceTestConfig
             LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
+            LocalMailServiceTestConfig
             LocalDatastoreServiceTestConfig]))
 
 
@@ -9,6 +10,18 @@
      {:bytes LocalMemcacheServiceTestConfig$SizeUnit/BYTES
       :kb LocalMemcacheServiceTestConfig$SizeUnit/KB
       :mb LocalMemcacheServiceTestConfig$SizeUnit/MB})
+
+
+(def *logging-levels*
+     {:all java.util.logging.Level/ALL
+      :severe java.util.logging.Level/SEVERE
+      :warning java.util.logging.Level/WARNING
+      :info java.util.logging.Level/INFO
+      :config java.util.logging.Level/CONFIG
+      :fine java.util.logging.Level/FINE
+      :finer java.util.logging.Level/FINER
+      :finest java.util.logging.Level/FINEST
+      :off java.util.logging.Level/OFF})
 
 
 (defn memcache [& {:keys [max-size size-units]}]
@@ -43,6 +56,15 @@
     ldstc))
 
 
+(defn mail [& {:keys [log-mail-body? log-mail-level]
+               :or {log-mail-body? false
+                    log-mail-level :info}}]
+  (let [lmstc (LocalMailServiceTestConfig.)]
+    (.setLogMailBody lmstc log-mail-body?)
+    (.setLogMailLevel lmstc (*logging-levels* log-mail-level))
+    lmstc))
+
+
 (defn- make-local-services-fixture-fn [services]
   (fn [test-fn]
     (let [helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services))]
@@ -53,7 +75,7 @@
 
 (defn- local-services-helper
   ([]
-     [(memcache) (datastore)])
+     [(memcache) (datastore) (mail)])
   ([services override]
      (let [services (if (= :all services) (local-services-helper) services)]
        (if (nil? override)
