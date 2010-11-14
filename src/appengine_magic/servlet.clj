@@ -10,7 +10,7 @@
 
 (ns appengine-magic.servlet
   (:use [appengine-magic.utils :only [copy-stream]])
-  (:import [java.io File FileInputStream InputStream OutputStream]
+  (:import [java.io File FileInputStream InputStream ByteArrayInputStream OutputStream]
            [javax.servlet.http HttpServlet HttpServletRequest HttpServletResponse]))
 
 
@@ -74,26 +74,37 @@
 
 
 (defn- set-response-body [^HttpServletResponse response, body]
-  (cond (string? body)
-          (with-open [writer (.getWriter response)]
-            (.println writer body))
-        (seq? body)
-          (with-open [writer (.getWriter response)]
-            (doseq [chunk body]
-              (.print writer (str chunk))
-              (.flush writer)))
-        (instance? InputStream body)
-          (let [^InputStream b body]
-            (with-open [out (.getOutputStream response)]
-              (copy-stream b out)
-              (.close b)
-              (.flush out)))
-        (instance? File body)
-          (let [^File f body]
-            (with-open [stream (FileInputStream. f)]
-              (set-response-body response stream)))
-        (nil? body) nil
-        :else (throw (RuntimeException. (str "handler response body unknown" body)))))
+  (cond
+   ;; just a string
+   (string? body)
+   (with-open [writer (.getWriter response)]
+     (.println writer body))
+   ;; any Clojure seq
+   (seq? body)
+   (with-open [writer (.getWriter response)]
+     (doseq [chunk body]
+       (.print writer (str chunk))
+       (.flush writer)))
+   ;; a Java InputStream
+   (instance? InputStream body)
+   (let [^InputStream b body]
+     (with-open [out (.getOutputStream response)]
+       (copy-stream b out)
+       (.close b)
+       (.flush out)))
+   ;; serve up a File
+   (instance? File body)
+   (let [^File f body]
+     (with-open [stream (FileInputStream. f)]
+       (set-response-body response stream)))
+   ;; serve up a byte array
+   (instance? (class (.getBytes "")) body)
+   (with-open [in (ByteArrayInputStream. body)]
+     (set-response-body response in))
+   ;; nothing
+   (nil? body) nil
+   ;; unknown
+   :else (throw (RuntimeException. (str "handler response body unknown" body)))))
 
 
 (defn- adapt-servlet-response [^HttpServletResponse response,
