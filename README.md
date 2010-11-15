@@ -18,7 +18,7 @@ README file tries to describe everything you need to know to use App Engine with
 Clojure, but does not explain the details of App Engine semantics. Please refer
 to Google's official documentation for details.
 
-Please read the (HISTORY)[HISTORY.md] file to learn what changed in recent
+Please read the [HISTORY](HISTORY.md) file to learn what changed in recent
 releases.
 
 
@@ -56,7 +56,7 @@ To use appengine-magic effectively, you need the following:
    your application uses in `resources/`.
 
 Here is a sample `core.clj`, using Compojure (other Ring-compatible frameworks,
-such as (Moustache)[https://github.com/cgrand/moustache], also work):
+such as [Moustache](https://github.com/cgrand/moustache), also work):
 
     (ns simple-example.core
       (:use compojure.core)
