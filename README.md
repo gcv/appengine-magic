@@ -487,10 +487,6 @@ application's Ring handlers, and (2) in the automatic testing environment
 provided by `appengine-magic.testing`. This means that you cannot directly
 invoke most App Engine API functions from the REPL.
 
-This limitation will be addressed in the future. (In the meanwhile, avoid tight
-coupling between your application code and App Engine services.)
-
-
 
 ### Incomplete features
 
