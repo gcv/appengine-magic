@@ -55,6 +55,29 @@ To use appengine-magic effectively, you need the following:
    `resources/WEB-INF/` directory. You should also place all static files that
    your application uses in `resources/`.
 
+Here is a sample `core.clj`, using Compojure (other Ring-compatible frameworks,
+such as (Moustache)[https://github.com/cgrand/moustache], also work):
+
+    (ns simple-example.core
+      (:use compojure.core)
+      (:require [appengine-magic.core :as ae]))
+
+    (defroutes simple-example-app-handler
+      (GET "/" req
+           {:status 200
+            :headers {"Content-Type" "text/plain"}
+            :body "Hello, world!"})
+      (GET "/hello/:name" [name]
+           {:status 200
+            :headers {"Content-Type" "text/plain"}
+            :body (format "Hello, %s!" name)})
+      (ANY "*" _
+           {:status 200
+            :headers {"Content-Type" "text/plain"}
+            :body "not found"}))
+
+    (ae/def-appengine-app simple-example-app #'simple-example-app-handler)
+
 
 
 ## Getting Started
