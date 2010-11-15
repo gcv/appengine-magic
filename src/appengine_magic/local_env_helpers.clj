@@ -4,18 +4,22 @@
   (:import java.io.File
            [com.google.apphosting.api ApiProxy ApiProxy$Environment]
            [com.google.appengine.tools.development ApiProxyLocalFactory ApiProxyLocalImpl
-            LocalServerEnvironment]))
+            LocalServerEnvironment]
+           com.google.appengine.api.labs.taskqueue.dev.LocalTaskQueue))
 
 
 (defonce *current-app-id* (atom nil))
 
 
-(defn appengine-init [#^File dir]
+(defn appengine-init [#^File dir, port]
   (let [appengine-web-file (File. dir "WEB-INF/appengine-web.xml")
         application-id (first (xpath-value appengine-web-file "//application"))
         proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
-                      (getAppDir [] dir))
+                      (getAppDir [] dir)
+                      (getAddress [] "localhost")
+                      (getPort [] port)
+                      (waitForServerToStart [] nil))
         api-proxy (.create proxy-factory environment)]
     (reset! *current-app-id* application-id)
     (ApiProxy/setDelegate api-proxy)))
@@ -24,6 +28,7 @@
 (defn appengine-clear []
   (reset! *current-app-id* nil)
   (ApiProxy/clearEnvironmentForCurrentThread)
+  (.stop (.getService (ApiProxy/getDelegate) LocalTaskQueue/PACKAGE))
   (.stop (ApiProxy/getDelegate)))
 
 

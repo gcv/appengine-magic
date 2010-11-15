@@ -48,7 +48,7 @@
 (defn start* [appengine-app & {:keys [port join?]}]
   (let [war-root (java.io.File. (:war-root appengine-app))
         handler-servlet (servlet (:handler appengine-app))]
-    (appengine-init war-root)
+    (appengine-init war-root port)
     (jetty/start
      {"/" [(com.google.apphosting.utils.servlet.TransactionCleanupFilter.)
            (com.google.appengine.api.blobstore.dev.ServeBlobFilter.)
