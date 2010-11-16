@@ -1,5 +1,6 @@
 ## 0.3.0 (???)
 
+* Added the Task Queues service.
 * Added the Mail service.
 * Added the Blobstore service.
 * Speeded up production deployment by packaging compiled application .class

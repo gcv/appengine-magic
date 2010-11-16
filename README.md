@@ -437,7 +437,7 @@ This is confusing, but a Compojure example will help.
     (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
 
 
-### Mail
+### Mail service
 
 The `appengine-magic.services.mail` namespace provides helper functions for
 sending and receiving mail in an App Engine application.
@@ -498,6 +498,45 @@ Engine for handling mail is `/_ah/mail/*`.
     (ae/def-appengine-app mail-demo-app #'mail-demo-app-handler)
 
 
+### Task Queues service
+
+The `appengine-magic.services.task-queues` namespace has helper functions for
+using task queues. As always, read [Google's documentation on task
+queues](http://code.google.com/appengine/docs/java/taskqueue/overview.html), in
+particular the sections on configuring `queue.xml`, and on securing task URLs in
+`web.xml`. In addition, [the section on scheduled
+tasks](http://code.google.com/appengine/docs/java/config/cron.html) (`cron.xml`)
+is useful.
+
+Use the `add!` function to add a new task to a queue, and provide a callback URL
+which implements the actual work performed by the task. The current App Engine
+SDK does not seem to have any API calls for removing tasks from a queue, but
+does support this from the administration console.
+
+- `add! :url <callback-url>` (optional keywords: `:queue`,
+  `:join-current-transaction?`, `:params`, `:headers`, `:payload`, `:method`,
+  `:countdown-ms`, `:eta-ms`, `:eta`). The `:url` keyword is required.
+  * `:queue`: name of the queue to use; if omitted, uses the system default
+    queue. If provided, the queue must be defined in `queue.xml`.
+  * `:join-current-transaction?`: defaults to false. If true, and if this occurs
+    inside a datastore transaction context, then only adds this task to the
+    queue if the transaction commits successfully.
+  * `:params`: a map of form parameter key-value pairs for the callback. Do not
+    combine with the `:payload` keyword.
+  * `:headers`: a map of extra HTTP headers sent to the callback.
+  * `:payload`: provides data for the callback. Can be a string, a vector of the
+    form `[<string> <charset>]`, or a vector of the form `[<byte-array>
+    <content-type>]`.
+  * `:method`: supports `:post`, `:delete`, `:get`, `:head`, and `:put`. Default
+    is `:post`.
+  * `:countdown-ms`, `:eta-ms`, and `:eta`: scheduling parameters. Only one of
+    these may be used at a time. `:countdown-ms` schedules a task for the given
+    number of milliseconds from the time the `add!` function ran. `:eta-ms`
+    schedules a task for the given number of milliseconds from the beginning of
+    the epoch. `:eta` schedules execution for the time given by the a
+    `java.util.Date` object.
+
+
 
 ## Limitations
 
@@ -525,7 +564,6 @@ The following Google services are not yet tested in the REPL environment:
 - Images
 - Multitenancy
 - OAuth
-- Task queues
 - URL fetch
 - XMPP
 
