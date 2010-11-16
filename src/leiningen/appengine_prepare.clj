@@ -31,4 +31,4 @@
     (lancet/copy {:todir (.getPath target-lib-dir)}
                  (lancet/fileset
                   {:dir lib-dev-dir
-                   :includes "appengine-magic*,ring-core*,appengine-api-1.0-sdk*"}))))
+                   :includes "appengine-magic*,ring-core*,appengine-api-1.0-sdk*,appengine-api-labs*"}))))
