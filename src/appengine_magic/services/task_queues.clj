@@ -40,7 +40,7 @@
     (throw (IllegalArgumentException. "add! requires a :url argument")))
   (when-not (map? params)
     (throw (IllegalArgumentException. "add! :params must be a map")))
-  (let [queue-obj (get-task-queue :keys queue)
+  (let [queue-obj (get-task-queue :queue queue)
         opts (TaskOptions$Builder/url url)]
     ;; headers
     (doseq [[header-name header-value] headers]
