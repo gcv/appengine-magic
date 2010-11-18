@@ -1,5 +1,6 @@
 ## 0.3.0 (???)
 
+* Added `exists?` function to the Datastore service.
 * Added the Task Queues service.
 * Added the Mail service.
 * Added the Blobstore service.
