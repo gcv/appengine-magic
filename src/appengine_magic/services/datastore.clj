@@ -2,6 +2,7 @@
   (:use appengine-magic.utils)
   (:import [com.google.appengine.api.datastore DatastoreService DatastoreServiceFactory
             DatastoreServiceConfig DatastoreServiceConfig$Builder
+            EntityNotFoundException
             ReadPolicy ReadPolicy$Consistency ImplicitTransactionManagementPolicy
             Key KeyFactory
             Entity
@@ -332,6 +333,15 @@
      (if (nil? parent#)
          entity#
          (with-meta entity# {:key (get-key-object entity# parent#)}))))
+
+
+(defn exists? [entity-record-type key-value-or-values &
+               {:keys [parent kind]
+                :or {kind (unqualified-name (.getName entity-record-type))}}]
+  (try
+    (retrieve entity-record-type key-value-or-values :parent parent :kind kind)
+    true
+    (catch EntityNotFoundException _ false)))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
