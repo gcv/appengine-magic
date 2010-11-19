@@ -1,5 +1,6 @@
 ## 0.3.0 (???)
 
+* Deprecated including the `:aot` directive in `project.clj` files.
 * Added `exists?` function to the Datastore service.
 * Added the Task Queues service.
 * Added the Mail service.

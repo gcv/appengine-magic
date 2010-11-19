@@ -94,9 +94,8 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`:
-   - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.3.0-SNAPSHOT"]` to your `:dev-dependencies`
+3. Edit `project.clj`: add `[appengine-magic "0.3.0-SNAPSHOT"]` to your
+   `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
@@ -106,6 +105,11 @@ functionality.
    `resources/WEB-INF/appengine-web.xml` (an App Engine application
    descriptor). These files should contain reasonable starting defaults for your
    application.
+
+With regard to AOT-compilation, if your project needs it, then you must include
+`<project>.app_servlet` in Leiningen's `:aot` directive. Otherwise, omit the
+`:aot` directive altogether. The `lein appengine-prepare` task will take care of
+AOT-compiling the entry point servlet and cleaning up afterwards.
 
 The default `.gitignore` file produced by Leiningen works well with the
 resulting project, but do take a careful look at it. In particular, you should
