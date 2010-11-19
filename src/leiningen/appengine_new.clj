@@ -34,7 +34,7 @@
         WEB-INF-dir (File. resources-dir "WEB-INF")
         prj-application (or (:appengine-application project) (:name project))
         prj-display-name (or (:appengine-display-name project) (:name project))
-        prj-servlet "app_servlet"]
+        prj-servlet (or (:appengine-entry-servlet project) "app_servlet")]
     (println "making a skeleton for a Google App Engine application")
     ;; set up the required paths
     (when-not (.exists resources-dir)
