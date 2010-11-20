@@ -329,9 +329,8 @@ A few simple examples:
   of the given type with the given primary key value. If the target entity
   belongs to an entity group, specify the parent using the optional keyword. If
   the target entity was stored with a different kind from the entity record
-  type, specify the actual kind using the optional keyword. Note that `retrieve`
-  throws `com.google.appengine.api.datastore.EntityNotFoundException` if the
-  given key does not correspond to an entity of the given type or kind.
+  type, specify the actual kind using the optional keyword. This function
+  returns `nil` if the given key of the given kind does not exist.
 - `exists? <entity-record-type> <primary-key>` (optional keywords the same as
   for `retrieve`): used exactly like `retrieve`, but returns `true` if the given
   entity exists and `false` otherwise.
