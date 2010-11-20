@@ -168,10 +168,10 @@ put a file called `index.html` there, it will become a default welcome file.
 ### Classpath resources
 
 Put all classpath resources you expect to need at runtime in `resources/`. You
-can then access them using the `appengine-magic/open-resource-stream`, which
-returns a `java.io.BufferedInputStream` instance. Please note that, by default,
-App Engine then makes these resources available as static files. To change this
-behavior, you need to modify `appengine-web.xml` file. See [Google
+can then access them using the `appengine-magic.core/open-resource-stream`,
+which returns a `java.io.BufferedInputStream` instance. Please note that, by
+default, App Engine then makes these resources available as static files. To
+change this behavior, you need to modify `appengine-web.xml` file. See [Google
 documentation](http://code.google.com/appengine/docs/java/config/appconfig.html)
 for details.
 
@@ -189,6 +189,16 @@ work consistently across all App Engine environments.
    classes and libraries for deployment.
 3. When you are ready to deploy, just run `appcfg.sh update` with a path to your
    application's `resources/` directory.
+
+
+### Checking the runtime environment
+
+It is sometimes useful to know if the current execution environment is the
+production App Engine, `dev_appserver.sh`, or the interactive REPL. For example,
+you may wish to return more detailed error messages and stack traces in
+non-production mode. `appengine-magic.core/appengine-environment-type` returns a
+keyword corresponding to the current environment: `:production`,
+`:dev-appserver`, and `:interactive`.
 
 
 ### Automatic testing code
