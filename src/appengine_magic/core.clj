@@ -11,6 +11,14 @@
       false)))
 
 
+(defn appengine-environment-type []
+  (let [env-property (System/getProperty "com.google.appengine.runtime.environment")]
+    (cond
+     (nil? env-property) :interactive
+     (= env-property "Development") :dev-appserver
+     (= env-property "Production") :production)))
+
+
 (if (in-appengine-interactive-mode?)
     (load "core_local")
     (load "core_google"))
