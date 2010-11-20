@@ -257,9 +257,9 @@
 ;;; user functions and macros
 ;;; ----------------------------------------------------------------------------
 
-(defn retrieve [entity-record-type key-value-or-values &
-                {:keys [parent kind]
-                 :or {kind (unqualified-name (.getName entity-record-type))}}]
+(defn- retrieve-helper [entity-record-type key-value-or-values &
+                        {:keys [parent kind]
+                         :or {kind (unqualified-name (.getName entity-record-type))}}]
   (let [make-key-from-value (fn [key-value real-parent]
                               (cond
                                ;; already a Key object
@@ -294,6 +294,20 @@
           (with-meta
             (merge entity-record (entity->properties raw-properties))
             {:key (.getKey entity)})))))
+
+
+(defn retrieve [entity-record-type key-value-or-values &
+                {:keys [parent kind]
+                 :or {kind (unqualified-name (.getName entity-record-type))}}]
+  (try
+    (retrieve-helper entity-record-type key-value-or-values :parent parent :kind kind)
+    (catch EntityNotFoundException _ nil)))
+
+
+(defn exists? [entity-record-type key-value-or-values &
+               {:keys [parent kind]
+                :or {kind (unqualified-name (.getName entity-record-type))}}]
+  (not (nil? (retrieve entity-record-type key-value-or-values :parent parent :kind kind))))
 
 
 (defn delete! [target]
@@ -333,15 +347,6 @@
      (if (nil? parent#)
          entity#
          (with-meta entity# {:key (get-key-object entity# parent#)}))))
-
-
-(defn exists? [entity-record-type key-value-or-values &
-               {:keys [parent kind]
-                :or {kind (unqualified-name (.getName entity-record-type))}}]
-  (try
-    (retrieve entity-record-type key-value-or-values :parent parent :kind kind)
-    true
-    (catch EntityNotFoundException _ false)))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
