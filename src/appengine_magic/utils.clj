@@ -12,11 +12,18 @@
 
 ;;; Adapted from: http://groups.google.com/group/clojure/msg/5206fac13144ea99
 (defmacro record
-  "Dynamic factory for Clojure record objects."
-  [name & {:as vals-map}]
-  `(let [con# (first (.getDeclaredConstructors ~name))
-         num# (alength (.getParameterTypes con#))]
-     (merge (.newInstance con# (make-array Object num#)) ~vals-map)))
+  "A dynamic factory for Clojure record objects. Takes either a map of key-value
+   pairs to be used for the record, or just the key-value pairs as keyword
+   arguments. Example: (record Record :a 1 :b 2) or (record Record {:a 1 :b 2})."
+  [record-type & args]
+  (let [vals-map (if (= 1 (count args))
+                     (first args)
+                     (apply hash-map args))]
+    `(let [constructor# (first (.getDeclaredConstructors ~record-type))
+           number-constructor-parameters# (alength (.getParameterTypes constructor#))]
+       (merge (.newInstance constructor#
+                            (make-array Object number-constructor-parameters#))
+              ~vals-map))))
 
 
 (defn copy-stream [^InputStream input, ^OutputStream output]
