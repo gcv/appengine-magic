@@ -27,7 +27,7 @@ releases.
 
 * Clojure 1.2.0
 * Leiningen 1.3.1
-* Google App Engine SDK 1.3.7
+* Google App Engine SDK 1.3.8
 * swank-clojure 1.2.1 (optional)
 
 
@@ -94,7 +94,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.3.1-SNAPSHOT"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.4.0-SNAPSHOT"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
@@ -663,11 +663,9 @@ invoke most App Engine API functions from the REPL.
 ### Incomplete features
 
 When using the interactive REPL environment, some App Engine services are more
-limited than in `dev_appserver.sh` or in deployment. Because the App Engine
-SDK's jars are a mess, and many are not available in Maven repositories,
-providing the same functionality in an interactive Clojure environment is tricky
-and error-prone. In particular, the administration console, `/_ah/admin` is not
-available in the REPL environment.
+limited than in `dev_appserver.sh` or in deployment. In particular, the
+administration console, `/_ah/admin` is currently not available in the REPL
+environment.
 
 The following Google services are not yet tested in the REPL environment:
 

@@ -1,3 +1,9 @@
+## 0.4.0 (???)
+
+* Proper support for Google App Engine SDK 1.3.8 through a custom Maven
+  repository.
+
+
 ## 0.3.1 (???)
 
 * Added `as-*` type conversion functions to the Datastore service.
