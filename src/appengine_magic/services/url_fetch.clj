@@ -1,4 +1,4 @@
-(ns appengine-magic.services.urlfetch
+(ns appengine-magic.services.url-fetch
   (:import [com.google.appengine.api.urlfetch
             URLFetchServiceFactory
             FetchOptions

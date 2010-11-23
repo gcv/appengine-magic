@@ -557,7 +557,7 @@ does support this from the administration console.
 
 ### URL Fetch service
 
-`appengine-magic.services.urlfetch` lets App Engine applications send arbitrary
+`appengine-magic.services.url-fetch` lets App Engine applications send arbitrary
 HTTP requests to external services.
 
 - `fetch <url>` (optional keywords: `:method`, `:headers`, `:payload`,
