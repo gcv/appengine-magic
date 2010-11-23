@@ -555,6 +555,25 @@ does support this from the administration console.
     `java.util.Date` object.
 
 
+### URL Fetch service
+
+`appengine-magic.services.urlfetch` lets App Engine applications send arbitrary
+HTTP requests to external services.
+
+- `fetch <url>` (optional keywords: `:method`, `:headers`, `:payload`,
+  `:allow-truncate`, `:follow-redirects`, `:deadline`).
+  * `:method`: `:get` (default), `:post`, `:delete`, `:head`, or `:put`.
+  * `:headers`: a map from header name (string) to value (string).
+  * `:payload`: a Java byte array.
+  * `:allow-truncate`: if true, allow App Engine to truncate a large response
+    without an error; if false, throws an exception instead.
+  * `:follow-redirects`: if true (default), follows request redirects.
+  * `:deadline`: deadline for the requst, in seconds, expressed as a double.
+- `fetch-async <url>` (optional keywords same as `fetch`): works like `fetch`,
+  but returns a future-like object. May block when derefed if it has not yet
+  finished loading.
+
+
 
 ## Limitations
 
@@ -582,7 +601,6 @@ The following Google services are not yet tested in the REPL environment:
 - Images
 - Multitenancy
 - OAuth
-- URL fetch
 - XMPP
 
 They may still work, but appengine-magic does not provide convenient Clojure
