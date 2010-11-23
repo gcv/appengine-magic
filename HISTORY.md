@@ -1,4 +1,4 @@
-## 0.3.0 (???)
+## 0.3.0 (2010-11-23)
 
 * Added `appengine-magic.core/appengine-environment-type`.
 * Deprecated including the `:aot` directive in `project.clj` files.
