@@ -5,8 +5,7 @@
             FetchOptions$Builder
             HTTPHeader
             HTTPRequest
-            HTTPMethod])
-  (:require [clojure.contrib.string :as string]))
+            HTTPMethod]))
 
 (defonce *urlfetch-service* (atom nil))
 
@@ -30,7 +29,9 @@
   (map
    (fn [[name-key val]]
      (com.google.appengine.api.urlfetch.HTTPHeader.
-      (string/as-str name-key)
+      (if (keyword? name-key)
+          (.substring (str name-key) 1)
+          (str name-key))
       val))
    header-map))
 
