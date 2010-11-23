@@ -6,8 +6,7 @@
             HTTPHeader
             HTTPRequest
             HTTPMethod])
-  (:require [clojure.contrib.string :as string]
-            [appengine-magic.services.memcache :as memcache]))
+  (:require [clojure.contrib.string :as string]))
 
 (defonce *urlfetch-service* (atom nil))
 
