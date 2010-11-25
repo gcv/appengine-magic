@@ -78,7 +78,7 @@
    ;; just a string
    (string? body)
    (with-open [writer (.getWriter response)]
-     (.println writer body))
+     (.print writer body))
    ;; any Clojure seq
    (seq? body)
    (with-open [writer (.getWriter response)]
@@ -87,11 +87,10 @@
        (.flush writer)))
    ;; a Java InputStream
    (instance? InputStream body)
-   (let [^InputStream b body]
-     (with-open [out (.getOutputStream response)]
-       (copy-stream b out)
-       (.close b)
-       (.flush out)))
+   (with-open [out (.getOutputStream response)
+               ^InputStream b body]
+     (copy-stream b out)
+     (.flush out))
    ;; serve up a File
    (instance? File body)
    (let [^File f body]
