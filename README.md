@@ -94,7 +94,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.3.0"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.3.1-SNAPSHOT"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
@@ -215,6 +215,69 @@ but all tests must bootstrap App Engine services in order to run. The
 
 Then, write `deftest` forms normally; you can use App Engine services just as you
 would in application code.
+
+
+### File uploads and multipart forms
+
+A Ring application requires the use of middleware to convert the request body
+into something useful in the request map. Ring comes with
+`ring.middleware.multipart-params/wrap-multipart-params` which does this;
+unfortunately, this middleware uses classes restricted in App Engine. To deal
+with this, `appengine-magic` has its own middleware.
+
+`appengine-magic.multipart-params/wrap-multipart-params` works just like the
+Ring equivalent, except file upload parameters become maps with a `:bytes` key
+(instead of `:tempfile`). This key contains a byte array with the upload data.
+
+A full Compojure example (includes features from the Datastore service):
+
+    (use 'compojure.core
+         '[appengine-magic.multipart-params :only [wrap-multipart-params]])
+
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.datastore :as ds])
+
+    (ds/defentity Image [^:key name, content-type, data])
+
+    (defroutes upload-images-demo-app-handler
+      ;; HTML upload form
+      (GET "/upload" _
+           {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (str "<html><body>"
+                       "<form action=\"/done\" "
+                       "method=\"post\" enctype=\"multipart/form-data\">"
+                       "<input type=\"file\" name=\"file-upload\">"
+                       "<input type=\"submit\" value=\"Submit\">"
+                       "</form>"
+                       "</body></html>")})
+      ;; handles the uploaded data
+      (POST "/done" _
+            (wrap-multipart-params
+             (fn [req]
+               (let [img (get (:params req) "file-upload")
+                     img-entity (Image. (:filename img)
+                                        (:content-type img)
+                                        (ds/as-blob (:bytes img)))]
+                 (ds/save! img-entity)
+                 {:status 200
+                  :headers {"Content-Type" "text/plain"}
+                  :body (with-out-str
+                          (println (:params req)))}))))
+      ;; hit this route to retrieve an uploaded file
+      (GET ["/img/:name", :name #".*"] [name]
+           (let [img (ds/retrieve Image name)]
+             (if (nil? img)
+                 {:status 404}
+                 {:status 200
+                  :headers {"Content-Type" (:content-type img)}
+                  :body (.getBytes (:data img))}))))
+
+    (ae/def-appengine-app upload-images-demo-app #'upload-images-demo-app-handler)
+
+Please note that you do not need to use this middleware with the Blobstore
+service. App Engine takes care decoding the upload in its internal handlers, and
+the upload callbacks do not contain multipart data.
 
 
 
@@ -364,6 +427,15 @@ A few simple examples:
 - `init-datastore-service`: not normally needed. Only use this method if you
   want to modify the the read consistency and implicit transaction policies of
   the datastore service.
+- Type conversion functions: these help cast your data into a Java type which
+  receives special treatment from App Engine.
+  * `as-blob`: casts a byte array to `com.google.appengine.api.datastore.Blob`.
+  * `as-short-blob`: casts a byte array to
+    `com.google.appengine.api.datastore.ShortBlob`.
+  * `as-blob-key`: casts a string to
+    `com.google.appengine.api.blobstore.BlobKey`.
+  * `as-text`: casts a string to `com.google.appengine.api.datastore.Text`.
+  * `as-link`: casts a string to `com.google.appengine.api.datastore.Link`.
 
 
 ### Blobstore
