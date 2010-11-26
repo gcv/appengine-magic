@@ -15,7 +15,7 @@
 (defn- multipart-form?
   "Does a request have a multipart form?"
   [request]
-  (ServletFileUpload/isMultipartContent request))
+  (ServletFileUpload/isMultipartContent (:request request)))
 
 
 (defn- itemiterator-to-seq
