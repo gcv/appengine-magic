@@ -32,7 +32,7 @@
   [request encoding]
   (into {}
         (map (fn [i]
-               [(keyword (.getFieldName i))
+               [(.getFieldName i)
                 (if (.isFormField i)
                     (Streams/asString (.openStream i) encoding)
                     {:content-type (.getContentType i)
@@ -55,5 +55,7 @@
           params (if (multipart-form? request)
                      (field-seq request encoding)
                      {})
-          request (merge request {:multipart-params params} {:params params})]
+          request (merge-with merge request
+                              {:multipart-params params}
+                              {:params params})]
       (handler request))))
