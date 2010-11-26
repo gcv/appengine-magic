@@ -50,9 +50,9 @@
 
 
 (defn- save-upload! [upload-name upload-info target-dir]
-  (let [{:keys [name content-type bytes]} upload-info
+  (let [{:keys [filename content-type bytes size]} upload-info
         blob-key (make-clean-uuid)
-        blob-info (BlobInfo. blob-key content-type (java.util.Date.) name (alength bytes))
+        blob-info (BlobInfo. blob-key content-type (java.util.Date.) filename size)
         blob-file (File. target-dir blob-key)]
     (io/copy bytes blob-file)
     (ds/save! blob-info)

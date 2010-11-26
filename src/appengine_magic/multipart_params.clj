@@ -35,9 +35,11 @@
                [(.getFieldName i)
                 (if (.isFormField i)
                     (Streams/asString (.openStream i) encoding)
-                    {:content-type (.getContentType i)
-                     :name (.getName i)
-                     :bytes (IOUtils/toByteArray (.openStream i))})])
+                    (let [upload-bytes (IOUtils/toByteArray (.openStream i))]
+                      {:content-type (.getContentType i)
+                       :filename (.getName i)
+                       :size (alength upload-bytes)
+                       :bytes upload-bytes}))])
              (itemiterator-to-seq (.getItemIterator (ServletFileUpload.)
                                                     (:request request))))))
 
