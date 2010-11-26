@@ -7,7 +7,10 @@
             Key KeyFactory
             Entity
             FetchOptions$Builder
-            Query Query$FilterOperator Query$SortDirection]))
+            Query Query$FilterOperator Query$SortDirection]
+           ;; types
+           [com.google.appengine.api.datastore Blob ShortBlob Text Link]
+           com.google.appengine.api.blobstore.BlobKey))
 
 
 
@@ -29,6 +32,42 @@
 (defonce *datastore-implicit-transaction-policy-map*
   {:auto ImplicitTransactionManagementPolicy/AUTO
    :none ImplicitTransactionManagementPolicy/NONE})
+
+
+
+;;; ----------------------------------------------------------------------------
+;;; datastore type conversion functions
+;;; ----------------------------------------------------------------------------
+
+(let [byte-array-class (class (.getBytes ""))]
+
+  (defn as-blob [data]
+    (cond (instance? Blob data) data
+          (instance? byte-array-class data) (Blob. data)
+          :else (Blob. (.getBytes data))))
+
+  (defn as-short-blob [data]
+    (cond (instance? ShortBlob data) data
+          (instance? byte-array-class data) (ShortBlob. data)
+          :else (ShortBlob. (.getBytes data)))))
+
+
+(defn as-blob-key [x]
+  (if (instance? BlobKey x)
+      x
+      (BlobKey. x)))
+
+
+(defn as-text [x]
+  (if (instance? Text x)
+      x
+      (Text. x)))
+
+
+(defn as-link [x]
+  (if (instance? Link x)
+      x
+      (Link. x)))
 
 
 
