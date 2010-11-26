@@ -405,6 +405,8 @@ writes entities into the datastore: `__BlobInfo__` and
   serve up the given blob.
 - `callback-complete <ring-request-map> <destination>`: redirects the uploading
   HTTP client to the given destination.
+- `uploaded-blobs <ring-request-map>`: returns a map of form upload name fields
+  to blob keys.
 
 This is confusing, but a Compojure example will help.
 
@@ -433,8 +435,7 @@ This is confusing, but a Compojure example will help.
                        "</body></html>")})
       ;; success callback
       (POST "/done" req
-           (let [blob-map (blobs/uploaded-blobs (:request req))
-                 dest (str "/serve/" (.getKeyString (blob-map "file1")))]
+           (let [blob-map (blobs/uploaded-blobs req)]
              (ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
                         (UploadedFile. (.getKeyString (blob-map "file2")))
                         (UploadedFile. (.getKeyString (blob-map "file3")))])
@@ -479,7 +480,7 @@ application add a Ring handler for POST methods for URLs which begin with
   (takes a string or a vector), `:reply-to` (takes a string or a vector),
   `:text-body`, `:html-body`, and `:attachments` (takes a vector).
 - `send <msg>`: sends the given message.
-- `parse-message <request-map>`: returns a Clojure record of type
+- `parse-message <ring-request-map>`: returns a Clojure record of type
   `appengine-magic.services.mail.MailMessage`. Call this function inside the
   POST handler for `/_ah/mail/*`, and it will return the message sent in the
   given HTTP request.
@@ -632,6 +633,16 @@ Whenever you add a new dependency, no matter how innocuous, you should make sure
 your app still works. `dev_appserver.sh` is a good place to start, but you must
 also test in the main App Engine. The two do not always load classes the same
 way.
+
+
+
+## Contributors
+
+Many thanks to:
+
+* Brian Gruber
+* Marko Kocić
+* Conrad Barski
 
 
 
