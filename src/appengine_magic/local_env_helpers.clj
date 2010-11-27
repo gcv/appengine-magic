@@ -13,7 +13,9 @@
 
 (defn appengine-init [#^File dir, port]
   (let [appengine-web-file (File. dir "WEB-INF/appengine-web.xml")
-        application-id (first (xpath-value appengine-web-file "//application"))
+        application-id (if (.exists appengine-web-file)
+                           (first (xpath-value appengine-web-file "//application"))
+                           "appengine-magic-app")
         proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
                       (getAppDir [] dir)
