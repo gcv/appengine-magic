@@ -8,6 +8,7 @@
                  [commons-io "1.4"]
                  [commons-codec "1.4"]
                  [commons-fileupload "1.2.1"]
+                 [org.apache.commons/commons-exec "1.1"]
                  [com.google.appengine/appengine-api-1.0-sdk "1.3.8"]
                  [com.google.appengine/appengine-api-labs "1.3.8"]
                  [com.google.appengine/appengine-api-stubs "1.3.8"]
