@@ -3,7 +3,7 @@
   :repositories {"releases" "https://github.com/gcv/maven-repository/raw/master/releases/"
                  "snapshots" "https://github.com/gcv/maven-repository/raw/master/snapshots/"}
   :dependencies [[org.clojure/clojure "1.2.0"]
-                 [ring/ring-core "0.3.4"]
+                 [ring/ring-core "0.3.5"]
                  [javax.servlet/servlet-api "2.5"]
                  [commons-io "1.4"]
                  [commons-codec "1.4"]
