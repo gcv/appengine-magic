@@ -97,7 +97,7 @@
      (with-open [stream (FileInputStream. f)]
        (set-response-body response stream)))
    ;; serve up a byte array
-   (instance? (class (.getBytes "")) body)
+   (instance? (class (byte-array 0)) body)
    (with-open [in (ByteArrayInputStream. body)]
      (set-response-body response in))
    ;; nothing

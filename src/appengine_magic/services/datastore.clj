@@ -39,7 +39,7 @@
 ;;; datastore type conversion functions
 ;;; ----------------------------------------------------------------------------
 
-(let [byte-array-class (class (.getBytes ""))]
+(let [byte-array-class (class (byte-array 0))]
 
   (defn as-blob [data]
     (cond (instance? Blob data) data
