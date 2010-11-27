@@ -280,6 +280,46 @@ service. App Engine takes care decoding the upload in its internal handlers, and
 the upload callbacks do not contain multipart data.
 
 
+### Managing multiple environments
+
+Most web applications use several environments internally: production, plus
+various staging and development installations. App Engine supports multiple
+versions in its `appengine-web.xml` file, but does nothing to help deal with
+installing to different full environments. Since different versions of App
+Engine applications share the same blobstore and datastore, distinguishing
+between production and staging using only versions is dangerous.
+
+`appengine-magic` has a mechanism to help deal with multiple environments. The
+Leiningen `appengine-update` task replaces the use of `appcfg.sh update`, and a
+new entry in `project.clj` manages applications and versions.
+
+1. Rename your `WEB-INF/application-web.xml` file to
+   `WEB-INF/application-web.xml.tmpl`. For safety reasons, `appengine-update`
+   will not run if a normal `application-web.xml` exists. For clarity, you
+   should blank out the contents of the `<application>` and `<version>` tags of
+   the template file (but leave the tags in place).
+2. Add a new entry to `project.clj`: `:appengine-app-versions`. This entry is a
+   map from application name to application version. Example:
+    :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
+                             "myapp-staging"    "2010-11-27 22:05"
+                             "myapp-dev1"       "2830"
+                             "myapp-dev2"       "2893"}
+   The `myapp-` key strings correspond to App Engine applications, registered
+   and managed through the App Engine console. The value strings are the
+   versions `appengine-update` will install if invoked on that application.
+3. Add a new entry to `project.clj`: `:appengine-sdk`. The App Engine SDK
+   location is necessary to execute the acutal production deployment. This value
+   can be just a string, representing a path. Alternatively, for teams whose
+   members keep the App Engine SDK in different locations, this value can be a
+   map from username to path string. Examples:
+    :appengine-sdk "/opt/appengine-java-sdk"
+    :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
+                    "bob"     "/Users/bob/lib/appengine-java-sdk"
+                    "charlie" "/home/charlie/appengine/sdk/current"}
+4. Run `lein appengine-update <application>`, where the argument is an
+   application name from the `:appengine-app-versions` map.
+
+
 
 ## App Engine Services
 
