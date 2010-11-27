@@ -319,6 +319,10 @@ new entry in `project.clj` manages applications and versions.
 4. Run `lein appengine-update <application>`, where the argument is an
    application name from the `:appengine-app-versions` map.
 
+If you use this mechanism, be aware that `dev_appserver.sh` will no longer work
+(since your project no longer defines a simple `appengine-web.xml` file). To run
+that process, use `lein appengine-dev-appserver <application>`.
+
 
 
 ## App Engine Services
