@@ -52,8 +52,9 @@
     (doFilter [_ req resp chain]
       (let [all-cookies (.getCookies req)
             login-cookie (when all-cookies
-                           (.getValue (first (filter #(= "dev_appserver_login" (.getName %))
-                                                     (.getCookies req)))))
+                           (let [raw (first (filter #(= "dev_appserver_login" (.getName %))
+                                                    (.getCookies req)))]
+                             (when raw (.getValue raw))))
             [user-email user-admin? _] (when login-cookie
                                          (str/split login-cookie #":"))
             thread-environment-proxy (make-thread-environment-proxy :user-email user-email
