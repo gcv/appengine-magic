@@ -300,10 +300,12 @@ new entry in `project.clj` manages applications and versions.
    the template file (but leave the tags in place).
 2. Add a new entry to `project.clj`: `:appengine-app-versions`. This entry is a
    map from application name to application version. Example:
+
     :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
                              "myapp-staging"    "2010-11-27 22:05"
                              "myapp-dev1"       "2830"
                              "myapp-dev2"       "2893"}
+
    The `myapp-` key strings correspond to App Engine applications, registered
    and managed through the App Engine console. The value strings are the
    versions `appengine-update` will install if invoked on that application.
@@ -312,10 +314,12 @@ new entry in `project.clj` manages applications and versions.
    can be just a string, representing a path. Alternatively, for teams whose
    members keep the App Engine SDK in different locations, this value can be a
    map from username to path string. Examples:
+
     :appengine-sdk "/opt/appengine-java-sdk"
     :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
                     "bob"     "/Users/bob/lib/appengine-java-sdk"
                     "charlie" "/home/charlie/appengine/sdk/current"}
+
 4. Run `lein appengine-update <application>`, where the argument is an
    application name from the `:appengine-app-versions` map.
 
@@ -328,7 +332,9 @@ that process, use `lein appengine-dev-appserver <application>`.
 ## App Engine Services
 
 appengine-magic provides convenience wrappers for using App Engine services from
-Clojure.
+Clojure. Most of these API calls will work when invoked from the REPL, but only
+if an application is running — that is, it was launched using
+`appengine-magic.core/start`.
 
 
 ### User service
@@ -695,26 +701,14 @@ HTTP requests to external services.
 ## Limitations
 
 
-### Using App Engine API calls
-
-Most App Engine services do not work when invoked without an initialized App
-Engine context. For the time being, this context only exists (1) inside an
-application's Ring handlers, and (2) in the automatic testing environment
-provided by `appengine-magic.testing`. This means that you cannot directly
-invoke most App Engine API functions from the REPL.
-
-
 ### Incomplete features
-
-When using the interactive REPL environment, some App Engine services are more
-limited than in `dev_appserver.sh` or in deployment. In particular, the
-administration console, `/_ah/admin` is currently not available in the REPL
-environment.
 
 The following Google services are not yet tested in the REPL environment:
 
 - Images
+- Channels
 - Multitenancy
+- Capabilities
 - OAuth
 - XMPP
 
@@ -757,6 +751,7 @@ Many thanks to:
 * Brian Gruber
 * Marko Kocić
 * Conrad Barski
+* Yuri Niyazov
 
 
 

@@ -1,5 +1,9 @@
 ## 0.4.0 (???)
 
+* Added the ability to directly execute App Engine API calls from the REPL.
+* Enabled the use of the administrative console (`/_ah/admin`), including the
+  datastore viewer, from the interactive REPL environment (thanks to Yuri
+  Niyazov).
 * Added two new Leiningen tasks: `appengine-update` and
   `appengine-dev-appserver`. They allow maintaining multiple App Engine
   production environments with different versions (e.g., production and
