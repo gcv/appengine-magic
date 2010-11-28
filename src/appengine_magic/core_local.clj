@@ -78,10 +78,7 @@
       ;;"/_ah/img" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
       "/_ah/channel/jsapi" (com.google.appengine.api.channel.dev.ServeScriptServlet.)
       "/_ah/channel/dev" (com.google.appengine.api.channel.dev.LocalChannelServlet.)
-      ;; These other mappings are in webdefault.xml in in
-      ;; appengine-local-runtime-*.jar, but they required jars are not packaged
-      ;; in a Maven-friendly manner. They are only available in the SDK's own
-      ;; messy library structure.
+      ;; These mappings are from webdefault.xml in appengine-local-runtime-*.jar.
       "/_ah/sessioncleanup" (com.google.apphosting.utils.servlet.SessionCleanupServlet.)
       "/_ah/admin" (com.google.apphosting.utils.servlet.DatastoreViewerServlet.)
       "/_ah/admin/" (com.google.apphosting.utils.servlet.DatastoreViewerServlet.)
@@ -105,8 +102,7 @@
       "/_ah/xmppFinal" (org.apache.jsp.ah.xmppFinal_jsp.)
       "/_ah/inboundmailHead" (org.apache.jsp.ah.inboundMailHead_jsp.)
       "/_ah/inboundmailBody" (org.apache.jsp.ah.inboundMailBody_jsp.)
-      "/_ah/inboundmailFinal" (org.apache.jsp.ah.inboundMailFinal_jsp.)
-      }
+      "/_ah/inboundmailFinal" (org.apache.jsp.ah.inboundMailFinal_jsp.)}
      :port port
      :join? join?)))
 
