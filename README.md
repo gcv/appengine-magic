@@ -301,10 +301,10 @@ new entry in `project.clj` manages applications and versions.
 2. Add a new entry to `project.clj`: `:appengine-app-versions`. This entry is a
    map from application name to application version. Example:
 
-    :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
-                             "myapp-staging"    "2010-11-27 22:05"
-                             "myapp-dev1"       "2830"
-                             "myapp-dev2"       "2893"}
+       :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
+                                "myapp-staging"    "2010-11-27 22:05"
+                                "myapp-dev1"       "2830"
+                                "myapp-dev2"       "2893"}
 
    The `myapp-` key strings correspond to App Engine applications, registered
    and managed through the App Engine console. The value strings are the
@@ -315,10 +315,10 @@ new entry in `project.clj` manages applications and versions.
    members keep the App Engine SDK in different locations, this value can be a
    map from username to path string. Examples:
 
-    :appengine-sdk "/opt/appengine-java-sdk"
-    :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
-                    "bob"     "/Users/bob/lib/appengine-java-sdk"
-                    "charlie" "/home/charlie/appengine/sdk/current"}
+       :appengine-sdk "/opt/appengine-java-sdk"
+       :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
+                       "bob"     "/Users/bob/lib/appengine-java-sdk"
+                       "charlie" "/home/charlie/appengine/sdk/current"}
 
 4. Run `lein appengine-update <application>`, where the argument is an
    application name from the `:appengine-app-versions` map.
