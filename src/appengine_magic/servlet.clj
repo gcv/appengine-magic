@@ -1,11 +1,7 @@
 ;;; This code is adapted from Ring (http://github.com/mmcgrana/ring).
 ;;;
-;;; Required changes from Ring:
-;;;   1. Remove dependencies which use Java classes blacklisted in App Engine.
-;;;   2. Include raw cookie data retrieved using the servlet API. This does not
-;;;      preclude using Ring's cookie middleware, but is required separately:
-;;;      App Engine services do not always use standard-compliant cookies which
-;;;      the Ring middleware parses correctly.
+;;; Required change from Ring: removed dependencies which use Java classes
+;;; blacklisted in App Engine.
 
 
 (ns appengine-magic.servlet
