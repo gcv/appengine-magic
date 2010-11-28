@@ -1,6 +1,5 @@
 (ns appengine-magic.local-env-helpers
   (:use appengine-magic.utils)
-  (:require [clojure.string :as str])
   (:import java.io.File
            [com.google.apphosting.api ApiProxy ApiProxy$Environment]
            [com.google.appengine.tools.development ApiProxyLocalFactory ApiProxyLocalImpl
@@ -9,6 +8,18 @@
 
 
 (defonce *current-app-id* (atom nil))
+
+
+(defn make-thread-environment-proxy [& {:keys [user-email user-admin?]}]
+  (proxy [ApiProxy$Environment] []
+    (isLoggedIn [] (or (boolean user-email) false))
+    (getAuthDomain [] "")
+    (getRequestNamespace [] "")
+    (getDefaultNamespace [] "")
+    (getAttributes [] (java.util.HashMap.))
+    (getEmail [] (or user-email ""))
+    (isAdmin [] (or (Boolean/parseBoolean user-admin?) false))
+    (getAppId [] @*current-app-id*)))
 
 
 (defn appengine-init [#^File dir, port]
@@ -24,7 +35,10 @@
                       (waitForServerToStart [] nil))
         api-proxy (.create proxy-factory environment)]
     (reset! *current-app-id* application-id)
-    (ApiProxy/setDelegate api-proxy)))
+    (ApiProxy/setDelegate api-proxy)
+    ;; This installs a thread environment onto the REPL thread and allows App
+    ;; Engine API calls to work in the REPL.
+    (ApiProxy/setEnvironmentForCurrentThread (make-thread-environment-proxy))))
 
 
 (defn appengine-clear []
@@ -32,38 +46,3 @@
   (ApiProxy/clearEnvironmentForCurrentThread)
   (.stop (.getService (ApiProxy/getDelegate) LocalTaskQueue/PACKAGE))
   (.stop (ApiProxy/getDelegate)))
-
-(defn dumb-environment-proxy []
-  (proxy [ApiProxy$Environment] []
-      (isLoggedIn [] false)
-      (getAuthDomain [] "")
-      (getRequestNamespace [] "")
-      (getDefaultNamespace [] "")
-      (getAttributes [] (java.util.HashMap.))
-      (getEmail [] "")
-      (isAdmin [] false)
-      (getAppId [] @*current-app-id*)))
-
-(defn local-environment-proxy [req]
-  (let [servlet-cookies (:servlet-cookies req)
-        login-cookie (:value (get servlet-cookies "dev_appserver_login"))
-        [user-email user-admin _] (when login-cookie (str/split login-cookie #":"))]
-    (proxy [ApiProxy$Environment] []
-      (isLoggedIn [] (boolean user-email))
-      (getAuthDomain [] "")
-      (getRequestNamespace [] "")
-      (getDefaultNamespace [] "")
-      (getAttributes [] (java.util.HashMap.))
-      (getEmail [] (or user-email ""))
-      (isAdmin [] (Boolean/parseBoolean user-admin))
-      (getAppId [] @*current-app-id*))))
-
-
-(defmacro with-appengine [proxy & body]
-  `(last (doall [(ApiProxy/setEnvironmentForCurrentThread ~proxy) ~@body])))
-
-
-(defn environment-decorator [application]
-  (fn [req]
-    (with-appengine (local-environment-proxy req)
-      (application req))))

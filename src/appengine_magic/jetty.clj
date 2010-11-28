@@ -6,6 +6,7 @@
            javax.servlet.Filter
            [org.mortbay.jetty.servlet Context ServletHolder FilterHolder]))
 
+
 (defn- proxy-multihandler
   "Returns a Jetty Handler implementation for the given map of relative URLs to
    handlers. Each handler may be a Ring handler or an HttpServlet instance."
@@ -20,6 +21,7 @@
       (.addServlet context (ServletHolder. url-handler) relative-url))
     all-contexts))
 
+
 (defn #^Server start [filter-map servlet-map &
                       {:keys [port join?] :or {port 8080 join? false}}]
   (let [server (Server. port)]
@@ -28,6 +30,7 @@
       (.start))
     (when join? (.join server))
     server))
+
 
 (defn stop [#^Server server]
   (.stop server))

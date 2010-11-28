@@ -4,7 +4,8 @@
      '[appengine-magic.servlet :only [servlet]]
      '[ring.middleware.file :only [wrap-file]])
 
-(require '[appengine-magic.jetty :as jetty]
+(require '[clojure.string :as str]
+         '[appengine-magic.jetty :as jetty]
          '[appengine-magic.blobstore-upload :as blobstore-upload])
 
 (import java.io.File)
@@ -40,20 +41,25 @@
                             (default-war-root)
                             war-root-arg#)]
           {:handler (-> handler#
-                        environment-decorator
                         (wrap-war-static war-root#))
            :war-root war-root#})))
 
 
-(defn dumb-filter []
-  (proxy [javax.servlet.Filter] []
-    (init [_])
-    (destroy [])
-    (doFilter [req resp chain]
-              (ApiProxy/setEnvironmentForCurrentThread (dumb-environment-proxy))
-              (println (.getRequestURI req))
-              (println (.getRequestURL req))
-              (.doFilter chain req resp))))
+(defn make-appengine-request-environment-filter []
+  (reify javax.servlet.Filter
+    (init [_ _])
+    (destroy [_])
+    (doFilter [_ req resp chain]
+      (let [all-cookies (.getCookies req)
+            login-cookie (when all-cookies
+                           (.getValue (first (filter #(= "dev_appserver_login" (.getName %))
+                                                     (.getCookies req)))))
+            [user-email user-admin? _] (when login-cookie
+                                         (str/split login-cookie #":"))
+            thread-environment-proxy (make-thread-environment-proxy :user-email user-email
+                                                                    :user-admin? user-admin?)]
+        (ApiProxy/setEnvironmentForCurrentThread thread-environment-proxy))
+      (.doFilter chain req resp))))
 
 
 (defn start* [appengine-app & {:keys [port join?]}]
@@ -61,7 +67,7 @@
         handler-servlet (servlet (:handler appengine-app))]
     (appengine-init war-root port)
     (jetty/start
-     {"/*" [(dumb-filter)
+     {"/*" [(make-appengine-request-environment-filter)
             (com.google.apphosting.utils.servlet.TransactionCleanupFilter.)
             (com.google.appengine.api.blobstore.dev.ServeBlobFilter.)]}
      {"/" handler-servlet
