@@ -33,6 +33,16 @@
   (.stop (.getService (ApiProxy/getDelegate) LocalTaskQueue/PACKAGE))
   (.stop (ApiProxy/getDelegate)))
 
+(defn dumb-environment-proxy []
+  (proxy [ApiProxy$Environment] []
+      (isLoggedIn [] false)
+      (getAuthDomain [] "")
+      (getRequestNamespace [] "")
+      (getDefaultNamespace [] "")
+      (getAttributes [] (java.util.HashMap.))
+      (getEmail [] "")
+      (isAdmin [] false)
+      (getAppId [] @*current-app-id*)))
 
 (defn local-environment-proxy [req]
   (let [servlet-cookies (:servlet-cookies req)
