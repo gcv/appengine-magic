@@ -136,7 +136,7 @@ resulting Ring handler to `def-appengine-app`.
 
 To test your work interactively, you can control a Jetty instance from the REPL
 using `appengine-magic.core/start` and `appengine-magic.core/stop`. In addition,
-a convience function, `appengine-magic.core/serve`, will either start or restart
+a convenience function, `appengine-magic.core/serve`, will either start or restart
 a running instance. Examples (assuming you are in your application's `core`
 namespace and your application is named `foo`):
 
@@ -318,7 +318,7 @@ new entry in `project.clj` manages applications and versions.
    and managed through the App Engine console. The value strings are the
    versions `appengine-update` will install if invoked on that application.
 3. Add a new entry to `project.clj`: `:appengine-sdk`. The App Engine SDK
-   location is necessary to execute the acutal production deployment. This value
+   location is necessary to execute the actual production deployment. This value
    can be just a string, representing a path. Alternatively, for teams whose
    members keep the App Engine SDK in different locations, this value can be a
    map from username to path string. Examples:
