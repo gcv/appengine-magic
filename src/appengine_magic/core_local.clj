@@ -2,6 +2,7 @@
 
 (use 'appengine-magic.local-env-helpers
      '[appengine-magic.servlet :only [servlet]]
+     '[appengine-magic.swank :only [wrap-swank]]
      '[ring.middleware.file :only [wrap-file]])
 
 (require '[clojure.string :as str]
@@ -46,6 +47,7 @@
                             (default-war-root)
                             war-root-arg#)]
           {:handler (-> handler#
+                        wrap-swank
                         (wrap-war-static war-root#))
            :war-root war-root#})))
 
