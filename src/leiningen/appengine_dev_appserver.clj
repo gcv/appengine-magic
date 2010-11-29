@@ -1,5 +1,5 @@
 (ns leiningen.appengine-dev-appserver
-  "Deploys the application to the production Google App Engine."
+  "Starts a dev_appserver instance."
   (:use appengine-magic.leiningen-helpers))
 
 
