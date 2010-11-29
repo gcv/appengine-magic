@@ -135,12 +135,17 @@ any framework which produces a Ring-compatible handler. Then, just pass the
 resulting Ring handler to `def-appengine-app`.
 
 To test your work interactively, you can control a Jetty instance from the REPL
-using `appengine-magic.core/start` and `appengine-magic.core/stop`. Examples
-(assuming you are in your application's `core` namespace and your application is
-named `foo`):
+using `appengine-magic.core/start` and `appengine-magic.core/stop`. In addition,
+a convience function, `appengine-magic.core/serve`, will either start or restart
+a running instance. Examples (assuming you are in your application's `core`
+namespace and your application is named `foo`):
 
     (require '[appengine-magic.core :as ae])
 
+    ;; recommended: use this to start or restart an app
+    (ae/serve foo-app)
+
+    ;; or use these lower-level functions
     (ae/start foo-app)
     (ae/stop)
     (ae/start foo-app :port 8095)
@@ -148,6 +153,9 @@ named `foo`):
 
 Recompiling the functions which make up your Ring handler should produce
 instantaneous results.
+
+If you use SLIME, then the `swank.core/break` function works even inside a Ring
+handler.
 
 
 ### Testing with dev_appserver.sh

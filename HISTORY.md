@@ -1,5 +1,7 @@
 ## 0.4.0 (???)
 
+* Made `swank.core/break` work inside Ring handlers (using middleware included
+  from Ring).
 * Added the ability to directly execute App Engine API calls from the REPL.
 * Enabled the use of the administrative console (`/_ah/admin`), including the
   datastore viewer, from the interactive REPL environment (thanks to Yuri
