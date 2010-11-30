@@ -49,7 +49,7 @@
     (doseq [[param-name param-value] params]
       (.param opts param-name (cond
                                (string? param-value) param-value
-                               (instance? (class (.getBytes "")) param-value) param-value
+                               (instance? (class (byte-array 0)) param-value) param-value
                                :else (str param-value))))
     ;; HTTP method for hitting task
     (.method opts (*task-http-methods* method))

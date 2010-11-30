@@ -1,3 +1,13 @@
+## 0.3.1 (2010-11-30)
+
+* Added `as-*` type conversion functions to the Datastore service.
+* Breaking change: `appengine-magic.services.blobstore/uploaded-blobs` now takes
+  a Ring request map parameter (instead of an `HttpServletRequest`). This is for
+  consistency with the rest of the services API.
+* Added a version of multipart-params middleware which works in App Engine
+  (thanks to Conrad Barski).
+
+
 ## 0.3.0 (2010-11-23)
 
 * Added `appengine-magic.core/appengine-environment-type`.

@@ -1,4 +1,5 @@
 (ns appengine-magic.blobstore-upload
+  (:use [appengine-magic.multipart-params :only [wrap-multipart-params]])
   (:require [appengine-magic.services.datastore :as ds]
             [clojure.java.io :as io])
   (:import [java.io File OutputStreamWriter]
@@ -49,11 +50,11 @@
 
 
 (defn- save-upload! [upload-name upload-info target-dir]
-  (let [{:keys [filename size content-type tempfile]} upload-info
+  (let [{:keys [filename content-type bytes size]} upload-info
         blob-key (make-clean-uuid)
         blob-info (BlobInfo. blob-key content-type (java.util.Date.) filename size)
         blob-file (File. target-dir blob-key)]
-    (io/copy tempfile blob-file)
+    (io/copy bytes blob-file)
     (ds/save! blob-info)
     ;; Return the blob-key for later use.
     blob-key))
@@ -62,20 +63,23 @@
 (defn make-blob-upload-handler [war-root]
   (let [web-inf-dir (File. war-root "WEB-INF")
         appengine-generated-dir (File. web-inf-dir "appengine-generated")]
-    (fn [req]
-      (let [uri (:uri req)
-            key-string (.substring uri (inc (.lastIndexOf uri "/")))
-            key-object (KeyFactory/stringToKey key-string)
-            upload-session (ds/retrieve BlobUploadSession key-object
-                                        :kind "__BlobUploadSession__")
-            raw-uploads (:multipart-params req)
-            uploads (reduce (fn [acc [upload-name upload-info]]
-                              (assoc acc upload-name
-                                     (save-upload! upload-name
-                                                   upload-info appengine-generated-dir)))
-                            {}
-                            raw-uploads)]
-        (ds/delete! upload-session)
-        (let [resp (hit-callback req uploads (:success_path upload-session))]
-          ;; just return it to the user's browser
-          resp)))))
+    (wrap-multipart-params
+     (fn [req]
+       (let [uri (:uri req)
+             key-string (.substring uri (inc (.lastIndexOf uri "/")))
+             key-object (KeyFactory/stringToKey key-string)
+             upload-session (ds/retrieve BlobUploadSession key-object
+                                         :kind "__BlobUploadSession__")
+             raw-uploads (:multipart-params req)
+             uploads (reduce (fn [acc [upload-name upload-info]]
+                               (if (map? upload-info)
+                                   (assoc acc upload-name
+                                          (save-upload! upload-name
+                                                        upload-info appengine-generated-dir))
+                                   acc))
+                             {}
+                             raw-uploads)]
+         (ds/delete! upload-session)
+         (let [resp (hit-callback req uploads (:success_path upload-session))]
+           ;; just return it to the user's browser
+           resp))))))

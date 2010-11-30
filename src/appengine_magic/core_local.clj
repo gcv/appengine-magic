@@ -2,8 +2,7 @@
 
 (use 'appengine-magic.local-env-helpers
      '[appengine-magic.servlet :only [servlet]]
-     '[ring.middleware.file :only [wrap-file]]
-     '[ring.middleware.multipart-params :only [wrap-multipart-params]])
+     '[ring.middleware.file :only [wrap-file]])
 
 (require '[appengine-magic.jetty :as jetty]
          '[appengine-magic.blobstore-upload :as blobstore-upload])
@@ -55,8 +54,7 @@
            handler-servlet]
       "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
       "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)
-      "/_ah/upload" (servlet (wrap-multipart-params
-                              (blobstore-upload/make-blob-upload-handler war-root)))
+      "/_ah/upload" (servlet (blobstore-upload/make-blob-upload-handler war-root))
       ;;"/_ah/img" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
       "/_ah/channel/jsapi" (com.google.appengine.api.channel.dev.ServeScriptServlet.)
       "/_ah/channel/dev" (com.google.appengine.api.channel.dev.LocalChannelServlet.)

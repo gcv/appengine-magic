@@ -20,7 +20,7 @@
 
 
 (defn make-attachment [filename data]
-  (MailService$Attachment. filename (if (instance? (class (.getBytes "")) data)
+  (MailService$Attachment. filename (if (instance? (class (byte-array 0)) data)
                                         data
                                         (.getBytes data))))
 

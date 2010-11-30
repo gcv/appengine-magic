@@ -1,5 +1,6 @@
 (ns appengine-magic.services.blobstore
-  (:require [appengine-magic.core :as core])
+  (:require [appengine-magic.core :as core]
+            [appengine-magic.services.datastore :as ds])
   (:import [com.google.appengine.api.blobstore ByteRange BlobKey
             BlobstoreService BlobstoreServiceFactory]
            [javax.servlet.http HttpServletRequest HttpServletResponse]))
@@ -14,18 +15,12 @@
   @*blobstore-service*)
 
 
-(defn- make-blob-key [x]
-  (if (instance? BlobKey x)
-      x
-      (BlobKey. x)))
-
-
 (defn upload-url [success-path]
   (.createUploadUrl (get-blobstore-service) success-path))
 
 
 (defn delete! [& blobs]
-  (let [blobs (map make-blob-key blobs)]
+  (let [blobs (map ds/as-blob-key blobs)]
     (.delete (get-blobstore-service) (into-array blobs))))
 
 
@@ -39,9 +34,9 @@
 
 (defn- serve-helper
   ([blob-key, ^:HttpServletResponse response]
-     (.serve (get-blobstore-service) (make-blob-key blob-key) response))
+     (.serve (get-blobstore-service) (ds/as-blob-key blob-key) response))
   ([blob-key, start, end, ^:HttpServletResponse response]
-     (.serve (get-blobstore-service) (make-blob-key blob-key) (ByteRange. start end) response)))
+     (.serve (get-blobstore-service) (ds/as-blob-key blob-key) (ByteRange. start end) response)))
 
 
 (defn serve [request blob-key]
