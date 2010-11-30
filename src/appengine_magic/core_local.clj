@@ -91,7 +91,7 @@
       {"/" handler-servlet
        "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
        "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)
-       "/_ah/upload" (servlet (blobstore-upload/make-blob-upload-handler war-root))
+       "/_ah/upload/*" (servlet (blobstore-upload/make-blob-upload-handler war-root))
        ;;"/_ah/img" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
        "/_ah/channel/jsapi" (com.google.appengine.api.channel.dev.ServeScriptServlet.)
        "/_ah/channel/dev" (com.google.appengine.api.channel.dev.LocalChannelServlet.)
