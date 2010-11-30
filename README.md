@@ -94,7 +94,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.3.1-SNAPSHOT"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.3.1"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
