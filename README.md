@@ -705,6 +705,58 @@ HTTP requests to external services.
   finished loading.
 
 
+### Channel service
+
+App Engine has an implementation of server push through its Channel service
+(`appengine-magic.services.channel`). Using it requires a combination of
+client-side JavaScript event callbacks, and channel management on the
+server.
+
+Conceptually, the server maintains one or more channels associated with a
+channel group key (this is a small number; it is probably safest to assume only
+one channel per group key). The server opens a channel on the group key, which
+generates a channel ID. This ID must be passed to the connecting client; the
+client then uses this ID to receive messages from the server.
+
+- `create-channel <channel-group-key>`: creates a new channel and returns its
+  ID.
+- `make-message <channel-group-key> <message-string>`: makes a message object
+  destined for all channels associated with the given group key.
+- `send <message-object>`: sends the given message object.
+- `send <channel-group-key> <message-string>`: sends the given string to the
+  given channel group.
+
+NB: The current version of the Channel service does not help with channel
+bookkeeping. It probably cleans up idle channels internally, but does not inform
+the application of this. The application is responsible for keeping track of
+active channels.
+
+The client needs to load the JavaScript code at `/_ah/channel/jsapi`:
+
+    <script src="/_ah/channel/jsapi" type="text/javascript"></script>
+
+Once this library loads, the client must initiate a request in which the server
+can return the channel ID. Once this is done, the rest of the client API looks
+like this:
+
+    // read this from a normal server response
+    var channel_id = ...;
+
+    // open a "socket" to the server
+    var channel = new goog.appengine.Channel(channel_id);
+    var socket = channel.open();
+
+    // implement these callbacks to take action when an event occurs
+    socket.onopen = function(evt) { var data = evt.data; ... };
+    socket.onmessage = function(evt) { var data = evt.data; ... };
+    socket.onerror = function(evt) { var data = evt.data; ... };
+    socket.onclose = function(evt) { var data = evt.data; ... };
+
+NB: The development implementations of the Channel service just poll the server
+for updates, and merely emulate server push. If you watch a browser request
+console, you'll see the polling requests.
+
+
 
 ## Limitations
 
@@ -714,7 +766,6 @@ HTTP requests to external services.
 The following Google services are not yet tested in the REPL environment:
 
 - Images
-- Channels
 - Multitenancy
 - Capabilities
 - OAuth

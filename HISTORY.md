@@ -1,5 +1,6 @@
 ## 0.4.0 (???)
 
+* Added the Channel service.
 * Made `swank.core/break` work inside Ring handlers (using middleware included
   from Ring).
 * Added the ability to directly execute App Engine API calls from the REPL.
