@@ -1,5 +1,6 @@
 ## 0.4.0 (???)
 
+* Added the Images service.
 * Breaking change: removed `appengine-magic.services.url-fetch/fetch-async`
   function and replaced its functionality with a new `:async?` keyword to
   `appengine-magic.services.url-fetch/fetch`.

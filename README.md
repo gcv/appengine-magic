@@ -704,6 +704,42 @@ HTTP requests to external services.
   it has not yet finished loading.
 
 
+### Images service
+
+With `appengine-magic.services.images`, an application can (1) apply simple
+transformations to images, either in the blobstore or saved in byte arrays, and
+(2) access blobstore images through a CDN, with limited resizing capability.
+
+- `get-image <image-arg>`: if `image-arg` is a string or a blob key, returns an
+  image reference to this blob; if `image-arg` is a byte array, returns an image
+  corresponding to this byte array.
+- `serving-url <blob-key>`: returns a URL pointing directly at a blob image in a
+  Google content delivery network.
+  * `:size`: some resized versions of the given blob are available.
+  * `:crop?`: some sizes can be cropped instead of resized.
+- `transform <image-arg> <transforms>`: applies one or more transformations to
+  an image and returns the result as an instance of
+  `com.google.appengine.api.images.Image`. `Image/getImageData` returns an array
+  of bytes, useful as a response body. The `image-arg` argument can be an
+  instance of `Image`, or a string blob key reference, or a byte array. The
+  `transforms` argument is a vector of transformation objects, created using the
+  transformation functions below.Keyword arguments:
+  * `:async?`: if true, makes the `transform` function return a future-like
+    object.
+  * `:quality`: a value from 1 to 100.
+  * `:format`: the output format, either `:jpeg` (alternatively `:jpg`) or
+    `:png`.
+- Transformation functions:
+  * `crop* <left-x> <top-y> <right-x> <bottom-y>`: crops an image, each argument
+    is a fractional value from 0.0 to 1.0.
+  * `im-feeling-lucky*`: tries to automatically correct color and contrast; does
+    nothing in the development environment.
+  * `resize* <width> <height>`
+  * `rotate* <degrees-clockwise>`
+  * `horizontal-flip*`
+  * `vertical-flip*`
+
+
 ### Channel service
 
 App Engine has an implementation of server push through its Channel service
@@ -764,7 +800,7 @@ console, you'll see the polling requests.
 
 The following Google services are not yet tested in the REPL environment:
 
-- Images
+- Compositing in the Images API
 - Multitenancy
 - Capabilities
 - OAuth
