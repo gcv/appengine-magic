@@ -4,7 +4,7 @@
            [com.google.apphosting.api ApiProxy ApiProxy$Environment]
            [com.google.appengine.tools.development ApiProxyLocalFactory ApiProxyLocalImpl
             LocalServerEnvironment]
-           com.google.appengine.api.labs.taskqueue.dev.LocalTaskQueue))
+           com.google.appengine.api.taskqueue.dev.LocalTaskQueue))
 
 
 (defonce *current-app-id* (atom nil))
