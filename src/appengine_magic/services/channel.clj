@@ -14,13 +14,16 @@
 
 (defn create-channel
   "Returns a channel ID."
-  [channel-group-key]
+  [^String channel-group-key]
   (.createChannel (get-channel-service) channel-group-key))
 
 
-(defn make-message [channel-group-key message]
+(defn make-message [^String channel-group-key, ^String message]
   (ChannelMessage. channel-group-key message))
 
 
-(defn send [message]
-  (.sendMessage (get-channel-service) message))
+(defn send
+  ([^ChannelMessage message]
+     (.sendMessage (get-channel-service) message))
+  ([^String channel-group-key, ^String message]
+     (send (make-message channel-group-key message))))
