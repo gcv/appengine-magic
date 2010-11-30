@@ -89,13 +89,13 @@
              (com.google.apphosting.utils.servlet.TransactionCleanupFilter.)
              (com.google.appengine.api.blobstore.dev.ServeBlobFilter.)]}
       {"/" handler-servlet
+       ;; These mappings are from webdefault.xml in appengine-local-runtime-*.jar.
        "/_ah/login" (com.google.appengine.api.users.dev.LocalLoginServlet.)
        "/_ah/logout" (com.google.appengine.api.users.dev.LocalLogoutServlet.)
        "/_ah/upload/*" (servlet (blobstore-upload/make-blob-upload-handler war-root))
-       ;;"/_ah/img" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
+       "/_ah/img/*" (com.google.appengine.api.images.dev.LocalBlobImageServlet.)
        "/_ah/channel/jsapi" (com.google.appengine.api.channel.dev.ServeScriptServlet.)
        "/_ah/channel/dev" (com.google.appengine.api.channel.dev.LocalChannelServlet.)
-       ;; These mappings are from webdefault.xml in appengine-local-runtime-*.jar.
        "/_ah/sessioncleanup" (com.google.apphosting.utils.servlet.SessionCleanupServlet.)
        "/_ah/admin" (com.google.apphosting.utils.servlet.DatastoreViewerServlet.)
        "/_ah/admin/" (com.google.apphosting.utils.servlet.DatastoreViewerServlet.)
