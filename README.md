@@ -700,9 +700,8 @@ HTTP requests to external services.
     without an error; if false, throws an exception instead.
   * `:follow-redirects`: if true (default), follows request redirects.
   * `:deadline`: deadline for the requst, in seconds, expressed as a double.
-- `fetch-async <url>` (optional keywords same as `fetch`): works like `fetch`,
-  but returns a future-like object. May block when derefed if it has not yet
-  finished loading.
+  * `:async?`: if true, returns a future-like object. May block when derefed if
+  it has not yet finished loading.
 
 
 ### Channel service

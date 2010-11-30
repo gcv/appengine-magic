@@ -1,5 +1,8 @@
 ## 0.4.0 (???)
 
+* Breaking change: removed `appengine-magic.services.url-fetch/fetch-async`
+  function and replaced its functionality with a new `:async?` keyword to
+  `appengine-magic.services.url-fetch/fetch`.
 * Added the Channel service.
 * Made `swank.core/break` work inside Ring handlers (using middleware included
   from Ring).
