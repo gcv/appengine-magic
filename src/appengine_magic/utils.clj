@@ -43,6 +43,23 @@
           (recur))))))
 
 
+(defn derefify-future
+  "Cribbed from clojure.core/future-call. Returns the result of a custom
+   function of the future itself for deref."
+  [f & {:keys [deref-fn] :or {deref-fn (fn [f] (.get f))}}]
+  (reify
+    ;; clojure.lang.IDeref interface
+    clojure.lang.IDeref
+    (deref [this] (deref-fn this))
+    ;; java.util.concurrent.Future interface
+    java.util.concurrent.Future
+    (get [_] (.get f))
+    (get [_ timeout unit] (.get f timeout unit))
+    (isCancelled [_] (.isCancelled f))
+    (isDone [_] (.isDone f))
+    (cancel [_ interrupt?] (.cancel f interrupt?))))
+
+
 (defn dash_ [s]
   (.replaceAll s "-" "_"))
 

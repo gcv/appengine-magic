@@ -1,4 +1,5 @@
 (ns appengine-magic.services.url-fetch
+  (:use [appengine-magic.utils :only [derefify-future]])
   (:import [com.google.appengine.api.urlfetch
             URLFetchServiceFactory
             FetchOptions
@@ -84,31 +85,16 @@
                       without error. If false, throw an exception instead.
     :follow-redirects Self-explanatory boolean.
     :deadline         Deadline for the request, in seconds.
+    :async?           Perform the request asynchronously and return future-
+                      like object.
 
   Note that :allow-truncate, :follow-redirects and :deadline use the
   AppEngine defaults, whatever they are."
-  
-  [url & opts]
-  (parse-response (.fetch (get-urlfetch-service)
-                          (apply make-request (urlify url) opts))))
-
-(defn- derefify-future
-  "Cribbed from clojure.core/future-call, but returns the result of a
-   custom function of no-args for deref."  
-  [f deref-fn]
-  (reify
-   clojure.lang.IDeref
-   (deref [_] (deref-fn))
-   java.util.concurrent.Future
-   (get [_] (.get f))
-   (get [_ timeout unit] (.get f timeout unit))
-   (isCancelled [_] (.isCancelled f))
-   (isDone [_] (.isDone f))
-   (cancel [_ interrupt?] (.cancel f interrupt?))))
-
-(defn fetch-async
-  "Just like fetch, but returns a future-like object."
-  [url & opts]
-  (let [f (.fetchAsync (get-urlfetch-service)
-                       (apply make-request (urlify url) opts))]
-    (derefify-future f #(parse-response (.get f)))))
+  [url & {:keys [async?] :or {async? false} :as opts}]
+  (let [opts (flatten (vec opts))]
+    (if async?
+        (derefify-future (.fetchAsync (get-urlfetch-service)
+                                      (apply make-request (urlify url) opts))
+                         :deref-fn #(parse-response (.get %)))
+        (parse-response (.fetch (get-urlfetch-service)
+                                (apply make-request (urlify url) opts))))))
