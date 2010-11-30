@@ -19,7 +19,7 @@
   repository.
 
 
-## 0.3.1 (???)
+## 0.3.1 (2010-11-30)
 
 * Added `as-*` type conversion functions to the Datastore service.
 * Breaking change: `appengine-magic.services.blobstore/uploaded-blobs` now takes
