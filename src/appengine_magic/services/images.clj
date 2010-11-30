@@ -20,16 +20,16 @@
    :png ImagesService$OutputEncoding/PNG})
 
 
-(defonce *composite-anchor*
-  {:bottom Composite$Anchor/BOTTOM_CENTER
-   :bottom-left Composite$Anchor/BOTTOM_LEFT
-   :bottom-right Composite$Anchor/BOTTOM_RIGHT
-   :center Composite$Anchor/CENTER_CENTER
-   :center-left Composite$Anchor/CENTER_LEFT
-   :center-right Composite$Anchor/CENTER_RIGHT
-   :top Composite$Anchor/TOP_CENTER
-   :top-left Composite$Anchor/TOP_LEFT
-   :top-right Composite$Anchor/TOP_RIGHT})
+;; (defonce *composite-anchor*
+;;   {:bottom Composite$Anchor/BOTTOM_CENTER
+;;    :bottom-left Composite$Anchor/BOTTOM_LEFT
+;;    :bottom-right Composite$Anchor/BOTTOM_RIGHT
+;;    :center Composite$Anchor/CENTER_CENTER
+;;    :center-left Composite$Anchor/CENTER_LEFT
+;;    :center-right Composite$Anchor/CENTER_RIGHT
+;;    :top Composite$Anchor/TOP_CENTER
+;;    :top-left Composite$Anchor/TOP_LEFT
+;;    :top-right Composite$Anchor/TOP_RIGHT})
 
 
 (defrecord ImageHistogram [red green blue])
@@ -61,13 +61,6 @@
 ;;; ----------------------------------------------------------------------------
 ;;; transformations
 ;;; ----------------------------------------------------------------------------
-
-(defn composite* [image-arg offset-x offset-y opacity anchor-arg]
-  (let [image (get-image image-arg)
-        anchor (*composite-anchor* anchor-arg)]
-    (ImagesServiceFactory/makeComposite image (int offset-x) (int offset-y)
-                                        (float opacity) anchor)))
-
 
 (defn crop* [left-x top-y right-x bottom-y]
   (ImagesServiceFactory/makeCrop (double left-x) (double top-y)
