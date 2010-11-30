@@ -58,7 +58,8 @@
     (if follow-redirects
       (.followRedirects fetch-options)
       (.doNotFollowRedirects fetch-options))
-    (.setDeadline fetch-options (double deadline))
+    (when-not (nil? deadline)
+      (.setDeadline fetch-options (double deadline)))
     (let [method-obj (method {:delete HTTPMethod/DELETE
                               :get    HTTPMethod/GET
                               :head   HTTPMethod/HEAD
