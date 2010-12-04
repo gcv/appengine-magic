@@ -495,6 +495,20 @@ A few simple examples:
   * `as-text`: casts a string to `com.google.appengine.api.datastore.Text`.
   * `as-link`: casts a string to `com.google.appengine.api.datastore.Link`.
 
+The Clojure interface to the Datastore has an additional feature: any entity
+field may be marked with the `^:clj` metadata tag:
+
+    (ds/defentity TestEntity [^:key test-id, ^:clj some-table])
+
+The values of fields marked with the `^:clj` tag will go into the datastore as
+strings produced by Clojure's `prn-str` function, and they will be retrieved as
+Clojure objects read by `read-string`. In other words, `^:clj` fields will be
+serialized and retrieved using Clojure's reader. This is quite helpful for
+dealing with types which the datastore does not support: specifically maps (not
+even `java.util.HashMap` works) and sets (not even `java.util.HashSet`
+works). Keep in mind, however, that these fields are stored as instances of
+`com.google.appengine.api.datastore.Text`, which the datastore does not index.
+
 
 ### Blobstore
 
