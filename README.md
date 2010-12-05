@@ -815,7 +815,8 @@ console, you'll see the polling requests.
 The following Google services are not yet tested in the REPL environment:
 
 - Compositing in the Images API
-- Multitenancy
+- Multitenancy (namespaces)
+- Metadata queries (in the datastore API)
 - Capabilities
 - OAuth
 - XMPP
