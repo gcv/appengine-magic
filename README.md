@@ -761,19 +761,19 @@ App Engine has an implementation of server push through its Channel service
 client-side JavaScript event callbacks, and channel management on the
 server.
 
-Conceptually, the server maintains one or more channels associated with a
-channel group key (this is a small number; it is probably safest to assume only
-one channel per group key). The server opens a channel on the group key, which
-generates a channel ID. This ID must be passed to the connecting client; the
-client then uses this ID to receive messages from the server.
+Conceptually, the server maintains one or more channels associated with a client
+ID (this is a small number; it is probably safest to assume only one channel per
+ID). The server opens a channel, which generates a channel token. This token
+must be passed to the connecting client; the client then uses the token to
+receive messages from the server.
 
-- `create-channel <channel-group-key>`: creates a new channel and returns its
-  ID.
-- `make-message <channel-group-key> <message-string>`: makes a message object
-  destined for all channels associated with the given group key.
+- `create-channel <client-id>`: creates a new channel and returns a token;
+  JavaScript code will use this token to connect to the server.
+- `make-message <client-id> <message-string>`: makes a message object destined
+  for all channels associated with the given client ID.
 - `send <message-object>`: sends the given message object.
-- `send <channel-group-key> <message-string>`: sends the given string to the
-  given channel group.
+- `send <client-id> <message-string>`: sends the given string to the given
+  client.
 
 NB: The current version of the Channel service does not help with channel
 bookkeeping. It probably cleans up idle channels internally, but does not inform
@@ -789,10 +789,10 @@ can return the channel ID. Once this is done, the rest of the client API looks
 like this:
 
     // read this from a normal server response
-    var channel_id = ...;
+    var channel_token = ...;
 
     // open a "socket" to the server
-    var channel = new goog.appengine.Channel(channel_id);
+    var channel = new goog.appengine.Channel(channel_token);
     var socket = channel.open();
 
     // implement these callbacks to take action when an event occurs
