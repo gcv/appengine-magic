@@ -6,7 +6,9 @@
 
 
 (defn appengine-prepare [project]
-  (let [prj-display-name (or (:appengine-display-name project) (:name project))
+  (let [prj-application (or (:appengine-application project) (:name project))
+        prj-display-name (or (:appengine-display-name project) (:name project))
+        prj-servlet (or (:appengine-entry-servlet project) "app_servlet")
         resources-dir (File. (:resources-path project))
         lib-dir (File. (:library-path project))
         lib-dev-dir (File. lib-dir "dev")
@@ -19,7 +21,10 @@
     ;; compile all
     (let [project-with-aot (if (contains? project :aot)
                                project
-                               (assoc project :aot :all))]
+                               (assoc project
+                                 :keep-non-project-classes true
+                                 :aot [(symbol (format "%s.%s"
+                                                       (_dash prj-application) prj-servlet))]))]
       (leiningen.compile/compile project-with-aot))
     ;; delete existing content of target lib/
     (lancet/delete {:dir (.getPath target-lib-dir)})
