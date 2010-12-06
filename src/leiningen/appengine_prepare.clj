@@ -6,15 +6,12 @@
 
 
 (defn appengine-prepare [project]
-  (let [prj-application (or (:appengine-application project) (:name project))
-        prj-display-name (or (:appengine-display-name project) (:name project))
-        prj-servlet (or (:appengine-entry-servlet project) "app_servlet")
+  (let [prj-display-name (or (:appengine-display-name project) (:name project))
         resources-dir (File. (:resources-path project))
         lib-dir (File. (:library-path project))
         lib-dev-dir (File. lib-dir "dev")
         WEB-INF-dir (File. resources-dir "WEB-INF")
         target-lib-dir (File. WEB-INF-dir "lib")
-        target-app-jar (File. target-lib-dir (str prj-application ".jar"))
         compile-path (File. (:compile-path project))
         compile-path-exists? (.isDirectory compile-path)
         compile-path-empty? (= 0 (-> compile-path .list seq count))]
@@ -22,19 +19,16 @@
     ;; compile all
     (let [project-with-aot (if (contains? project :aot)
                                project
-                               ;; For projects which do not define any
-                               ;; namespaces for AOT compilation, just include
-                               ;; the entry-point servlet.
-                               (assoc project
-                                 :aot [(symbol (format "%s.%s"
-                                                       (_dash prj-application) prj-servlet))]))]
+                               (assoc project :aot :all))]
       (leiningen.compile/compile project-with-aot))
     ;; delete existing content of target lib/
     (lancet/delete {:dir (.getPath target-lib-dir)})
     ;; prepare destination lib/ directory
     (lancet/mkdir {:dir target-lib-dir})
     ;; make a jar of the compiled app, and put it in WEB-INF/lib
-    (leiningen.jar/jar project)
+    (leiningen.jar/jar (merge project
+                              {:omit-source true
+                               :jar-exclusions [#"^WEB-INF/appengine-generated.*$"]}))
     (lancet/move {:file (leiningen.jar/get-jar-filename project)
                   :todir (.getPath target-lib-dir)})
     ;; projects which do not normally use AOT may need some cleanup

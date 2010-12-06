@@ -1,5 +1,6 @@
 (defproject appengine-magic "0.4.0-SNAPSHOT"
   :description "Google App Engine library for Clojure."
+  :min-lein-version "1.4.0"
   :repositories {"releases" "https://github.com/gcv/maven-repository/raw/master/releases/"
                  "snapshots" "https://github.com/gcv/maven-repository/raw/master/snapshots/"}
   :dependencies [[org.clojure/clojure "1.2.0"]
