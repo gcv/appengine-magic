@@ -26,8 +26,8 @@ releases.
 ## Dependencies
 
 * Clojure 1.2.0
-* Leiningen 1.3.1
-* Google App Engine SDK 1.3.8
+* Leiningen 1.4.0
+* Google App Engine SDK 1.4.0
 * swank-clojure 1.2.1 (optional)
 
 
@@ -830,9 +830,10 @@ interfaces for them, and may lack mappings for any necessary supporting URLs.
 The `appengine-prepare` task currently copies all your static files and other
 resources into the jar file containing your application. This means that these
 resources deploy to App Engine both as separate files, and inside the jar. This
-should not cause problems for the time being (except for increased space), and
-will be fixed when Leiningen 1.4 comes out (which supports a `:jar-exclusions`
-project property).
+should not cause problems for the time being (except for increased space).
+
+A patch to the `appengine-prepare` task, with a safe rule to use with the
+`:jar-exclusions` project property, is welcome.
 
 
 
