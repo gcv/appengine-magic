@@ -607,6 +607,20 @@ This is confusing, but a Compojure example will help.
 
     (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
 
+Note that the Blobstore API primarily allows for browser-driven file
+uploads. appengine-magic includes a hack which allows an application to upload a
+blob without a browser.
+
+- `upload-hack <contents> <success-path>`: upload contents into the
+  blobstore. When the upload completes, App Engine will make a request to the
+  `<success-path>` URL, just like in a regular blobstore upload. This callback
+  should record the blob key of the uploaded data. `<contents>` is either a
+  single map, or a vector of maps, each with the following keys:
+  * `:field`: the name of the imitation form field; used as keys in the result
+    of `uploaded-blobs`.
+  * `:filename`
+  * `:bytes`: byte array of the uploaded data.
+
 
 ### Mail service
 

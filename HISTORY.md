@@ -1,5 +1,7 @@
 ## 0.4.0 (???)
 
+* Added a hack to allow uploads to the Blobstore service from an application,
+  without involving a web browser.
 * Modified the Datastore service to optionally support storing values of
   arbitrary readbly-printable Clojure types.
 * Added the Images service.
