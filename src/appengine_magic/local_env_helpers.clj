@@ -8,6 +8,9 @@
 
 
 (defonce *current-app-id* (atom nil))
+(defonce *current-app-version* (atom nil))
+
+(defonce *current-server-port* (atom nil))
 
 
 (defn make-thread-environment-proxy [& {:keys [user-email user-admin?]}]
@@ -19,7 +22,8 @@
     (getAttributes [] (java.util.HashMap.))
     (getEmail [] (or user-email ""))
     (isAdmin [] (or (Boolean/parseBoolean user-admin?) false))
-    (getAppId [] @*current-app-id*)))
+    (getAppId [] @*current-app-id*)
+    (getVersionId [] @*current-app-version*)))
 
 
 (defn appengine-init [#^File dir, port]
@@ -27,6 +31,9 @@
         application-id (if (.exists appengine-web-file)
                            (first (xpath-value appengine-web-file "//application"))
                            "appengine-magic-app")
+        application-version (if (.exists appengine-web-file)
+                                (first (xpath-value appengine-web-file "//version"))
+                                "none")
         proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
                       (getAppDir [] dir)
@@ -35,6 +42,8 @@
                       (waitForServerToStart [] nil))
         api-proxy (.create proxy-factory environment)]
     (reset! *current-app-id* application-id)
+    (reset! *current-app-version* application-version)
+    (reset! *current-server-port* port)
     (ApiProxy/setDelegate api-proxy)
     ;; This installs a thread environment onto the REPL thread and allows App
     ;; Engine API calls to work in the REPL.
