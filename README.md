@@ -208,6 +208,14 @@ non-production mode. `appengine-magic.core/appengine-environment-type` returns a
 keyword corresponding to the current environment: `:production`,
 `:dev-appserver`, and `:interactive`.
 
+Additionally, the `appengine-magic.core/appengine-base-url` function returns a
+string with the base hostname of the current application, e.g.,
+`http://my-app.appspot.com`. In production, this always points to the
+`appspot.com` domain. In interactive mode, this always points to `localhost`,
+but also includes the correct port. The `:https?` keyword determines if the
+schema in the URL should be `https://`, but is ignored in interactive mode. This
+function does not work in `dev_appserver.sh` at all.
+
 
 ### Automatic testing code
 
