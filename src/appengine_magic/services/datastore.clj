@@ -210,12 +210,16 @@
 
 
 (defn save!-helper [entity-record]
-  (.put (get-datastore-service) (get-entity-object entity-record)))
+  (let [new-key (.put (get-datastore-service) (get-entity-object entity-record))]
+    (with-meta entity-record (merge (meta entity-record) {:key new-key}))))
 
 
 (defn- save-many-helper! [entity-record-seq]
-  (let [entities (map get-entity-object entity-record-seq)]
-    (.put (get-datastore-service) entities)))
+  (let [entities (map get-entity-object entity-record-seq)
+        new-keys (.put (get-datastore-service) entities)]
+    (map (fn [e k]
+           (with-meta e (merge (meta e) {:key k})))
+         entity-record-seq new-keys)))
 
 
 
