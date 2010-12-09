@@ -2,11 +2,15 @@
   (:use appengine-magic.utils)
   (:import [com.google.appengine.api.datastore DatastoreService DatastoreServiceFactory
             DatastoreServiceConfig DatastoreServiceConfig$Builder
+            EntityNotFoundException
             ReadPolicy ReadPolicy$Consistency ImplicitTransactionManagementPolicy
             Key KeyFactory
             Entity
             FetchOptions$Builder
-            Query Query$FilterOperator Query$SortDirection]))
+            Query Query$FilterOperator Query$SortDirection]
+           ;; types
+           [com.google.appengine.api.datastore Blob ShortBlob Text Link]
+           com.google.appengine.api.blobstore.BlobKey))
 
 
 
@@ -28,6 +32,42 @@
 (defonce *datastore-implicit-transaction-policy-map*
   {:auto ImplicitTransactionManagementPolicy/AUTO
    :none ImplicitTransactionManagementPolicy/NONE})
+
+
+
+;;; ----------------------------------------------------------------------------
+;;; datastore type conversion functions
+;;; ----------------------------------------------------------------------------
+
+(let [byte-array-class (class (byte-array 0))]
+
+  (defn as-blob [data]
+    (cond (instance? Blob data) data
+          (instance? byte-array-class data) (Blob. data)
+          :else (Blob. (.getBytes data))))
+
+  (defn as-short-blob [data]
+    (cond (instance? ShortBlob data) data
+          (instance? byte-array-class data) (ShortBlob. data)
+          :else (ShortBlob. (.getBytes data)))))
+
+
+(defn as-blob-key [x]
+  (if (instance? BlobKey x)
+      x
+      (BlobKey. x)))
+
+
+(defn as-text [x]
+  (if (instance? Text x)
+      x
+      (Text. x)))
+
+
+(defn as-link [x]
+  (if (instance? Link x)
+      x
+      (Link. x)))
 
 
 
@@ -69,7 +109,15 @@
    field becomes the key. If a record has no :key metadata tags, then a key is
    automatically generated for it. In either case, the key becomes part of the
    entity's metadata. Entity retrieval operations must set the :key metadata on
-   returned entity records."
+   returned entity records.
+
+   In addition, any field may be marked with a ^:clj metadata tag. This tag
+   means that the field's value goes through prn-str on its way out and through
+   read-string on its way in. It allows automatic serialization for some types
+   not directly supported by the datastore."
+  (get-clj-properties [this]
+    "Returns a set of all properties which pass through the Clojure reader on
+     their way in and out of the datastore.")
   (get-key-object [this] [this parent]
     "Returns nil if no tag is specified in the record definition, and no :key
      metadata exists. Otherwise returns a Key object. Specify optional entity
@@ -149,12 +197,15 @@
 
 (defn get-entity-object-helper [entity-record kind]
   (let [key-object (get-key-object entity-record)
+        clj-properties (get-clj-properties entity-record)
         entity (if key-object
                    (Entity. key-object)
                    (Entity. kind))]
     (doseq [[property-kw value] entity-record]
       (let [property-name (.substring (str property-kw) 1)]
-        (.setProperty entity property-name (coerce-clojure-type value))))
+        (.setProperty entity property-name (if (contains? clj-properties property-kw)
+                                               (Text. (prn-str value))
+                                               (coerce-clojure-type value)))))
     entity))
 
 
@@ -242,11 +293,13 @@
     fetch-options-object))
 
 
-(defn- entity->properties [raw-properties]
+(defn- entity->properties [raw-properties clj-properties]
   (reduce (fn [m [k v]]
-            (assoc m
-              (keyword k)
-              (coerce-java-type v)))
+            (let [k (keyword k)]
+             (assoc m k (if (contains? clj-properties k)
+                            (binding [*read-eval* false]
+                              (read-string (.getValue v)))
+                            (coerce-java-type v)))))
           {}
           raw-properties))
 
@@ -256,16 +309,22 @@
 ;;; user functions and macros
 ;;; ----------------------------------------------------------------------------
 
-(defn retrieve [entity-record-type key-value-or-values &
-                {:keys [parent kind]
-                 :or {kind (unqualified-name (.getName entity-record-type))}}]
+(defn- retrieve-helper [entity-record-type key-value-or-values &
+                        {:keys [parent kind]
+                         :or {kind (unqualified-name (.getName entity-record-type))}}]
   (let [make-key-from-value (fn [key-value real-parent]
-                              (if real-parent
-                                  (KeyFactory/createKey (get-key-object real-parent)
-                                                        kind
-                                                        (coerce-key-value-type key-value))
-                                  (KeyFactory/createKey kind
-                                                        (coerce-key-value-type key-value))))]
+                              (cond
+                               ;; already a Key object
+                               (instance? Key key-value) key-value
+                               ;; parent provided
+                               real-parent
+                               (KeyFactory/createKey (get-key-object real-parent)
+                                                     kind
+                                                     (coerce-key-value-type key-value))
+                               ;; no parent provided
+                               :else
+                               (KeyFactory/createKey kind
+                                                     (coerce-key-value-type key-value))))]
     (if (sequential? key-value-or-values)
         ;; handles sequences of values
         (let [key-objects (map (fn [kv] (if (sequential? kv)
@@ -276,7 +335,9 @@
               model-record (record entity-record-type)]
           (map #(let [v (.getValue %)]
                   (with-meta
-                    (merge model-record (entity->properties (.getProperties v)))
+                    (merge model-record
+                           (entity->properties (.getProperties v)
+                                               (get-clj-properties model-record)))
                     {:key (.getKey v)}))
                entities))
         ;; handles singleton values
@@ -285,8 +346,23 @@
               raw-properties (into {} (.getProperties entity))
               entity-record (record entity-record-type)]
           (with-meta
-            (merge entity-record (entity->properties raw-properties))
+            (merge entity-record (entity->properties raw-properties
+                                                     (get-clj-properties entity-record)))
             {:key (.getKey entity)})))))
+
+
+(defn retrieve [entity-record-type key-value-or-values &
+                {:keys [parent kind]
+                 :or {kind (unqualified-name (.getName entity-record-type))}}]
+  (try
+    (retrieve-helper entity-record-type key-value-or-values :parent parent :kind kind)
+    (catch EntityNotFoundException _ nil)))
+
+
+(defn exists? [entity-record-type key-value-or-values &
+               {:keys [parent kind]
+                :or {kind (unqualified-name (.getName entity-record-type))}}]
+  (not (nil? (retrieve entity-record-type key-value-or-values :parent parent :kind kind))))
 
 
 (defn delete! [target]
@@ -299,9 +375,16 @@
                      {:keys [kind]
                       :or {kind (unqualified-name name)}}]
   (let [key-property-name (first (filter #(= (:tag (meta %)) :key) properties))
-        key-property (if key-property-name (keyword (str key-property-name)) nil)]
+        key-property (if key-property-name (keyword (str key-property-name)) nil)
+        ;; XXX: The keyword and str composition below works
+        ;; around a weird Clojure bug (see
+        ;; http://groups.google.com/group/clojure-dev/browse_thread/thread/655f6e7d1b312f17).
+        clj-properties (set (map (comp keyword str)
+                                 (filter #(= (:tag (meta %)) :clj) properties)))]
     `(defrecord ~name ~properties
        EntityProtocol
+       (get-clj-properties [this#]
+         ~clj-properties)
        (get-key-object [this#]
          (get-key-object-helper this# ~key-property ~kind nil))
        (get-key-object [this# parent#]
@@ -366,7 +449,9 @@
                                        ;; unknown type; just use a basic EntityProtocol
                                        (EntityBase.))]
                   (map #(with-meta
-                          (merge model-record (entity->properties (.getProperties %)))
+                          (merge model-record
+                                 (entity->properties (.getProperties %)
+                                                     (get-clj-properties model-record)))
                           {:key (.getKey %)})
                        results)))))
 

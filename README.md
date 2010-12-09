@@ -18,7 +18,7 @@ README file tries to describe everything you need to know to use App Engine with
 Clojure, but does not explain the details of App Engine semantics. Please refer
 to Google's official documentation for details.
 
-Please read the (HISTORY)[HISTORY.md] file to learn what changed in recent
+Please read the [HISTORY](HISTORY.md) file to learn what changed in recent
 releases.
 
 
@@ -26,8 +26,8 @@ releases.
 ## Dependencies
 
 * Clojure 1.2.0
-* Leiningen 1.3.1
-* Google App Engine SDK 1.3.7
+* Leiningen 1.4.0
+* Google App Engine SDK 1.4.0
 * swank-clojure 1.2.1 (optional)
 
 
@@ -55,6 +55,29 @@ To use appengine-magic effectively, you need the following:
    `resources/WEB-INF/` directory. You should also place all static files that
    your application uses in `resources/`.
 
+Here is a sample `core.clj`, using Compojure (other Ring-compatible frameworks,
+such as [Moustache](https://github.com/cgrand/moustache), also work):
+
+    (ns simple-example.core
+      (:use compojure.core)
+      (:require [appengine-magic.core :as ae]))
+
+    (defroutes simple-example-app-handler
+      (GET "/" req
+           {:status 200
+            :headers {"Content-Type" "text/plain"}
+            :body "Hello, world!"})
+      (GET "/hello/:name" [name]
+           {:status 200
+            :headers {"Content-Type" "text/plain"}
+            :body (format "Hello, %s!" name)})
+      (ANY "*" _
+           {:status 200
+            :headers {"Content-Type" "text/plain"}
+            :body "not found"}))
+
+    (ae/def-appengine-app simple-example-app #'simple-example-app-handler)
+
 
 
 ## Getting Started
@@ -71,9 +94,8 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`:
-   - add `:namespaces [<project>.app_servlet]` (or use the equivalent `:aot` directive)
-   - add `[appengine-magic "0.3.0"]` to your `:dev-dependencies`
+3. Edit `project.clj`: add `[appengine-magic "0.4.0-SNAPSHOT"]` to your
+   `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
@@ -84,10 +106,19 @@ functionality.
    descriptor). These files should contain reasonable starting defaults for your
    application.
 
+With regard to AOT-compilation, if your project needs it, then you must include
+`<project>.app_servlet` in Leiningen's `:aot` directive. Otherwise, omit the
+`:aot` directive altogether. The `lein appengine-prepare` task will take care of
+AOT-compiling the entry point servlet and cleaning up afterwards.
+
 The default `.gitignore` file produced by Leiningen works well with the
 resulting project, but do take a careful look at it. In particular, you should
 avoid checking in `resources/WEB-INF/lib/` or `resources/WEB-INF/classes/`: let
 Leiningen take care of managing those directories.
+
+NB: When editing the Leiningen `project.clj` file, do not point `:compile-path`
+or `:library-path` to `resources/WEB-INF/classes/` and
+`resources/WEB-INF/lib/`. This will interfere with deployment.
 
 
 ### Development process
@@ -104,10 +135,17 @@ any framework which produces a Ring-compatible handler. Then, just pass the
 resulting Ring handler to `def-appengine-app`.
 
 To test your work interactively, you can control a Jetty instance from the REPL
-using `appengine-magic.core/start` and `appengine-magic.core/stop`. Examples
-(assuming you are in your application's `core` namespace, your application is
-named `foo`, and you aliased `appengine-magic.core` to `ae`):
+using `appengine-magic.core/start` and `appengine-magic.core/stop`. In addition,
+a convenience function, `appengine-magic.core/serve`, will either start or restart
+a running instance. Examples (assuming you are in your application's `core`
+namespace and your application is named `foo`):
 
+    (require '[appengine-magic.core :as ae])
+
+    ;; recommended: use this to start or restart an app
+    (ae/serve foo-app)
+
+    ;; or use these lower-level functions
     (ae/start foo-app)
     (ae/stop)
     (ae/start foo-app :port 8095)
@@ -116,12 +154,15 @@ named `foo`, and you aliased `appengine-magic.core` to `ae`):
 Recompiling the functions which make up your Ring handler should produce
 instantaneous results.
 
+If you use SLIME, then the `swank.core/break` function works even inside a Ring
+handler.
+
 
 ### Testing with dev_appserver.sh
 
-1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, then
-   copies the necessary classes and library dependencies to your application's
-   `resources/WEB-INF/classes/` and `resources/WEB-INF/lib/` directories.
+1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, makes a
+   jar of your application, and copies it, along with all your library
+   dependencies, to your application's `resources/WEB-INF/lib/` directories.
 2. Run `dev_appserver.sh` with a path to your application's `resources/`
    directory.
 
@@ -135,12 +176,16 @@ put a file called `index.html` there, it will become a default welcome file.
 ### Classpath resources
 
 Put all classpath resources you expect to need at runtime in `resources/`. You
-can then access them using the `appengine-magic/open-resource-stream`, which
-returns a `java.io.BufferedInputStream` instance. Please note that, by default,
-App Engine then makes these resources available as static files. To change this
-behavior, you need to modify `appengine-web.xml` file. See [Google
+can then access them using the `appengine-magic.core/open-resource-stream`,
+which returns a `java.io.BufferedInputStream` instance. Please note that, by
+default, App Engine then makes these resources available as static files. To
+change this behavior, you need to modify `appengine-web.xml` file. See [Google
 documentation](http://code.google.com/appengine/docs/java/config/appconfig.html)
 for details.
+
+Do not use direct methods like `java.io.File` or
+`ClassLoader/getSystemClassLoader` to access classpath resources; they do not
+work consistently across all App Engine environments.
 
 
 ### Deployment to App Engine
@@ -152,6 +197,24 @@ for details.
    classes and libraries for deployment.
 3. When you are ready to deploy, just run `appcfg.sh update` with a path to your
    application's `resources/` directory.
+
+
+### Checking the runtime environment
+
+It is sometimes useful to know if the current execution environment is the
+production App Engine, `dev_appserver.sh`, or the interactive REPL. For example,
+you may wish to return more detailed error messages and stack traces in
+non-production mode. `appengine-magic.core/appengine-environment-type` returns a
+keyword corresponding to the current environment: `:production`,
+`:dev-appserver`, and `:interactive`.
+
+Additionally, the `appengine-magic.core/appengine-base-url` function returns a
+string with the base hostname of the current application, e.g.,
+`http://my-app.appspot.com`. In production, this always points to the
+`appspot.com` domain. In interactive mode, this always points to `localhost`,
+but also includes the correct port. The `:https?` keyword determines if the
+schema in the URL should be `https://`, but is ignored in interactive mode. This
+function does not work in `dev_appserver.sh` at all.
 
 
 ### Automatic testing code
@@ -170,17 +233,130 @@ Then, write `deftest` forms normally; you can use App Engine services just as yo
 would in application code.
 
 
+### File uploads and multipart forms
+
+A Ring application requires the use of middleware to convert the request body
+into something useful in the request map. Ring comes with
+`ring.middleware.multipart-params/wrap-multipart-params` which does this;
+unfortunately, this middleware uses classes restricted in App Engine. To deal
+with this, `appengine-magic` has its own middleware.
+
+`appengine-magic.multipart-params/wrap-multipart-params` works just like the
+Ring equivalent, except file upload parameters become maps with a `:bytes` key
+(instead of `:tempfile`). This key contains a byte array with the upload data.
+
+A full Compojure example (includes features from the Datastore service):
+
+    (use 'compojure.core
+         '[appengine-magic.multipart-params :only [wrap-multipart-params]])
+
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.datastore :as ds])
+
+    (ds/defentity Image [^:key name, content-type, data])
+
+    (defroutes upload-images-demo-app-handler
+      ;; HTML upload form
+      (GET "/upload" _
+           {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (str "<html><body>"
+                       "<form action=\"/done\" "
+                       "method=\"post\" enctype=\"multipart/form-data\">"
+                       "<input type=\"file\" name=\"file-upload\">"
+                       "<input type=\"submit\" value=\"Submit\">"
+                       "</form>"
+                       "</body></html>")})
+      ;; handles the uploaded data
+      (POST "/done" _
+            (wrap-multipart-params
+             (fn [req]
+               (let [img (get (:params req) "file-upload")
+                     img-entity (Image. (:filename img)
+                                        (:content-type img)
+                                        (ds/as-blob (:bytes img)))]
+                 (ds/save! img-entity)
+                 {:status 200
+                  :headers {"Content-Type" "text/plain"}
+                  :body (with-out-str
+                          (println (:params req)))}))))
+      ;; hit this route to retrieve an uploaded file
+      (GET ["/img/:name", :name #".*"] [name]
+           (let [img (ds/retrieve Image name)]
+             (if (nil? img)
+                 {:status 404}
+                 {:status 200
+                  :headers {"Content-Type" (:content-type img)}
+                  :body (.getBytes (:data img))}))))
+
+    (ae/def-appengine-app upload-images-demo-app #'upload-images-demo-app-handler)
+
+Please note that you do not need to use this middleware with the Blobstore
+service. App Engine takes care decoding the upload in its internal handlers, and
+the upload callbacks do not contain multipart data.
+
+
+### Managing multiple environments
+
+Most web applications use several environments internally: production, plus
+various staging and development installations. App Engine supports multiple
+versions in its `appengine-web.xml` file, but does nothing to help deal with
+installing to different full environments. Since different versions of App
+Engine applications share the same blobstore and datastore, distinguishing
+between production and staging using only versions is dangerous.
+
+`appengine-magic` has a mechanism to help deal with multiple environments. The
+Leiningen `appengine-update` task replaces the use of `appcfg.sh update`, and a
+new entry in `project.clj` manages applications and versions.
+
+1. Rename your `WEB-INF/application-web.xml` file to
+   `WEB-INF/application-web.xml.tmpl`. For safety reasons, `appengine-update`
+   will not run if a normal `application-web.xml` exists. For clarity, you
+   should blank out the contents of the `<application>` and `<version>` tags of
+   the template file (but leave the tags in place).
+2. Add a new entry to `project.clj`: `:appengine-app-versions`. This entry is a
+   map from application name to application version. Example:
+
+       :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
+                                "myapp-staging"    "2010-11-27 22:05"
+                                "myapp-dev1"       "2830"
+                                "myapp-dev2"       "2893"}
+
+   The `myapp-` key strings correspond to App Engine applications, registered
+   and managed through the App Engine console. The value strings are the
+   versions `appengine-update` will install if invoked on that application.
+3. Add a new entry to `project.clj`: `:appengine-sdk`. The App Engine SDK
+   location is necessary to execute the actual production deployment. This value
+   can be just a string, representing a path. Alternatively, for teams whose
+   members keep the App Engine SDK in different locations, this value can be a
+   map from username to path string. Examples:
+
+       :appengine-sdk "/opt/appengine-java-sdk"
+       :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
+                       "bob"     "/Users/bob/lib/appengine-java-sdk"
+                       "charlie" "/home/charlie/appengine/sdk/current"}
+
+4. Run `lein appengine-update <application>`, where the argument is an
+   application name from the `:appengine-app-versions` map.
+
+If you use this mechanism, be aware that `dev_appserver.sh` will no longer work
+(since your project no longer defines a simple `appengine-web.xml` file). To run
+that process, use `lein appengine-dev-appserver <application>`.
+
+
 
 ## App Engine Services
 
 appengine-magic provides convenience wrappers for using App Engine services from
-Clojure.
+Clojure. Most of these API calls will work when invoked from the REPL, but only
+if an application is running — that is, it was launched using
+`appengine-magic.core/start`.
 
 
 ### User service
 
-The `appengine-magic.services.user` namespace (suggested alias: `ae-user`)
-provides the following functions for handling users.
+The `appengine-magic.services.user` namespace provides the following functions
+for handling users.
 
 - `current-user`: returns the `com.google.appengine.api.users.User` for the
   currently logged-in user.
@@ -194,9 +370,9 @@ provides the following functions for handling users.
 
 ### Memcache service
 
-The `appengine-magic.services.memcache` namespace (suggested alias:
-`ae-memcache`) provides the following functions for the App Engine memcache. See
-App Engine documentation for detailed explanations of the underlying Java API.
+The `appengine-magic.services.memcache` namespace provides the following
+functions for the App Engine memcache. See App Engine documentation for detailed
+explanations of the underlying Java API.
 
 - `statistics`: returns the current memcache statistics.
 - `clear-all!`: wipes the entire cache for all namespaces.
@@ -225,42 +401,44 @@ App Engine documentation for detailed explanations of the underlying Java API.
 
 ### Datastore
 
-The `appengine-magic.services.datastore` namespace (suggested alias: `ae-ds`)
-provides a fairly complete interface for the App Engine datastore.
+The `appengine-magic.services.datastore` namespace provides a fairly complete
+interface for the App Engine datastore.
 
 A few simple examples:
 
-    (ae-ds/defentity Author [^:key name, birthday])
-    (ae-ds/defentity Book [^:key isbn, title, author])
+    (require '[appengine-magic.services.datastore :as ds])
+
+    (ds/defentity Author [^:key name, birthday])
+    (ds/defentity Book [^:key isbn, title, author])
 
     ;; Writes three authors to the datastore.
     (let [will (Author. "Shakespeare, William" nil)
           geoff (Author. "Chaucer, Geoffrey" "1343")
           oscar (Author. "Wilde, Oscar" "1854-10-16")]
       ;; First, just write Will, without a birthday.
-      (ae-ds/save! will)
+      (ds/save! will)
       ;; Now overwrite Will with an entity containing a birthday, and also
       ;; write the other two authors.
-      (ae-ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
+      (ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
 
     ;; Retrieves two authors and writes book entites.
-    (let [will (first (ae-ds/query :kind Author :filter (= :name "Shakespeare, William")))
-          geoff (first (ae-ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
-                                                          (= :birthday "1343")]))]
-      (ae-ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
-      (ae-ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
-      (ae-ds/save! (Book. "0393039854" "The First Folio" will)))
+    (let [will (first (ds/query :kind Author :filter (= :name "Shakespeare, William")))
+          geoff (first (ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
+                                                       (= :birthday "1343")]))]
+      (ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
+      (ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
+      (ds/save! (Book. "0393039854" "The First Folio" will)))
 
     ;; Retrieves all Chaucer books in the datastore, sorting by descending title and
     ;; then by ISBN.
-    (let [geoff (ae-ds/retrieve Author "Chaucer, Geoffrey")]
-      (ae-ds/query :kind Book
-                   :filter (= :author geoff)
-                   :sort [[title :dsc] :isbn]))
+    (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
+      (ds/query :kind Book
+                :filter (= :author geoff)
+                :sort [[title :dsc] :isbn]))
 
     ;; Deletes all books by Chaucer.
-    (let [geoff (ae-ds/retrieve Author "Chaucer, Geoffrey")]
-      (ae-ds/delete! (ae-ds/query :kind Book :filter (= :author geoff))))
+    (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
+      (ds/delete! (ds/query :kind Book :filter (= :author geoff))))
 
 - `defentity` (optional keyword: `:kind`): defines an entity record type
   suitable for storing in the App Engine datastore. These entities work just
@@ -290,7 +468,11 @@ A few simple examples:
   of the given type with the given primary key value. If the target entity
   belongs to an entity group, specify the parent using the optional keyword. If
   the target entity was stored with a different kind from the entity record
-  type, specify the actual kind using the optional keyword.
+  type, specify the actual kind using the optional keyword. This function
+  returns `nil` if the given key of the given kind does not exist.
+- `exists? <entity-record-type> <primary-key>` (optional keywords the same as
+  for `retrieve`): used exactly like `retrieve`, but returns `true` if the given
+  entity exists and `false` otherwise.
 - `query` (optional keywords: `:kind`, `:ancestor`, `:filter`, `:sort`,
   `:keys-only?`, `:count-only?`, `:in-transaction?`, `:limit`, `:offset`,
   `:prefetch-size`, `:chunk-size`, `:entity-record-type`): runs a query with the
@@ -311,30 +493,369 @@ A few simple examples:
 - `init-datastore-service`: not normally needed. Only use this method if you
   want to modify the the read consistency and implicit transaction policies of
   the datastore service.
+- Type conversion functions: these help cast your data into a Java type which
+  receives special treatment from App Engine.
+  * `as-blob`: casts a byte array to `com.google.appengine.api.datastore.Blob`.
+  * `as-short-blob`: casts a byte array to
+    `com.google.appengine.api.datastore.ShortBlob`.
+  * `as-blob-key`: casts a string to
+    `com.google.appengine.api.blobstore.BlobKey`.
+  * `as-text`: casts a string to `com.google.appengine.api.datastore.Text`.
+  * `as-link`: casts a string to `com.google.appengine.api.datastore.Link`.
+
+The Clojure interface to the Datastore has an additional feature: any entity
+field may be marked with the `^:clj` metadata tag:
+
+    (ds/defentity TestEntity [^:key test-id, ^:clj some-table])
+
+The values of fields marked with the `^:clj` tag will go into the datastore as
+strings produced by Clojure's `prn-str` function, and they will be retrieved as
+Clojure objects read by `read-string`. In other words, `^:clj` fields will be
+serialized and retrieved using Clojure's reader. This is quite helpful for
+dealing with types which the datastore does not support: specifically maps (not
+even `java.util.HashMap` works) and sets (not even `java.util.HashSet`
+works). Keep in mind, however, that these fields are stored as instances of
+`com.google.appengine.api.datastore.Text`, which the datastore does not index.
+
+
+### Blobstore
+
+The `appengine-magic.services.blobstore` namespace helps with the App Engine
+Blobstore service, designed for hosting large files. Note that the production
+App Engine only enables the Blobstore service for applications with billing
+enabled.
+
+Using the Blobstore generally requires three components: an upload session, an
+HTTP `multipart/form-data` file upload (usually initiated through an HTML form),
+and an upload callback.
+
+1. Your application must first initiate an upload session; this gives it a URL
+   to use for the corresponding HTTP POST request.
+2. Your application must provide a proper upload form, with the `action`
+   pointing to the URL of the upload session, the `method` set to `post`, and
+   `enctype` set to `multipart/form-data`; each uploaded file must have a `name`
+   attribute.
+3. Your application must provide an upload callback URL. App Engine will make an
+   HTTP POST request to that URL once the file upload completes. This callback's
+   request will contain information about the uploaded files. The callback
+   should save this data in some way that makes sense for the application. The
+   callback implementation must end with an invocation of the
+   `callback-complete` function. Do not attempt to return a Ring response map
+   from an upload handler.
+4. A Ring handler which serves up a blob must end with an invocation of the
+   `serve` function. Do not attempt to return a Ring response map from a
+   blob-serving handler.
+
+NB: In the REPL environment and in `dev_appserver.sh`, using the Blobstore
+writes entities into the datastore: `__BlobInfo__` and
+`__BlobUploadSession__`. This does not happen in the production environment.
+
+- `upload-url <success-path>`: initializes an upload session and returns its
+  URL. `success-path` is the URL of the upload callback.
+- `delete! <blob-keys>`: deletes the given blobs by their keys.
+- `serve <ring-request-map> <blob-key>`: modifies the given Ring request map to
+  serve up the given blob.
+- `callback-complete <ring-request-map> <destination>`: redirects the uploading
+  HTTP client to the given destination.
+- `uploaded-blobs <ring-request-map>`: returns a map of form upload name fields
+  to blob keys.
+
+This is confusing, but a Compojure example will help.
+
+    (use 'compojure.core)
+
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.datastore :as ds]
+             '[appengine-magic.services.blobstore :as blobs])
+
+    (ds/defentity UploadedFile [^:key blob-key])
+
+    (defroutes upload-demo-app-handler
+      ;; HTML upload form; note the upload-url call
+      (GET "/upload" _
+           {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (str "<html><body>"
+                       "<form action=\""
+                       (blobs/upload-url "/done")
+                       "\" method=\"post\" enctype=\"multipart/form-data\">"
+                       "<input type=\"file\" name=\"file1\">"
+                       "<input type=\"file\" name=\"file2\">"
+                       "<input type=\"file\" name=\"file3\">"
+                       "<input type=\"submit\" value=\"Submit\">"
+                       "</form>"
+                       "</body></html>")})
+      ;; success callback
+      (POST "/done" req
+           (let [blob-map (blobs/uploaded-blobs req)]
+             (ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
+                        (UploadedFile. (.getKeyString (blob-map "file2")))
+                        (UploadedFile. (.getKeyString (blob-map "file3")))])
+             (blobs/callback-complete req "/list")))
+      ;; a list of all uploaded files with links
+      (GET "/list" _
+           {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (apply str `["<html><body>"
+                               ~@(map #(format " <a href=\"/serve/%s\">file</a>"
+                                               (:blob-key %))
+                                      (ds/query :kind UploadedFile))
+                               "</body></html>"])})
+      ;; serves the given blob by key
+      (GET "/serve/:blob-key" {{:strs [blob-key]} :params :as req}
+           (blobs/serve req blob-key)))
+
+    (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
+
+Note that the Blobstore API primarily allows for browser-driven file
+uploads. appengine-magic includes a hack which allows an application to upload a
+blob without a browser.
+
+- `upload-hack <contents> <success-path>`: upload contents into the
+  blobstore. When the upload completes, App Engine will make a request to the
+  `<success-path>` URL, just like in a regular blobstore upload. This callback
+  should record the blob key of the uploaded data. `<contents>` is either a
+  single map, or a vector of maps, each with the following keys:
+  * `:field`: the name of the imitation form field; used as keys in the result
+    of `uploaded-blobs`.
+  * `:filename`
+  * `:bytes`: byte array of the uploaded data.
+
+
+### Mail service
+
+The `appengine-magic.services.mail` namespace provides helper functions for
+sending and receiving mail in an App Engine application.
+
+To send an mail message, construct it using `make-message` and `make-attachment`
+functions, and send it using the `send` function.
+
+To receive incoming mail, first read and understand the relevant section in
+(Google's official
+documentation)[http://code.google.com/appengine/docs/java/mail/receiving.html]. You
+need to modify your application's `appengine-web.xml`, and you should add a
+security constraint for `/_ah/mail/*` URLs in your `web.xml`. In your
+application add a Ring handler for POST methods for URLs which begin with
+`/_ah/mail`.
+
+- `make-attachment <filename> <bytes>`: constructs an attachment object for a
+  file with the given filename and consisting of the given bytes.
+- `make-message`: this function has many keyword parameters, and constructs a
+  message object. The parameters are self-explanatory: `:from`, `:to` (takes a
+  string or a vector), `:subject`, `:cc` (takes a string or a vector), `:bcc`
+  (takes a string or a vector), `:reply-to` (takes a string or a vector),
+  `:text-body`, `:html-body`, and `:attachments` (takes a vector).
+- `send <msg>`: sends the given message.
+- `parse-message <ring-request-map>`: returns a Clojure record of type
+  `appengine-magic.services.mail.MailMessage`. Call this function inside the
+  POST handler for `/_ah/mail/*`, and it will return the message sent in the
+  given HTTP request.
+
+NB: With Compojure, the only route which seems to work in the production App
+Engine for handling mail is `/_ah/mail/*`.
+
+    (use 'compojure.core)
+
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.mail :as mail])
+
+    (defroutes mail-demo-app-handler
+      ;; sending
+      (GET "/mail" _
+           (let [att1 (mail/make-attachment "hello.txt" (.getBytes "hello world"))
+                 att2 (mail/make-attachment "jk.txt" (.getBytes "just kidding"))
+                 msg (mail/make-message :from "one@example.com"
+                                        :to "two@example.com"
+                                        :cc ["three@example.com" "four@example.com"]
+                                        :subject "Test message."
+                                        :text-body "Sent from appengine-magic."
+                                        :attachments [att1 att2])]
+             (mail/send msg)
+             {:status 200
+              :headers {"Content-Type" "text/plain"}
+              :body "sent"}))
+      ;; receiving
+      (POST "/_ah/mail/*" req
+           (let [msg (mail/parse-message req)]
+             ;; use the resulting MailMessage object
+             {:status 200})))
+
+    (ae/def-appengine-app mail-demo-app #'mail-demo-app-handler)
+
+
+### Task Queues service
+
+The `appengine-magic.services.task-queues` namespace has helper functions for
+using task queues. As always, read [Google's documentation on task
+queues](http://code.google.com/appengine/docs/java/taskqueue/overview.html), in
+particular the sections on configuring `queue.xml`, and on securing task URLs in
+`web.xml`. In addition, [the section on scheduled
+tasks](http://code.google.com/appengine/docs/java/config/cron.html) (`cron.xml`)
+is useful.
+
+Use the `add!` function to add a new task to a queue, and provide a callback URL
+which implements the actual work performed by the task. The current App Engine
+SDK does not seem to have any API calls for removing tasks from a queue, but
+does support this from the administration console.
+
+- `add! :url <callback-url>` (optional keywords: `:queue`,
+  `:join-current-transaction?`, `:params`, `:headers`, `:payload`, `:method`,
+  `:countdown-ms`, `:eta-ms`, `:eta`). The `:url` keyword is required.
+  * `:queue`: name of the queue to use; if omitted, uses the system default
+    queue. If provided, the queue must be defined in `queue.xml`.
+  * `:join-current-transaction?`: defaults to false. If true, and if this occurs
+    inside a datastore transaction context, then only adds this task to the
+    queue if the transaction commits successfully.
+  * `:params`: a map of form parameter key-value pairs for the callback. Do not
+    combine with the `:payload` keyword.
+  * `:headers`: a map of extra HTTP headers sent to the callback.
+  * `:payload`: provides data for the callback. Can be a string, a vector of the
+    form `[<string> <charset>]`, or a vector of the form `[<byte-array>
+    <content-type>]`.
+  * `:method`: supports `:post`, `:delete`, `:get`, `:head`, and `:put`. Default
+    is `:post`.
+  * `:countdown-ms`, `:eta-ms`, and `:eta`: scheduling parameters. Only one of
+    these may be used at a time. `:countdown-ms` schedules a task for the given
+    number of milliseconds from the time the `add!` function ran. `:eta-ms`
+    schedules a task for the given number of milliseconds from the beginning of
+    the epoch. `:eta` schedules execution for the time given by the a
+    `java.util.Date` object.
+
+
+### URL Fetch service
+
+`appengine-magic.services.url-fetch` lets App Engine applications send arbitrary
+HTTP requests to external services.
+
+- `fetch <url>` (optional keywords: `:method`, `:headers`, `:payload`,
+  `:allow-truncate`, `:follow-redirects`, `:deadline`).
+  * `:method`: `:get` (default), `:post`, `:delete`, `:head`, or `:put`.
+  * `:headers`: a map from header name (string) to value (string).
+  * `:payload`: a Java byte array.
+  * `:allow-truncate`: if true, allow App Engine to truncate a large response
+    without an error; if false, throws an exception instead.
+  * `:follow-redirects`: if true (default), follows request redirects.
+  * `:deadline`: deadline for the requst, in seconds, expressed as a double.
+  * `:async?`: if true, returns a future-like object. May block when derefed if
+  it has not yet finished loading.
+
+
+### Images service
+
+With `appengine-magic.services.images`, an application can (1) apply simple
+transformations to images, either in the blobstore or saved in byte arrays, and
+(2) access blobstore images through a CDN, with limited resizing capability.
+
+- `get-image <image-arg>`: if `image-arg` is a string or a blob key, returns an
+  image reference to this blob; if `image-arg` is a byte array, returns an image
+  corresponding to this byte array.
+- `serving-url <blob-key>`: returns a URL pointing directly at a blob image in a
+  Google content delivery network.
+  * `:size`: some resized versions of the given blob are available.
+  * `:crop?`: some sizes can be cropped instead of resized.
+- `transform <image-arg> <transforms>`: applies one or more transformations to
+  an image and returns the result as an instance of
+  `com.google.appengine.api.images.Image`. `Image/getImageData` returns an array
+  of bytes, useful as a response body. The `image-arg` argument can be an
+  instance of `Image`, or a string blob key reference, or a byte array. The
+  `transforms` argument is a vector of transformation objects, created using the
+  transformation functions below.Keyword arguments:
+  * `:async?`: if true, makes the `transform` function return a future-like
+    object.
+  * `:quality`: a value from 1 to 100.
+  * `:format`: the output format, either `:jpeg` (alternatively `:jpg`) or
+    `:png`.
+- Transformation functions:
+  * `crop* <left-x> <top-y> <right-x> <bottom-y>`: crops an image, each argument
+    is a fractional value from 0.0 to 1.0.
+  * `im-feeling-lucky*`: tries to automatically correct color and contrast; does
+    nothing in the development environment.
+  * `resize* <width> <height>`
+  * `rotate* <degrees-clockwise>`
+  * `horizontal-flip*`
+  * `vertical-flip*`
+
+
+### Channel service
+
+App Engine has an implementation of server push through its Channel service
+(`appengine-magic.services.channel`). Using it requires a combination of
+client-side JavaScript event callbacks, and channel management on the
+server.
+
+Conceptually, the server maintains one or more channels associated with a client
+ID (this is a small number; it is probably safest to assume only one channel per
+ID). The server opens a channel, which generates a channel token. This token
+must be passed to the connecting client; the client then uses the token to
+receive messages from the server.
+
+- `create-channel <client-id>`: creates a new channel and returns a token;
+  JavaScript code will use this token to connect to the server.
+- `make-message <client-id> <message-string>`: makes a message object destined
+  for all channels associated with the given client ID.
+- `send <message-object>`: sends the given message object.
+- `send <client-id> <message-string>`: sends the given string to the given
+  client.
+
+NB: The current version of the Channel service does not help with channel
+bookkeeping. It probably cleans up idle channels internally, but does not inform
+the application of this. The application is responsible for keeping track of
+active channels.
+
+The client needs to load the JavaScript code at `/_ah/channel/jsapi`:
+
+    <script src="/_ah/channel/jsapi" type="text/javascript"></script>
+
+Once this library loads, the client must initiate a request in which the server
+can return the channel ID. Once this is done, the rest of the client API looks
+like this:
+
+    // read this from a normal server response
+    var channel_token = ...;
+
+    // open a "socket" to the server
+    var channel = new goog.appengine.Channel(channel_token);
+    var socket = channel.open();
+
+    // implement these callbacks to take action when an event occurs
+    socket.onopen = function(evt) { var data = evt.data; ... };
+    socket.onmessage = function(evt) { var data = evt.data; ... };
+    socket.onerror = function(evt) { var data = evt.data; ... };
+    socket.onclose = function(evt) { var data = evt.data; ... };
+
+NB: The development implementations of the Channel service just poll the server
+for updates, and merely emulate server push. If you watch a browser request
+console, you'll see the polling requests.
+
 
 
 ## Limitations
 
-When using the interactive REPL environment, some App Engine services are more
-limited than in `dev_appserver.sh` or in deployment. Because the App Engine
-SDK's jars are a mess, and many are not available in Maven repositories,
-providing the same functionality in an interactive Clojure environment is tricky
-and error-prone. In particular, the administration console, `/_ah/admin` is not
-available in the REPL environment.
+
+### Incomplete features
 
 The following Google services are not yet tested in the REPL environment:
 
-- Blobstore
-- Images
-- Mail
-- Multitenancy
+- Compositing in the Images API
+- Multitenancy (namespaces)
+- Metadata queries (in the datastore API)
+- Capabilities
 - OAuth
-- Task queues
-- URL fetch
 - XMPP
 
 They may still work, but appengine-magic does not provide convenient Clojure
 interfaces for them, and may lack mappings for any necessary supporting URLs.
+
+
+### Resource duplication
+
+The `appengine-prepare` task currently copies all your static files and other
+resources into the jar file containing your application. This means that these
+resources deploy to App Engine both as separate files, and inside the jar. This
+should not cause problems for the time being (except for increased space).
+
+A patch to the `appengine-prepare` task, with a safe rule to use with the
+`:jar-exclusions` project property, is welcome.
 
 
 
@@ -352,6 +873,17 @@ Whenever you add a new dependency, no matter how innocuous, you should make sure
 your app still works. `dev_appserver.sh` is a good place to start, but you must
 also test in the main App Engine. The two do not always load classes the same
 way.
+
+
+
+## Contributors
+
+Many thanks to:
+
+* Brian Gruber
+* Marko Kocić
+* Conrad Barski
+* Yuri Niyazov
 
 
 

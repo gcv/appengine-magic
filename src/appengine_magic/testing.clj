@@ -1,12 +1,27 @@
 (ns appengine-magic.testing
   (:import [com.google.appengine.tools.development.testing LocalServiceTestHelper
-            LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit]))
+            LocalServiceTestConfig
+            LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
+            LocalMailServiceTestConfig
+            LocalDatastoreServiceTestConfig]))
 
 
 (def *memcache-size-units*
      {:bytes LocalMemcacheServiceTestConfig$SizeUnit/BYTES
       :kb LocalMemcacheServiceTestConfig$SizeUnit/KB
       :mb LocalMemcacheServiceTestConfig$SizeUnit/MB})
+
+
+(def *logging-levels*
+     {:all java.util.logging.Level/ALL
+      :severe java.util.logging.Level/SEVERE
+      :warning java.util.logging.Level/WARNING
+      :info java.util.logging.Level/INFO
+      :config java.util.logging.Level/CONFIG
+      :fine java.util.logging.Level/FINE
+      :finer java.util.logging.Level/FINER
+      :finest java.util.logging.Level/FINEST
+      :off java.util.logging.Level/OFF})
 
 
 (defn memcache [& {:keys [max-size size-units]}]
@@ -24,9 +39,35 @@
     lmstc))
 
 
+(defn datastore [& {:keys [storage? store-delay-ms
+                           max-txn-lifetime-ms max-query-lifetime-ms
+                           backing-store-location]
+                    :or {storage? false}}]
+  (let [ldstc (LocalDatastoreServiceTestConfig.)]
+    (.setNoStorage ldstc (not storage?))
+    (when-not (nil? store-delay-ms)
+      (.setStoreDelayMs ldstc store-delay-ms))
+    (when-not (nil? max-txn-lifetime-ms)
+      (.setMaxTxnLifetimeMs ldstc max-txn-lifetime-ms))
+    (when-not (nil? max-query-lifetime-ms)
+      (.setMaxQueryLifetimeMs ldstc max-query-lifetime-ms))
+    (when-not (nil? backing-store-location)
+      (.setBackingStoreLocation ldstc backing-store-location))
+    ldstc))
+
+
+(defn mail [& {:keys [log-mail-body? log-mail-level]
+               :or {log-mail-body? false
+                    log-mail-level :info}}]
+  (let [lmstc (LocalMailServiceTestConfig.)]
+    (.setLogMailBody lmstc log-mail-body?)
+    (.setLogMailLevel lmstc (*logging-levels* log-mail-level))
+    lmstc))
+
+
 (defn- make-local-services-fixture-fn [services]
   (fn [test-fn]
-    (let [helper (LocalServiceTestHelper. (into-array services))]
+    (let [helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services))]
       (.setUp helper)
       (test-fn)
       (.tearDown helper))))
@@ -34,7 +75,7 @@
 
 (defn- local-services-helper
   ([]
-     [(memcache)])
+     [(memcache) (datastore) (mail)])
   ([services override]
      (let [services (if (= :all services) (local-services-helper) services)]
        (if (nil? override)

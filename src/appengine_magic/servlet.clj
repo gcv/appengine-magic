@@ -1,21 +1,13 @@
 ;;; This code is adapted from Ring (http://github.com/mmcgrana/ring).
 ;;;
-;;; Required changes from Ring:
-;;;   1. Remove dependencies which use Java classes blacklisted in App Engine.
-;;;   2. Include raw cookie data retrieved using the servlet API. This does not
-;;;      preclude using Ring's cookie middleware, but is required separately:
-;;;      App Engine services do not always use standard-compliant cookies which
-;;;      the Ring middleware parses correctly.
+;;; Required change from Ring: removed dependencies which use Java classes
+;;; blacklisted in App Engine.
 
 
 (ns appengine-magic.servlet
-  (:import [java.io File FileInputStream InputStream OutputStream]
-           java.nio.ByteBuffer
-           [java.nio.channels Channel Channels ReadableByteChannel WritableByteChannel]
+  (:use [appengine-magic.utils :only [copy-stream]])
+  (:import [java.io File FileInputStream InputStream ByteArrayInputStream OutputStream]
            [javax.servlet.http HttpServlet HttpServletRequest HttpServletResponse]))
-
-
-(defrecord Cookie [comment domain max-age name path secure value version])
 
 
 (defn- get-headers [^HttpServletRequest request]
@@ -25,21 +17,6 @@
           (enumeration-seq (.getHeaderNames request))))
 
 
-(defn- get-cookies [^HttpServletRequest request]
-  (reduce (fn [cookies ^javax.servlet.http.Cookie new-cookie]
-            (assoc cookies (.getName new-cookie)
-                   (Cookie. (.getComment new-cookie)
-                            (.getDomain new-cookie)
-                            (.getMaxAge new-cookie)
-                            (.getName new-cookie)
-                            (.getPath new-cookie)
-                            (.getSecure new-cookie)
-                            (.getValue new-cookie)
-                            (.getVersion new-cookie))))
-          {}
-          (.getCookies request)))
-
-
 (defn- make-request-map [^HttpServlet servlet
                          ^HttpServletRequest request
                          ^HttpServletResponse response]
@@ -47,7 +24,6 @@
    :response           response
    :request            request
    :servlet-context    (.getServletContext servlet)
-   :servlet-cookies    (get-cookies request)
    :server-port        (.getServerPort request)
    :server-name        (.getServerName request)
    :remote-addr        (.getRemoteAddr request)
@@ -74,53 +50,48 @@
     (.setContentType response content-type)))
 
 
-(defn- copy-stream [^InputStream input, ^OutputStream output]
-  (with-open [^ReadableByteChannel in-channel (Channels/newChannel input)
-              ^WritableByteChannel out-channel (Channels/newChannel output)]
-    (let [^ByteBuffer buf (ByteBuffer/allocateDirect (* 4 1024))]
-      (loop []
-        (when-not (= -1 (.read in-channel buf))
-          (.flip buf)
-          (.write out-channel buf)
-          (.compact buf)
-          (recur)))
-      (.flip buf)
-      (loop [] ; drain the buffer
-        (when (.hasRemaining buf)
-          (.write out-channel buf)
-          (recur))))))
-
-
 (defn- set-response-body [^HttpServletResponse response, body]
-  (cond (string? body)
-          (with-open [writer (.getWriter response)]
-            (.println writer body))
-        (seq? body)
-          (with-open [writer (.getWriter response)]
-            (doseq [chunk body]
-              (.print writer (str chunk))
-              (.flush writer)))
-        (instance? InputStream body)
-          (let [^InputStream b body]
-            (with-open [out (.getOutputStream response)]
-              (copy-stream b out)
-              (.close b)
-              (.flush out)))
-        (instance? File body)
-          (let [^File f body]
-            (with-open [stream (FileInputStream. f)]
-              (set-response-body response stream)))
-        (nil? body) nil
-        :else (throw (RuntimeException. (str "handler response body unknown" body)))))
+  (cond
+   ;; just a string
+   (string? body)
+   (with-open [writer (.getWriter response)]
+     (.print writer body))
+   ;; any Clojure seq
+   (seq? body)
+   (with-open [writer (.getWriter response)]
+     (doseq [chunk body]
+       (.print writer (str chunk))
+       (.flush writer)))
+   ;; a Java InputStream
+   (instance? InputStream body)
+   (with-open [out (.getOutputStream response)
+               ^InputStream b body]
+     (copy-stream b out)
+     (.flush out))
+   ;; serve up a File
+   (instance? File body)
+   (let [^File f body]
+     (with-open [stream (FileInputStream. f)]
+       (set-response-body response stream)))
+   ;; serve up a byte array
+   (instance? (class (byte-array 0)) body)
+   (with-open [in (ByteArrayInputStream. body)]
+     (set-response-body response in))
+   ;; nothing
+   (nil? body) nil
+   ;; unknown
+   :else (throw (RuntimeException. (str "handler response body unknown" body)))))
 
 
 (defn- adapt-servlet-response [^HttpServletResponse response,
-                               {:keys [status headers body] :as response-map}]
-  (if status
-      (.setStatus response status)
-      (throw (RuntimeException. "handler response status not set")))
-  (when headers (set-response-headers response headers))
-  (when body (set-response-body response body)))
+                               {:keys [commit? status headers body]
+                                :or {commit? true}}]
+  (when commit?
+    (if status
+        (.setStatus response status)
+        (throw (RuntimeException. "handler response status not set")))
+    (when headers (set-response-headers response headers))
+    (when body (set-response-body response body))))
 
 
 (defn make-servlet-service-method [ring-handler]
