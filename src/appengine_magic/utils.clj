@@ -3,11 +3,10 @@
            java.nio.ByteBuffer
            [java.nio.channels Channel Channels ReadableByteChannel WritableByteChannel]
            org.xml.sax.InputSource
-           javax.xml.parsers.DocumentBuilderFactory
-           [javax.xml.xpath XPathFactory XPathConstants]
-           javax.xml.transform.TransformerFactory
-           javax.xml.transform.dom.DOMSource
-           javax.xml.transform.stream.StreamResult))
+           [javax.xml parsers.DocumentBuilderFactory
+            xpath.XPathFactory xpath.XPathConstants
+            transform.TransformerFactory transform.dom.DOMSource
+            transform.stream.StreamResult]))
 
 
 ;;; Adapted from: http://groups.google.com/group/clojure/msg/5206fac13144ea99
