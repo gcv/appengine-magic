@@ -1,5 +1,6 @@
 (ns appengine-magic.services.task-queues
   (:require [appengine-magic.services.datastore :as ds])
+  (:use [clojure.contrib.string :only [as-str]])
   (:import java.util.Date
            [com.google.appengine.api.taskqueue Queue QueueFactory
             TaskOptions$Builder TaskOptions$Method]))
@@ -47,10 +48,10 @@
       (.header opts header-name header-value))
     ;; params
     (doseq [[param-name param-value] params]
-      (.param opts param-name (cond
-                               (string? param-value) param-value
-                               (instance? (class (byte-array 0)) param-value) param-value
-                               :else (str param-value))))
+      (.param opts (as-str param-name) (cond
+                                        (string? param-value) param-value
+                                        (instance? (class (byte-array 0)) param-value) param-value
+                                        :else (str param-value))))
     ;; HTTP method for hitting task
     (.method opts (*task-http-methods* method))
     ;; payload
@@ -86,5 +87,5 @@
      :else nil)
     ;; transactions and done
     (if join-current-transaction?
-        (.add queue-obj ds/*current-transaction* opts)
-        (.add queue-obj opts))))
+      (.add queue-obj ds/*current-transaction* opts)
+      (.add queue-obj opts))))
