@@ -1,5 +1,9 @@
 ## 0.4.0 (???)
 
+* Breaking change: the result object returned by the `fetch` function of the URL
+  Fetch service no longer converts header names to keywords.
+* Made it possible to store datastore entities in memcache during interactive
+  REPL development.
 * Added a hack to allow uploads to the Blobstore service from an application,
   without involving a web browser.
 * Modified the Datastore service to optionally support storing values of

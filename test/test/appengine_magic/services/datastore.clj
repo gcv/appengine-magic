@@ -16,8 +16,8 @@
   (let [alice (Author. "Alice")
         bob (Author. "Bob")
         charlie (Author. "Charlie")]
-    (ds/save! alice)
-    (ds/save! [bob charlie])
+    (is (= alice (ds/save! alice)))
+    (is (= [bob charlie] (ds/save! [bob charlie])))
     ;; basic retrieval
     (let [alice-retrieved (ds/retrieve Author "Alice")
           alice-queried (first (ds/query :kind Author :filter (= :name "Alice")))
@@ -42,15 +42,15 @@
 (deftest transactions
   (let [alice (Author. "Alice")
         article (Article. "Article 1" alice "The fine article." 0)]
-    (ds/save! [alice article])
+    (is (= [alice article] (ds/save! [alice article])))
     (let [comment-1 (ds/new* Comment ["FP" article alice "Comment 1."] :parent article)
           comment-2 (ds/new* Comment ["SP" article alice "Comment 2."] :parent article)]
       (ds/with-transaction
         (ds/save! (assoc article :comment-count (inc (:comment-count article))))
-        (ds/save! comment-1))
+        (is (= comment-1 (ds/save! comment-1))))
       (ds/with-transaction
         (let [article (ds/retrieve Article "Article 1")]
           (ds/save! (assoc article :comment-count (inc (:comment-count article))))
-          (ds/save! comment-2))))
+          (is (= comment-2 (ds/save! comment-2))))))
     (let [article (ds/retrieve Article "Article 1")]
       (is (= 2 (:comment-count article))))))

@@ -23,17 +23,16 @@
 			 response-code])
 
 (defn- parse-headers [headers]
-  (zipmap (map #(keyword (.getName %)) headers)
+  (zipmap (map #(.getName %) headers)
 	  (map #(.getValue %) headers)))
 
 (defn- make-headers [header-map]
   (map
    (fn [[name-key val]]
-     (com.google.appengine.api.urlfetch.HTTPHeader.
-      (if (keyword? name-key)
-          (.substring (str name-key) 1)
-          (str name-key))
-      val))
+     (HTTPHeader. (if (keyword? name-key)
+                      (.substring (str name-key) 1)
+                      (str name-key))
+                  val))
    header-map))
 
 (defn- parse-response
@@ -47,11 +46,11 @@
   [url &
    {:keys [method headers payload allow-truncate follow-redirects deadline]
     :or {method :get
-          headers {}
-          payload nil
-          allow-truncate FetchOptions/DEFAULT_ALLOW_TRUNCATE
-          follow-redirects FetchOptions/DEFAULT_FOLLOW_REDIRECTS
-          deadline FetchOptions/DEFAULT_DEADLINE}}]
+         headers {}
+         payload nil
+         allow-truncate FetchOptions/DEFAULT_ALLOW_TRUNCATE
+         follow-redirects FetchOptions/DEFAULT_FOLLOW_REDIRECTS
+         deadline FetchOptions/DEFAULT_DEADLINE}}]
   (let [fetch-options (FetchOptions$Builder/withDefaults)]
     (if allow-truncate
       (.allowTruncate fetch-options)
