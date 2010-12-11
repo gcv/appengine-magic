@@ -30,7 +30,7 @@
   (map
    (fn [[name-key val]]
      (HTTPHeader. (if (keyword? name-key)
-                      (.substring (str name-key) 1)
+                      (name name-key)
                       (str name-key))
                   val))
    header-map))

@@ -202,10 +202,9 @@
                    (Entity. key-object)
                    (Entity. kind))]
     (doseq [[property-kw value] entity-record]
-      (let [property-name (.substring (str property-kw) 1)]
-        (.setProperty entity property-name (if (contains? clj-properties property-kw)
-                                               (Text. (prn-str value))
-                                               (coerce-clojure-type value)))))
+      (.setProperty entity (name property-kw) (if (contains? clj-properties property-kw)
+                                                  (Text. (prn-str value))
+                                                  (coerce-clojure-type value))))
     entity))
 
 
@@ -259,7 +258,7 @@
               (not (nil? filter-property-kw))
               (not (nil? filter-value))
               (keyword? filter-property-kw))
-         (let [filter-property (.substring (str filter-property-kw) 1)
+         (let [filter-property (name filter-property-kw)
                filter-value (if (extends? EntityProtocol (class filter-value))
                                 (get-key-object filter-value)
                                 filter-value)]
@@ -278,8 +277,7 @@
          (and (not (nil? sort-property-kw))
               (not (nil? sort-direction))
               (keyword? sort-property-kw))
-         (let [sort-property (.substring (str sort-property-kw) 1)]
-           (.addSort query-object sort-property sort-direction))
+         (.addSort query-object (name sort-property-kw) sort-direction)
          ;; no sort definition
          (and (nil? sort-property-kw) (nil? sort-direction))
          nil
