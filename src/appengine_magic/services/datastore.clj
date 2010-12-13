@@ -223,7 +223,7 @@
 
 
 ;;; ----------------------------------------------------------------------------
-;;; query helper objects and functions
+;;; query helper objects and functions; do not use these directly
 ;;; ----------------------------------------------------------------------------
 
 (defrecord QueryFilter [operator property value])
@@ -510,3 +510,76 @@
                      ~start-cursor ~end-cursor
                      ~prefetch-size ~chunk-size
                      ~entity-record-type))))
+
+
+(defn- get-key-str-helper [key]
+  (let [str-key (str key)]
+    (if (empty? str-key)
+        (throw (IllegalArgumentException.
+                (str "get-key-str must be called on an object with a datastore key, "
+                     "i.e., an object already persisted with save!")))
+        str-key)))
+
+
+(defn key-str
+  "Given an object, or a kind and an object, returns a string representation of
+   the object's key, e.g., \"User(10)\". It must be called after an object
+   already has acquired a key. The kind may be a string representing a datastore
+   kind, or an entity record defined with defentity. This function provides a
+   useful general-purpose mechanism for determining a unique identifier for a
+   datastore entity. Note that the resulting key string cannot, by itself, be
+   used for datastore queries. It is likely to be more helpful for saving
+   entities in, e.g., memcache.
+
+   The object argument can be the result of a KeyFactory/keyToString call, an
+   existing Key, or an existing entity record instance.
+
+   > (key-str \"ahNhcHBlbmdpbmUtbWFnaWMtYXBwcgoLEgRVc2VyGAgM\")
+   \"User(8)\"
+   > (key-str User 8)
+   \"User(8)\"
+   > (key-str User \"8\")
+   \"User(8)\"
+   > (key-str user-object)
+   \"User(8)\""
+  ([obj]
+     (let [key (cond
+                ;; an entity; use its existing key
+                (extends? EntityProtocol (class obj))
+                (str (get-key-object obj))
+                ;; already a Key; use it
+                (instance? Key obj)
+                obj
+                ;; a string; make a Key
+                (string? obj)
+                (KeyFactory/stringToKey obj))]
+       (get-key-str-helper key)))
+  ([kind obj]
+     (let [kind (cond
+                 ;; already a string
+                 (string? kind)
+                 kind
+                 ;; probably an entity class
+                 (class? kind)
+                 (unqualified-name kind)
+                 ;; no clue
+                 :else (throw (IllegalArgumentException. "unsupported kind argument type")))
+           key (cond
+                ;; an entity; use its existing key
+                (extends? EntityProtocol (class obj))
+                (str (get-key-object obj))
+                ;; already a Key; use it
+                (instance? Key obj)
+                obj
+                ;; an ID, probably assigned by the datastore
+                (number? obj)
+                (KeyFactory/createKey kind (coerce-key-value-type obj))
+                ;; string - either a stringified number e.g. "8"
+                ;; or the result of calling KeyFactory/keyToString
+                ;; or something unrecognizable - throws IllegalArgumentException
+                (string? obj)
+                (if-let [long-key (try (Long/parseLong obj)
+                                       (catch NumberFormatException _ nil))]
+                    (KeyFactory/createKey kind long-key)
+                    (KeyFactory/stringToKey obj)))]
+       (get-key-str-helper key))))
