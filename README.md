@@ -459,6 +459,12 @@ A few simple examples:
   a newly-instantiated entity lacking an explicit primary key, this method
   returns nil. Entities properly brought under entity groups using `new*` will
   have hierarchical keys. You should rarely need to use this explicitly.
+- `key-str`: this utility function returns the string representation of a Key
+  object. The Key object may be given directly, or as the encoded result of call
+  to `com.google.appengine.api.datastore.KeyFactory/keyToString`. In addition,
+  the Key may be constructed by passing `key-str` the type (or kind string) of
+  the object and its ID. This function is probably most useful for generating
+  human-readable keys for storing entities in maps or memcache.
 - `save!`: calling this method on an entity writes it to the datastore, using
   the primary key returned by calling `get-key-object` on the entity. May be
   called on a sequence of entities.
