@@ -427,12 +427,12 @@
              (throw err#))))))
 
 
-(defn query* [kind ancestor filters sorts keys-only?
-              count-only? in-transaction?
-              limit offset
-              start-cursor end-cursor
-              prefetch-size chunk-size
-              entity-record-type]
+(defn query-helper [kind ancestor filters sorts keys-only?
+                    count-only? in-transaction?
+                    limit offset
+                    start-cursor end-cursor
+                    prefetch-size chunk-size
+                    entity-record-type]
   (let [query-object (make-query-object kind ancestor filters sorts keys-only?)
         fetch-options-object (make-fetch-options-object limit offset prefetch-size chunk-size)
         prepared-query (if (and in-transaction? *current-transaction*)
@@ -504,9 +504,9 @@
                               (QuerySort. sort-property# sort-dir#))
                             (QuerySort. sort-spec# Query$SortDirection/ASCENDING)))
                       ~sort)]
-       (query* ~kind ~ancestor filter# sort# ~keys-only?
-               ~count-only? ~in-transaction?
-               ~limit ~offset
-               ~start-cursor ~end-cursor
-               ~prefetch-size ~chunk-size
-               ~entity-record-type))))
+       (query-helper ~kind ~ancestor filter# sort# ~keys-only?
+                     ~count-only? ~in-transaction?
+                     ~limit ~offset
+                     ~start-cursor ~end-cursor
+                     ~prefetch-size ~chunk-size
+                     ~entity-record-type))))
