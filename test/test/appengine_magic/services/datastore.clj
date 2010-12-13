@@ -1,7 +1,8 @@
 (ns test.appengine-magic.services.datastore
   (:use clojure.test)
   (:require [appengine-magic.services.datastore :as ds]
-            [appengine-magic.testing :as ae-testing]))
+            [appengine-magic.testing :as ae-testing])
+  (:import com.google.appengine.api.datastore.KeyFactory))
 
 
 (use-fixtures :each (ae-testing/local-services :all))
@@ -10,6 +11,7 @@
 (ds/defentity Author [^:key name])
 (ds/defentity Article [^:key title author body comment-count])
 (ds/defentity Comment [^:key subject article author body])
+(ds/defentity Note [author body])
 
 
 (deftest basics
@@ -54,3 +56,20 @@
           (is (= comment-2 (ds/save! comment-2))))))
     (let [article (ds/retrieve Article "Article 1")]
       (is (= 2 (:comment-count article))))))
+
+
+(deftest key-strings
+  (is (= "Note(1)" (ds/key-str "Note" "1")))
+  (is (= "Note(1)" (ds/key-str "Note" 1)))
+  (is (= "Note(1)" (ds/key-str Note "1")))
+  (is (= "Note(1)" (ds/key-str Note 1)))
+  (is (= "Note(3)" (str (KeyFactory/createKey "Note" (long 3)))))
+  (is (thrown? IllegalArgumentException (ds/key-str (Note. 1 2))))
+  (let [alice (ds/save! (Author. "Alice"))
+        note-1 (ds/save! (Note. alice "Note 1."))
+        note-2 (ds/save! (Note. alice "Note 2."))]
+    (is (= "Author(\"Alice\")" (ds/key-str alice)))
+    (is (= (str (ds/get-key-object note-1)) (ds/key-str note-1)))
+    (is (= (str (ds/get-key-object note-2)) (ds/key-str note-2)))
+    (is (= (ds/key-str (KeyFactory/keyToString (ds/get-key-object note-2)))
+           (ds/key-str note-2)))))
