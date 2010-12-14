@@ -42,8 +42,8 @@
                  (lein/abort (format ":appengine-app-versions does not contain %s" app-name))
                  ;; looks fine now
                  :else (versions app-name))
-        resources-dir (File. (:resources-path project))
-        web-inf-dir (File. resources-dir "WEB-INF")
+        war-dir (File. (or (:appengine-app-war-root project) "war"))
+        web-inf-dir (File. war-dir "WEB-INF")
         in-appengine-web-xml-tmpl (File. web-inf-dir "appengine-web.xml.tmpl")
         out-appengine-web-xml (File. web-inf-dir "appengine-web.xml")]
     (when (not (.exists in-appengine-web-xml-tmpl))
@@ -67,12 +67,12 @@
       (cond
        ;; update task
        (= "appengine-update" task-name)
-       (AppCfg/main (into-array ["update" (.getCanonicalPath resources-dir)]))
+       (AppCfg/main (into-array ["update" (.getCanonicalPath war-dir)]))
        ;; dev_appserver
        (= "appengine-dev-appserver" task-name)
        (let [cmd (format "%s/bin/dev_appserver.sh %s"
                          (.getCanonicalPath appengine-sdk)
-                         (.getCanonicalPath resources-dir))
+                         (.getCanonicalPath war-dir))
              cmd-line (CommandLine/parse cmd)
              executor (DefaultExecutor.)]
          (.execute executor cmd-line))

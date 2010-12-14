@@ -30,19 +30,19 @@
 
 
 (defn appengine-new [project]
-  (let [resources-dir (File. (:resources-path project))
-        WEB-INF-dir (File. resources-dir "WEB-INF")
+  (let [war-dir (File. (or (:appengine-app-war-root project) "war"))
+        web-inf-dir (File. war-dir "WEB-INF")
         prj-application (or (:appengine-application project) (:name project))
         prj-display-name (or (:appengine-display-name project) (:name project))
         prj-servlet (or (:appengine-entry-servlet project) "app_servlet")]
     (println "making a skeleton for a Google App Engine application")
     ;; set up the required paths
-    (when-not (.exists resources-dir)
-      (.mkdir resources-dir)
-      (println "created resources directory" (.getPath resources-dir)))
-    (when-not (.exists WEB-INF-dir)
-      (.mkdir WEB-INF-dir)
-      (println "created WEB-INF directory" (.getPath WEB-INF-dir)))
+    (when-not (.exists war-dir)
+      (.mkdir war-dir)
+      (println "created war directory" (.getPath war-dir)))
+    (when-not (.exists web-inf-dir)
+      (.mkdir web-inf-dir)
+      (println "created WEB-INF directory" (.getPath web-inf-dir)))
     ;; write some base source files
     (let [src-dir (File. (:source-path project))
           src-base-namespace-dir (File. src-dir (dash_ prj-application))
@@ -74,8 +74,8 @@
                          (.getResourceAsStream "web.xml"))
           in-appengine-web-xml (-> (clojure.lang.RT/baseLoader)
                                    (.getResourceAsStream "appengine-web.xml"))
-          out-web-xml (File. WEB-INF-dir "web.xml")
-          out-appengine-web-xml (File. WEB-INF-dir "appengine-web.xml")]
+          out-web-xml (File. web-inf-dir "web.xml")
+          out-appengine-web-xml (File. web-inf-dir "appengine-web.xml")]
       (when-not (.exists out-web-xml)
         (xpath-replace-all in-web-xml out-web-xml
                            {"//display-name" prj-display-name

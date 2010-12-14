@@ -4,11 +4,6 @@
         'com.google.apphosting.api.ApiProxy)
 
 
-(defn open-resource-stream [resource-name]
-  (let [f (File. resource-name)]
-    (BufferedInputStream. (FileInputStream. resource-name))))
-
-
 (defn appengine-base-url [& {:keys [https?] :or {https? false}}]
   (when (= :dev-appserver (appengine-environment-type))
     (throw (RuntimeException.

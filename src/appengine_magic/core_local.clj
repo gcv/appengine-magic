@@ -23,12 +23,8 @@
       (.getResource ".")
       .getFile
       java.net.URLDecoder/decode
-      (File. "../resources")
+      (File. "../war")
       .getAbsolutePath))
-
-
-(defn open-resource-stream [resource-name]
-  (-> (ClassLoader/getSystemClassLoader) (.getResourceAsStream resource-name)))
 
 
 (defn appengine-base-url [& {:keys [https?] :or {https? false}}]

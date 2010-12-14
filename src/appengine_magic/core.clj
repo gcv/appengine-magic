@@ -11,6 +11,10 @@
       false)))
 
 
+(defn open-resource-stream [resource-name]
+  (-> (clojure.lang.RT/baseLoader) (.getResourceAsStream resource-name)))
+
+
 (defn appengine-environment-type []
   (let [env-property (System/getProperty "com.google.appengine.runtime.environment")]
     (cond
