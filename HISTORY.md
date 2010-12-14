@@ -1,9 +1,14 @@
 ## 0.4.0 (???)
 
+* **Breaking change:** moved the web application from `resources/` to `war/`. To
+  adapt your application to this layout, just rename your application's
+  `resources/` directory to `war/`. If you use classpath resources (with the
+  `appengine-magic.core/open-resource-stream` function), move them all back to
+  `resources/`.
 * Added `appengine-magic.services.datastore/key-str`, to get a better handle on
   entity records' IDs.
-* Breaking change: the result object returned by the `fetch` function of the URL
-  Fetch service no longer converts header names to keywords.
+* **Breaking change:** the result object returned by the `fetch` function of the
+  URL Fetch service no longer converts header names to keywords.
 * Made it possible to store datastore entities in memcache during interactive
   REPL development.
 * Added a hack to allow uploads to the Blobstore service from an application,
@@ -11,7 +16,7 @@
 * Modified the Datastore service to optionally support storing values of
   arbitrary readbly-printable Clojure types.
 * Added the Images service.
-* Breaking change: removed `appengine-magic.services.url-fetch/fetch-async`
+* **Breaking change:** removed `appengine-magic.services.url-fetch/fetch-async`
   function and replaced its functionality with a new `:async?` keyword to
   `appengine-magic.services.url-fetch/fetch`.
 * Added the Channel service.
@@ -32,9 +37,9 @@
 ## 0.3.1 (2010-11-30)
 
 * Added `as-*` type conversion functions to the Datastore service.
-* Breaking change: `appengine-magic.services.blobstore/uploaded-blobs` now takes
-  a Ring request map parameter (instead of an `HttpServletRequest`). This is for
-  consistency with the rest of the services API.
+* **Breaking change:** `appengine-magic.services.blobstore/uploaded-blobs` now
+  takes a Ring request map parameter (instead of an `HttpServletRequest`). This
+  is for consistency with the rest of the services API.
 * Added a version of multipart-params middleware which works in App Engine
   (thanks to Conrad Barski).
 
@@ -51,7 +56,7 @@
   files into a .jar. Eliminated the WEB-INF/classes/ directory.
 * Added support for general classpath resources with the
   `appengine-magic.core/open-resource-stream` function.
-* Breaking change: moved the web application from `resources/war/` to
+* **Breaking change:** moved the web application from `resources/war/` to
   `resources/`. This provides better support for using general classpath
   resources.
 * Breaking change: renamed all destructive Memcache service operations to have a

@@ -52,8 +52,8 @@ To use appengine-magic effectively, you need the following:
    `def-appengine-app`.
 5. Web application resources. This primarily includes web application
    descriptors. `lein appengine-new` generates those and places them in the
-   `resources/WEB-INF/` directory. You should also place all static files that
-   your application uses in `resources/`.
+   `war/WEB-INF/` directory. You should also place all static files that your
+   application uses in `war/`.
 
 Here is a sample `core.clj`, using Compojure (other Ring-compatible frameworks,
 such as [Moustache](https://github.com/cgrand/moustache), also work):
@@ -101,10 +101,9 @@ functionality.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
    (which has a sample Ring handler and uses the `def-appengine-app` macro),
    `app_servlet.clj` (the entry point for the application),
-   `resources/WEB-INF/web.xml` (a servlet descriptor), and
-   `resources/WEB-INF/appengine-web.xml` (an App Engine application
-   descriptor). These files should contain reasonable starting defaults for your
-   application.
+   `war/WEB-INF/web.xml` (a servlet descriptor), and
+   `war/WEB-INF/appengine-web.xml` (an App Engine application descriptor). These
+   files should contain reasonable starting defaults for your application.
 
 With regard to AOT-compilation, if your project needs it, then you must include
 `<project>.app_servlet` in Leiningen's `:aot` directive. Otherwise, omit the
@@ -113,12 +112,12 @@ AOT-compiling the entry point servlet and cleaning up afterwards.
 
 The default `.gitignore` file produced by Leiningen works well with the
 resulting project, but do take a careful look at it. In particular, you should
-avoid checking in `resources/WEB-INF/lib/` or `resources/WEB-INF/classes/`: let
-Leiningen take care of managing those directories.
+avoid checking in `war/WEB-INF/lib/` or `war/WEB-INF/classes/`: let Leiningen
+take care of managing those directories.
 
 NB: When editing the Leiningen `project.clj` file, do not point `:compile-path`
-or `:library-path` to `resources/WEB-INF/classes/` and
-`resources/WEB-INF/lib/`. This will interfere with deployment.
+or `:library-path` to `war/WEB-INF/classes/` and `war/WEB-INF/lib/`. This will
+interfere with deployment.
 
 
 ### Development process
@@ -162,26 +161,21 @@ handler.
 
 1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, makes a
    jar of your application, and copies it, along with all your library
-   dependencies, to your application's `resources/WEB-INF/lib/` directories.
-2. Run `dev_appserver.sh` with a path to your application's `resources/`
-   directory.
+   dependencies, to your application's `war/WEB-INF/lib/` directories.
+2. Run `dev_appserver.sh` with a path to your application's `war/` directory.
 
 
-### Static resources
+### Static files
 
-Just put all static files into your application's `resources/` directory. If you
-put a file called `index.html` there, it will become a default welcome file.
+Just put all static files into your application's `war/` directory. If you put a
+file called `index.html` there, it will become a default welcome file.
 
 
 ### Classpath resources
 
 Put all classpath resources you expect to need at runtime in `resources/`. You
 can then access them using the `appengine-magic.core/open-resource-stream`,
-which returns a `java.io.BufferedInputStream` instance. Please note that, by
-default, App Engine then makes these resources available as static files. To
-change this behavior, you need to modify `appengine-web.xml` file. See [Google
-documentation](http://code.google.com/appengine/docs/java/config/appconfig.html)
-for details.
+which returns a `java.io.BufferedInputStream` instance.
 
 Do not use direct methods like `java.io.File` or
 `ClassLoader/getSystemClassLoader` to access classpath resources; they do not
@@ -193,10 +187,10 @@ work consistently across all App Engine environments.
 1. First of all, be careful. You must manually maintain the version field in
    `appengine-web.xml` and you should understand its implications. Refer to
    Google App Engine documentation for more information.
-2. `lein appengine-prepare` prepares the `resources/` directory with the latest
+2. `lein appengine-prepare` prepares the `war/` directory with the latest
    classes and libraries for deployment.
 3. When you are ready to deploy, just run `appcfg.sh update` with a path to your
-   application's `resources/` directory.
+   application's `war/` directory.
 
 
 ### Checking the runtime environment
@@ -842,6 +836,8 @@ console, you'll see the polling requests.
 
 The following Google services are not yet tested in the REPL environment:
 
+- Datastore async queries
+- Datastore cursors
 - Compositing in the Images API
 - Multitenancy (namespaces)
 - Metadata queries (in the datastore API)
@@ -851,17 +847,6 @@ The following Google services are not yet tested in the REPL environment:
 
 They may still work, but appengine-magic does not provide convenient Clojure
 interfaces for them, and may lack mappings for any necessary supporting URLs.
-
-
-### Resource duplication
-
-The `appengine-prepare` task currently copies all your static files and other
-resources into the jar file containing your application. This means that these
-resources deploy to App Engine both as separate files, and inside the jar. This
-should not cause problems for the time being (except for increased space).
-
-A patch to the `appengine-prepare` task, with a safe rule to use with the
-`:jar-exclusions` project property, is welcome.
 
 
 
