@@ -538,15 +538,15 @@
    \"User(8)\"
    > (key-str User 8)
    \"User(8)\"
-   > (key-str User \"8\")
-   \"User(8)\"
+   > (key-str Person \"alice@example.com\")
+   \"Person(\"alice@example.com\")\"
    > (key-str user-object)
    \"User(8)\""
   ([obj]
      (let [key (cond
                 ;; an entity; use its existing key
                 (extends? EntityProtocol (class obj))
-                (str (get-key-object obj))
+                (get-key-object obj)
                 ;; already a Key; use it
                 (instance? Key obj)
                 obj
@@ -567,19 +567,11 @@
            key (cond
                 ;; an entity; use its existing key
                 (extends? EntityProtocol (class obj))
-                (str (get-key-object obj))
+                (get-key-object obj)
                 ;; already a Key; use it
                 (instance? Key obj)
                 obj
-                ;; an ID, probably assigned by the datastore
-                (number? obj)
-                (KeyFactory/createKey kind (coerce-key-value-type obj))
-                ;; string - either a stringified number e.g. "8"
-                ;; or the result of calling KeyFactory/keyToString
-                ;; or something unrecognizable - throws IllegalArgumentException
-                (string? obj)
-                (if-let [long-key (try (Long/parseLong obj)
-                                       (catch NumberFormatException _ nil))]
-                    (KeyFactory/createKey kind long-key)
-                    (KeyFactory/stringToKey obj)))]
+                ;; something else
+                :else
+                (KeyFactory/createKey kind (coerce-key-value-type obj)))]
        (get-key-str-helper key))))

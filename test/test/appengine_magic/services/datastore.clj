@@ -59,11 +59,11 @@
 
 
 (deftest key-strings
-  (is (= "Note(1)" (ds/key-str "Note" "1")))
+  (is (= "Note(\"1\")" (ds/key-str "Note" "1")))
   (is (= "Note(1)" (ds/key-str "Note" 1)))
-  (is (= "Note(1)" (ds/key-str Note "1")))
+  (is (= "Note(\"1\")" (ds/key-str Note "1")))
   (is (= "Note(1)" (ds/key-str Note 1)))
-  (is (= "Note(3)" (str (KeyFactory/createKey "Note" (long 3)))))
+  (is (= "Note(3)" (ds/key-str Note 3) (str (KeyFactory/createKey "Note" (long 3)))))
   (is (thrown? IllegalArgumentException (ds/key-str (Note. 1 2))))
   (let [alice (ds/save! (Author. "Alice"))
         note-1 (ds/save! (Note. alice "Note 1."))
