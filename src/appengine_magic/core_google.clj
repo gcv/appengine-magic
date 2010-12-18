@@ -1,7 +1,6 @@
 (in-ns 'appengine-magic.core)
 
-(import '[java.io File FileInputStream BufferedInputStream]
-        'com.google.apphosting.api.ApiProxy)
+(import '[java.io File FileInputStream BufferedInputStream])
 
 
 (defn appengine-base-url [& {:keys [https?] :or {https? false}}]
@@ -9,8 +8,7 @@
     (throw (RuntimeException.
             "appengine-magic.core/appengine-base-url not supported in dev-appserver.sh")))
   (str (if https? "https" "http")
-       "://"
-       (-> (ApiProxy/getCurrentEnvironment) .getAppId) ".appspot.com"))
+       "://" (appengine-app-id) ".appspot.com"))
 
 
 (defmacro def-appengine-app [app-var-name handler & [args]]

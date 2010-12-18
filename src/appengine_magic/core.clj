@@ -1,4 +1,5 @@
-(ns appengine-magic.core)
+(ns appengine-magic.core
+  (:import com.google.apphosting.api.ApiProxy))
 
 
 (defn in-appengine-interactive-mode? []
@@ -21,6 +22,14 @@
      (nil? env-property) :interactive
      (= env-property "Development") :dev-appserver
      (= env-property "Production") :production)))
+
+
+(defn appengine-app-id []
+  (-> (ApiProxy/getCurrentEnvironment) .getAppId))
+
+
+(defn appengine-app-version []
+  (-> (ApiProxy/getCurrentEnvironment) .getVersionId))
 
 
 (if (in-appengine-interactive-mode?)

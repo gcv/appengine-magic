@@ -33,7 +33,7 @@
                            "appengine-magic-app")
         application-version (if (.exists appengine-web-file)
                                 (first (xpath-value appengine-web-file "//version"))
-                                "none")
+                                "")
         proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
                       (getAppDir [] dir)
