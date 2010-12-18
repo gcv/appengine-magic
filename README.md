@@ -195,20 +195,22 @@ work consistently across all App Engine environments.
 
 ### Checking the runtime environment
 
-It is sometimes useful to know if the current execution environment is the
-production App Engine, `dev_appserver.sh`, or the interactive REPL. For example,
-you may wish to return more detailed error messages and stack traces in
-non-production mode. `appengine-magic.core/appengine-environment-type` returns a
-keyword corresponding to the current environment: `:production`,
-`:dev-appserver`, and `:interactive`.
-
-Additionally, the `appengine-magic.core/appengine-base-url` function returns a
-string with the base hostname of the current application, e.g.,
-`http://my-app.appspot.com`. In production, this always points to the
-`appspot.com` domain. In interactive mode, this always points to `localhost`,
-but also includes the correct port. The `:https?` keyword determines if the
-schema in the URL should be `https://`, but is ignored in interactive mode. This
-function does not work in `dev_appserver.sh` at all.
+- `appengine-magic.core/appengine-environment-type`: returns a keyword
+  corresponding to the current environment: `:production`, `:dev-appserver`, and
+  `:interactive`. Useful if you want to, e.g., return more detailed error
+  messages and stack traces in non-production mode.
+- `appengine-magic.core/appengine-app-id`: returns the ID of the running
+  application.
+- `appengine-magic.core/appengine-app-version`: returns the current deployed
+  version string.
+- `appengine-magic.core/appengine-base-url`: returns a string with the base
+  hostname of the current application, e.g., `http://my-app.appspot.com`. In
+  production, this always points to the `appspot.com` domain. In interactive
+  mode, this always points to `localhost`, but also includes the correct
+  port. The `:https?` keyword determines if the schema in the URL should be
+  `https://`, but is ignored in interactive mode. This function does not work in
+  `dev_appserver.sh` at all (it is difficult from within the application
+  environment to determine the correct port).
 
 
 ### Automatic testing code

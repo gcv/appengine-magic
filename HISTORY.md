@@ -1,5 +1,7 @@
 ## 0.4.0 (???)
 
+* Added `appengine-magic.core/appengine-app-id` and
+  `appengine-magic.core/appengine-app-version` helper functions.
 * **Breaking change:** moved the web application from `resources/` to `war/`. To
   adapt your application to this layout, just rename your application's
   `resources/` directory to `war/`. If you use classpath resources (with the
