@@ -339,6 +339,9 @@ If you use this mechanism, be aware that `dev_appserver.sh` will no longer work
 (since your project no longer defines a simple `appengine-web.xml` file). To run
 that process, use `lein appengine-dev-appserver <application>`.
 
+You may also force a specific version string if you pass it as an optional
+argument to `appengine-update`: `lein appengine-update <application> <version>`.
+
 
 
 ## App Engine Services
