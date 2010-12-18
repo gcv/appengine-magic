@@ -3,5 +3,5 @@
   (:use appengine-magic.leiningen-helpers))
 
 
-(defn appengine-update [project app-name]
-  (run-with-appengine-app-versions "appengine-update" project app-name))
+(defn appengine-update [project app-name & [app-version]]
+  (run-with-appengine-app-versions "appengine-update" project app-name app-version))

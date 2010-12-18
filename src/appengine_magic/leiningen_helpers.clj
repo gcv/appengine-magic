@@ -6,7 +6,7 @@
            [org.apache.commons.exec CommandLine DefaultExecutor]))
 
 
-(defn run-with-appengine-app-versions [task-name project app-name]
+(defn run-with-appengine-app-versions [task-name project app-name version]
   (let [appengine-sdk (:appengine-sdk project)
         appengine-sdk (cond
                        ;; not given
@@ -29,19 +29,23 @@
                           (lein/abort (format "%s is not a valid App Engine SDK directory"
                                               appengine-sdk)))
                         appengine-sdk)
-        versions (if (contains? project :appengine-app-versions)
-                     (:appengine-app-versions project)
-                     (lein/abort (str task-name "requires :appengine-app-versions"
-                                      " in project.clj")))
-        version (cond
-                 ;; not a map
-                 (not (map? versions))
-                 (lein/abort "bad format for :appengine-app-versions")
-                 ;; check the given app-name
-                 (not (contains? versions app-name))
-                 (lein/abort (format ":appengine-app-versions does not contain %s" app-name))
-                 ;; looks fine now
-                 :else (versions app-name))
+        version (if (not (nil? version))
+                    version ; just use the given version
+                    (let [versions (if (contains? project :appengine-app-versions)
+                                       (:appengine-app-versions project)
+                                       (lein/abort (str task-name
+                                                        "requires :appengine-app-versions"
+                                                        " in project.clj")))]
+                      (cond
+                       ;; not a map
+                       (not (map? versions))
+                       (lein/abort "bad format for :appengine-app-versions")
+                       ;; check the given app-name
+                       (not (contains? versions app-name))
+                       (lein/abort (format ":appengine-app-versions does not contain %s"
+                                           app-name))
+                       ;; looks fine now
+                       :else (versions app-name))))
         war-dir (File. (or (:appengine-app-war-root project) "war"))
         web-inf-dir (File. war-dir "WEB-INF")
         in-appengine-web-xml-tmpl (File. web-inf-dir "appengine-web.xml.tmpl")
