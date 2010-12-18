@@ -381,6 +381,8 @@
         ;; XXX: The keyword and str composition below works
         ;; around a weird Clojure bug (see
         ;; http://groups.google.com/group/clojure-dev/browse_thread/thread/655f6e7d1b312f17).
+        ;; TODO: This bug is fixed in Clojure 1.3 (see
+        ;; http://dev.clojure.org/jira/browse/CLJ-693).
         clj-properties (set (map (comp keyword str)
                                  (filter #(= (:tag (meta %)) :clj) properties)))]
     `(defrecord ~name ~properties
