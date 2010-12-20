@@ -25,11 +25,17 @@
 
 
 (defn appengine-app-id []
-  (-> (ApiProxy/getCurrentEnvironment) .getAppId))
+  (try
+    (-> (ApiProxy/getCurrentEnvironment) .getAppId)
+    (catch NullPointerException npe
+      (throw (RuntimeException. "the server must be running" npe)))))
 
 
 (defn appengine-app-version []
-  (-> (ApiProxy/getCurrentEnvironment) .getVersionId))
+  (try
+    (-> (ApiProxy/getCurrentEnvironment) .getVersionId)
+    (catch NullPointerException npe
+      (throw (RuntimeException. "the server must be running" npe)))))
 
 
 (if (in-appengine-interactive-mode?)
