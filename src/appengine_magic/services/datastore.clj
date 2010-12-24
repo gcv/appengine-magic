@@ -376,15 +376,24 @@
 (defmacro defentity [name properties &
                      {:keys [kind]
                       :or {kind (unqualified-name name)}}]
-  (let [key-property-name (first (filter #(= (:tag (meta %)) :key) properties))
+  ;; TODO: Clojure 1.3: Remove the ugly Clojure version check.
+  (let [clj13? (fn [] (and (= 1 (:major *clojure-version*))
+                           (= 3 (:minor *clojure-version*))))
+        key-property-name (if (clj13?)
+                              (first (filter #(contains? (meta %) :key) properties))
+                              (first (filter #(= (:tag (meta %)) :key) properties)))
+        ;; TODO: Clojure 1.3: Remove unnecessary call to str.
         key-property (if key-property-name (keyword (str key-property-name)) nil)
         ;; XXX: The keyword and str composition below works
         ;; around a weird Clojure bug (see
         ;; http://groups.google.com/group/clojure-dev/browse_thread/thread/655f6e7d1b312f17).
-        ;; TODO: This bug is fixed in Clojure 1.3 (see
+        ;; TODO: This bug is fixed in Clojure 1.3 after alpha4 came out (see
         ;; http://dev.clojure.org/jira/browse/CLJ-693).
-        clj-properties (set (map (comp keyword str)
-                                 (filter #(= (:tag (meta %)) :clj) properties)))]
+        clj-properties (if (clj13?)
+                           (set (map (comp keyword str)
+                                     (filter #(contains? (meta %) :clj) properties)))
+                           (set (map (comp keyword str)
+                                     (filter #(= (:tag (meta %)) :clj) properties))))]
     `(defrecord ~name ~properties
        EntityProtocol
        (get-clj-properties [this#]
