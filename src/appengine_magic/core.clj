@@ -5,6 +5,7 @@
   (try
     (let [stack-trace (.getStackTrace (Thread/currentThread))]
       (some #(or (.contains (.toString %) "swank.core")
+                 (.contains (.toString %) "vimclojure")
                  (.contains (.toString %) "clojure.main$repl"))
             stack-trace))
     (catch java.security.AccessControlException ace
