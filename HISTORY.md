@@ -1,3 +1,8 @@
+## 0.3.2 (2010-12-29)
+
+* Added support for VimClojure (thanks to Alex Bolodurin).
+
+
 ## 0.3.1 (2010-11-30)
 
 * Added `as-*` type conversion functions to the Datastore service.
