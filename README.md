@@ -464,6 +464,12 @@ A few simple examples:
   the Key may be constructed by passing `key-str` the type (or kind string) of
   the object and its ID. This function is probably most useful for generating
   human-readable keys for storing entities in maps or memcache.
+- `key-id`: this utility function returns the numeric identifier of the numeric
+  key of the given entity.
+- `key-name`: this utility function returns the string identifier of the string
+  key of the given entity.
+- `key-kind`: this utility function returns the kind, as a string, of the given
+  entity.
 - `save!`: calling this method on an entity writes it to the datastore, using
   the primary key returned by calling `get-key-object` on the entity. May be
   called on a sequence of entities.

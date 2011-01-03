@@ -1,5 +1,8 @@
 ## 0.4.0 (???)
 
+* Added `appengine-magic.services.datastore/key-id`,
+  `appengine-magic.services.datastore/key-name`, and
+  `appengine-magic.services.datastore/key-kind`.
 * Added `appengine-magic.core/appengine-app-id` and
   `appengine-magic.core/appengine-app-version` helper functions.
 * **Breaking change:** moved the web application from `resources/` to `war/`. To
