@@ -586,3 +586,18 @@
                 :else
                 (KeyFactory/createKey kind (coerce-key-value-type obj)))]
        (get-key-str-helper key))))
+
+
+(defn key-id [entity]
+  (when entity
+    (.getId (get-key-object entity))))
+
+
+(defn key-name [entity]
+  (when entity
+    (.getName (get-key-object entity))))
+
+
+(defn key-kind [entity]
+  (when entity
+    (.getKind (get-key-object entity))))
