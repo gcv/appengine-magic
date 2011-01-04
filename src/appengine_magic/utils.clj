@@ -111,3 +111,18 @@
       (finally
        (when (instance? FileInputStream in-stream)
          (.close in-stream))))))
+
+
+(defn os-type []
+  (let [os-name (.toLowerCase (System/getProperty "os.name"))]
+    (cond (.startsWith os-name "mac os x")      :mac
+          (.startsWith os-name "windows")       :windows
+          (.startsWith os-name "linux")         :linux
+          (re-matches #".*bsd.*" os-name)       :bsd
+          (or (.startsWith os-name "solaris")
+              (.startsWith os-name "sunos")
+              (.startsWith os-name "irix")
+              (.startsWith os-name "hp-ux")
+              (.startsWith os-name "aix")
+              (re-matches #".*unix.*" os-name)) :unix
+              :else nil)))
