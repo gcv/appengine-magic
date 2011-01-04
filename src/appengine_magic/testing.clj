@@ -1,4 +1,5 @@
 (ns appengine-magic.testing
+  (:use [appengine-magic.utils :only [os-type]])
   (:import [com.google.appengine.tools.development.testing LocalServiceTestHelper
             LocalServiceTestConfig
             LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
@@ -51,8 +52,11 @@
       (.setMaxTxnLifetimeMs ldstc max-txn-lifetime-ms))
     (when-not (nil? max-query-lifetime-ms)
       (.setMaxQueryLifetimeMs ldstc max-query-lifetime-ms))
-    (when-not (nil? backing-store-location)
-      (.setBackingStoreLocation ldstc backing-store-location))
+    (if-not (nil? backing-store-location)
+        (.setBackingStoreLocation ldstc backing-store-location)
+        (.setBackingStoreLocation ldstc (if (= :windows (os-type))
+                                            "NUL"
+                                            "/dev/null")))
     ldstc))
 
 
