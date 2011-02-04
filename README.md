@@ -439,6 +439,49 @@ A few simple examples:
     (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
       (ds/delete! (ds/query :kind Book :filter (= :author geoff))))
 
+The next example (which uses Compojure) demonstrates the use of entity groups
+and transactions.
+
+    (use '[clojure.pprint :only [pprint]]
+         'compojure.core)
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.datastore :as ds])
+
+    (ds/defentity Parent [^:key name, children])
+    (ds/defentity Child [^:key name])
+
+    (defroutes entity-group-example-app-handler
+      (GET  "/" [] {:headers {"Content-Type" "text/plain"} :body "started"})
+      (POST "/new/:parent-name/:child-name" [parent-name child-name]
+            (let [parent (or (ds/retrieve Parent parent-name)
+                             ;; Note the use of ds/save! here. Unless an entity has
+                             ;; been saved to the datastore, children cannot join
+                             ;; the entity group.
+                             (ds/save! (Parent. parent-name [])))
+                  ;; Note the use of ds/new* here: it is required so that a :parent
+                  ;; entity may be specified in the instantiation of a child entity.
+                  child (ds/new* Child [child-name] :parent parent)]
+              ;; Updating the parent and the child together occurs in a transaction.
+              (ds/with-transaction
+                (ds/save! (assoc parent
+                            :members (conj (:children parent) child-name)))
+                (ds/save! child))
+              {:headers {"Content-Type" "text/plain"}
+               :body "done"}))
+      (GET  "/parents" []
+            (let [parents (ds/query :kind Parent)]
+              {:headers {"Content-Type" "text/plain"}
+               :body (str (with-out-str (pprint parents))
+                          "\n"
+                          (with-out-str (pprint (map ds/get-key-object parents))))}))
+      (GET  "/children" []
+            (let [children (ds/query :kind Child)]
+              {:headers {"Content-Type" "text/plain"}
+               :body (str (with-out-str (pprint children))
+                          "\n"
+                          (with-out-str (pprint (map ds/get-key-object children))))}))
+      (ANY  "*" [] {:status 404 :body "not found" :headers {"Content-Type" "text/plain"}}))
+
 - `defentity` (optional keyword: `:kind`): defines an entity record type
   suitable for storing in the App Engine datastore. These entities work just
   like Clojure records. Internally, they implement an additional protocol,
@@ -887,6 +930,7 @@ Many thanks to:
 * Conrad Barski
 * Yuri Niyazov
 * Alex Bolodurin
+* Stefan Kamphausen
 
 
 
