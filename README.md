@@ -496,7 +496,8 @@ and transactions.
   Clojure conventions to instantiate entity records, but creating entities
   destined for entity groups requires using `new*`. To put the new entity into a
   group, use the `:parent` keyword with the parent entity. Instantiating an
-  entity does not automatically write it to the datastore.
+  entity does not automatically write it to the datastore. `new*` accepts either
+  a vector of slot values or a map of slots.
 - `get-key-object`: this returns the primary Key object of the given entity. For
   a newly-instantiated entity lacking an explicit primary key, this method
   returns nil. Entities properly brought under entity groups using `new*` will
