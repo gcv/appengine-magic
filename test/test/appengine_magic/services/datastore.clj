@@ -92,3 +92,14 @@
                (ds/save! c2))]
       (is (= "Parent(1)/Child(3)" (ds/key-str c2)))
       (is (= 2 (:child-counter (ds/retrieve Parent 1)))))))
+
+
+(deftest fancy-new*
+  (let [title "Anonymous On Anonymity"
+        body "Anonymity is important. The end."
+        a (ds/new* Article {:title title
+                            :body body
+                            :comment-count 0})]
+    (is (nil? (:author a)))
+    (is (= title (:title a)))
+    (is (= body (:body a)))))

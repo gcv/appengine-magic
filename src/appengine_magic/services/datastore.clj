@@ -418,12 +418,15 @@
 
 
 (defmacro new* [entity-record-type property-values & {:keys [parent]}]
-  `(let [parent# ~parent
-         entity# (new ~entity-record-type ~@property-values)]
-     (if (nil? parent#)
-         entity#
-         (with-meta entity# {:key (get-key-object entity# parent#)
-                             :parent (get-key-object parent#)}))))
+  (let [props-expr (cond (vector? property-values) `(new ~entity-record-type ~@property-values)
+                         (map? property-values) `(record ~entity-record-type ~property-values)
+                         :else (throw (IllegalArgumentException. "bad argument to new*")))]
+    `(let [entity# ~props-expr
+           parent# ~parent]
+       (if (nil? parent#)
+           entity#
+           (with-meta entity# {:key (get-key-object entity# parent#)
+                               :parent (get-key-object parent#)})))))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
