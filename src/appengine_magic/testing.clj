@@ -3,7 +3,8 @@
             LocalServiceTestConfig
             LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
             LocalMailServiceTestConfig
-            LocalDatastoreServiceTestConfig]))
+            LocalDatastoreServiceTestConfig
+            LocalUserServiceTestConfig]))
 
 
 (def *memcache-size-units*
@@ -64,10 +65,13 @@
     (.setLogMailLevel lmstc (*logging-levels* log-mail-level))
     lmstc))
 
+(defn user []
+  (LocalUserServiceTestConfig.))
 
-(defn- make-local-services-fixture-fn [services]
+
+(defn- make-local-services-fixture-fn [services hook-helper]
   (fn [test-fn]
-    (let [helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services))]
+    (let [helper (hook-helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services)))]
       (.setUp helper)
       (test-fn)
       (.tearDown helper))))
@@ -75,7 +79,7 @@
 
 (defn- local-services-helper
   ([]
-     [(memcache) (datastore) (mail)])
+     [(memcache) (datastore) (mail) (user)])
   ([services override]
      (let [services (if (= :all services) (local-services-helper) services)]
        (if (nil? override)
@@ -88,10 +92,26 @@
 (defn local-services
   ([]
      "Uses all services with their default settings."
-     (make-local-services-fixture-fn (local-services-helper)))
-  ([services & {:keys [override]}]
+     (make-local-services-fixture-fn (local-services-helper) identity))
+  ([services & {:keys [override hook-helper] :or {hook-helper identity}}]
      "- If services is :all, uses all services with their default settings.
       - If services is a vector of services, uses those as given.
       - To use all defaults, but override some specific services, use :all
         and an :override vector."
-     (make-local-services-fixture-fn (local-services-helper services override))))
+     (make-local-services-fixture-fn (local-services-helper services override) hook-helper)))
+
+(defn login
+  "Hook helper to logged in"
+  [email]
+  (let [domain (-> (re-seq #"@(.+)$" email) first second)]
+    #(.. % (setEnvIsLoggedIn true) (setEnvAuthDomain domain) (setEnvEmail email))))
+
+(defn admin
+  "Hook helper to be admin"
+  []
+  #(.setEnvIsAdmin % true))
+
+(defn admin-login
+  "Hook helper to logged in as admin"
+  [email]
+  (comp (admin) (login email)))
