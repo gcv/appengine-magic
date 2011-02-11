@@ -39,6 +39,11 @@
   repository.
 
 
+## 0.3.3 (2011-02-10)
+
+* Improved user service testing support (thanks to Masashi Iizuka).
+
+
 ## 0.3.2 (2010-12-29)
 
 * Added support for VimClojure (thanks to Alex Bolodurin).

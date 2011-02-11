@@ -932,6 +932,7 @@ Many thanks to:
 * Yuri Niyazov
 * Alex Bolodurin
 * Stefan Kamphausen
+* Masashi Iizuka
 
 
 
