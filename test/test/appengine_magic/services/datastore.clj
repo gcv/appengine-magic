@@ -12,6 +12,8 @@
 (ds/defentity Article [^:key title author body comment-count])
 (ds/defentity Comment [^:key subject article author body])
 (ds/defentity Note [author body])
+(ds/defentity Parent [name child-counter])
+(ds/defentity Child [name parent])
 
 
 (deftest basics
@@ -73,3 +75,20 @@
     (is (= (str (ds/get-key-object note-2)) (ds/key-str note-2)))
     (is (= (ds/key-str (KeyFactory/keyToString (ds/get-key-object note-2)))
            (ds/key-str note-2)))))
+
+
+(deftest auto-id-transactions
+  (let [p (ds/save! (Parent. "alpha" 0))
+        c1 (ds/new* Child ["bravo" p] :parent p)
+        c2 (ds/new* Child ["charlie" p] :parent p)]
+    (let [p (ds/retrieve Parent 1)
+          c1 (ds/with-transaction
+               (ds/save! (assoc p :child-counter (inc (:child-counter p))))
+               (ds/save! c1))]
+      (is (= "Parent(1)/Child(2)" (ds/key-str c1))))
+    (let [p (ds/retrieve Parent 1)
+          c2 (ds/with-transaction
+               (ds/save! (assoc p :child-counter (inc (:child-counter p))))
+               (ds/save! c2))]
+      (is (= "Parent(1)/Child(3)" (ds/key-str c2)))
+      (is (= 2 (:child-counter (ds/retrieve Parent 1)))))))

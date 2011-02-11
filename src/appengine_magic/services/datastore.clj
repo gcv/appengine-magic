@@ -198,9 +198,10 @@
 (defn get-entity-object-helper [entity-record kind]
   (let [key-object (get-key-object entity-record)
         clj-properties (get-clj-properties entity-record)
-        entity (if key-object
-                   (Entity. key-object)
-                   (Entity. kind))]
+        entity-meta (meta entity-record)
+        entity (cond key-object (Entity. key-object)
+                     (contains? entity-meta :parent) (Entity. kind (:parent entity-meta))
+                     :else (Entity. kind))]
     (doseq [[property-kw value] entity-record]
       (.setProperty entity (name property-kw) (if (contains? clj-properties property-kw)
                                                   (Text. (prn-str value))
@@ -421,7 +422,8 @@
          entity# (new ~entity-record-type ~@property-values)]
      (if (nil? parent#)
          entity#
-         (with-meta entity# {:key (get-key-object entity# parent#)}))))
+         (with-meta entity# {:key (get-key-object entity# parent#)
+                             :parent (get-key-object parent#)}))))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
