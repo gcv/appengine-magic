@@ -32,11 +32,14 @@
                      :or {destination "/"}}]
   (.createLogoutURL (get-user-service) destination))
 
+
 (defn get-email [#^User user]
   (.getEmail user))
 
+
 (defn get-nickname [#^User user]
   (.getNickname user))
+
 
 (defn get-auth-domain [#^User user]
   (.getAuthDomain user))

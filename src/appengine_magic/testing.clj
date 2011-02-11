@@ -65,6 +65,7 @@
     (.setLogMailLevel lmstc (*logging-levels* log-mail-level))
     lmstc))
 
+
 (defn user []
   (LocalUserServiceTestConfig.))
 
@@ -100,18 +101,21 @@
         and an :override vector."
      (make-local-services-fixture-fn (local-services-helper services override) hook-helper)))
 
+
 (defn login
-  "Hook helper to logged in"
+  "Hook helper to be a logged-in user."
   [email]
   (let [domain (-> (re-seq #"@(.+)$" email) first second)]
     #(.. % (setEnvIsLoggedIn true) (setEnvAuthDomain domain) (setEnvEmail email))))
 
+
 (defn admin
-  "Hook helper to be admin"
+  "Hook helper to be an admin."
   []
   #(.setEnvIsAdmin % true))
 
+
 (defn admin-login
-  "Hook helper to logged in as admin"
+  "Hook helper to logged in as an admin."
   [email]
   (comp (admin) (login email)))
