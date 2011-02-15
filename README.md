@@ -27,7 +27,7 @@ releases.
 
 * Clojure 1.2.0
 * Leiningen 1.4.0
-* Google App Engine SDK 1.4.0
+* Google App Engine SDK 1.4.2
 * swank-clojure 1.2.1 (optional)
 
 

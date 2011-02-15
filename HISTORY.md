@@ -35,8 +35,7 @@
   `appengine-dev-appserver`. They allow maintaining multiple App Engine
   production environments with different versions (e.g., production and
   staging).
-* Added support for Google App Engine SDK 1.3.8 through a custom Maven
-  repository.
+* Added support for new versions of the Google App Engine SDK.
 
 
 ## 0.3.3 (2011-02-10)
