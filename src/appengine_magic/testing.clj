@@ -5,7 +5,8 @@
             LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
             LocalMailServiceTestConfig
             LocalDatastoreServiceTestConfig
-            LocalUserServiceTestConfig]))
+            LocalUserServiceTestConfig]
+           [com.google.apphosting.api ApiProxy]))
 
 
 (def *memcache-size-units*
@@ -76,10 +77,14 @@
 
 (defn- make-local-services-fixture-fn [services hook-helper]
   (fn [test-fn]
-    (let [helper (hook-helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services)))]
+    (let [environment (ApiProxy/getCurrentEnvironment)
+          delegate (ApiProxy/getDelegate)
+          helper (hook-helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services)))]
       (.setUp helper)
       (test-fn)
-      (.tearDown helper))))
+      (.tearDown helper)
+      (ApiProxy/setEnvironmentForCurrentThread environment)
+      (ApiProxy/setDelegate delegate))))
 
 
 (defn- local-services-helper
