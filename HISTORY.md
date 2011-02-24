@@ -38,6 +38,11 @@
 * Added support for new versions of the Google App Engine SDK.
 
 
+## 0.3.4 (2011-02-23)
+
+* Fixed a bug in use of :prefetch-size and :chunk-size parameters to ds/query.
+
+
 ## 0.3.3 (2011-02-10)
 
 * Improved user service testing support (thanks to Masashi Iizuka).

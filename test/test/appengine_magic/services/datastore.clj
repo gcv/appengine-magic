@@ -103,3 +103,10 @@
     (is (nil? (:author a)))
     (is (= title (:title a)))
     (is (= body (:body a)))))
+
+
+(deftest query-params-regression
+  (let [a1 (Author. "A1")
+        a2 (Author. "A2")]
+    (ds/save! [a1 a2])
+    (is (ds/query :kind Author :chunk-size 10 :prefetch-size 10))))
