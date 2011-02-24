@@ -54,3 +54,10 @@
           (ds/save! comment-2))))
     (let [article (ds/retrieve Article "Article 1")]
       (is (= 2 (:comment-count article))))))
+
+
+(deftest query-params-regression
+  (let [a1 (Author. "A1")
+        a2 (Author. "A2")]
+    (ds/save! [a1 a2])
+    (is (ds/query :kind Author :chunk-size 10 :prefetch-size 10))))

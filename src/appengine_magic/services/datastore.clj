@@ -277,8 +277,8 @@
   (let [fetch-options-object (FetchOptions$Builder/withDefaults)]
     (when limit (.limit fetch-options-object limit))
     (when offset (.offset fetch-options-object offset))
-    (when prefetch-size (.prefetchSize prefetch-size))
-    (when chunk-size (.chunkSize chunk-size))
+    (when prefetch-size (.prefetchSize fetch-options-object prefetch-size))
+    (when chunk-size (.chunkSize fetch-options-object chunk-size))
     fetch-options-object))
 
 
