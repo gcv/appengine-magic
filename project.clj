@@ -4,7 +4,7 @@
   :repositories {"releases" "http://appengine-magic-mvn.googlecode.com/svn/releases/"
                  "snapshots" "http://appengine-magic-mvn.googlecode.com/svn/snapshots/"}
   :dependencies [[org.clojure/clojure "1.2.0"]
-                 [ring/ring-core "0.3.6"]
+                 [ring/ring-core "0.3.7"]
                  [org.apache.commons/commons-exec "1.1"]
                  ;; App Engine supporting essentials
                  [javax.servlet/servlet-api "2.5"]
