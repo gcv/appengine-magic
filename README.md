@@ -18,8 +18,7 @@ README file tries to describe everything you need to know to use App Engine with
 Clojure, but does not explain the details of App Engine semantics. Please refer
 to Google's official documentation for details.
 
-Please read the [HISTORY](HISTORY.md) file to learn what changed in recent
-releases.
+Please read the project's HISTORY file to learn what changed in recent releases.
 
 
 
@@ -55,8 +54,10 @@ To use appengine-magic effectively, you need the following:
    `war/WEB-INF/` directory. You should also place all static files that your
    application uses in `war/`.
 
-Here is a sample `core.clj`, using Compojure (other Ring-compatible frameworks,
-such as [Moustache](https://github.com/cgrand/moustache), also work):
+Here is a sample `core.clj`, using
+[Compojure](https://github.com/weavejester/compojure) (other Ring-compatible
+frameworks, such as [Moustache](https://github.com/cgrand/moustache), also
+work):
 
     (ns simple-example.core
       (:use compojure.core)
@@ -78,6 +79,12 @@ such as [Moustache](https://github.com/cgrand/moustache), also work):
 
     (ae/def-appengine-app simple-example-app #'simple-example-app-handler)
 
+If you wish to emit HTML or XML from your application, you should use a
+specialized Clojure server-side templating library, e.g.,
+[Enlive](https://github.com/cgrand/enlive) or
+[Hiccup](https://github.com/weavejester/hiccup). None of the appengine-magic
+examples rely on these libraries.
+
 
 
 ## Getting Started
@@ -97,7 +104,9 @@ functionality.
 3. Edit `project.clj`: add `[appengine-magic "0.4.0-SNAPSHOT"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
-   tasks available.
+   tasks available. If you already have the App Engine SDK installed locally,
+   and do not wish to wait for Maven to download it again as a dependency, you
+   may optionally run the provided `install-artifacts.sh` script first.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
    (which has a sample Ring handler and uses the `def-appengine-app` macro),
    `app_servlet.clj` (the entry point for the application),
