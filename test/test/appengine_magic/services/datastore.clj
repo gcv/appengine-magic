@@ -60,6 +60,15 @@
       (is (= 2 (:comment-count article))))))
 
 
+(deftest records-in-records
+  (let [alice (ds/save! (Author. "Alice"))
+        bob (ds/save! (Author. "Bob"))
+        article-1 (ds/save! (Article. "Article 1" alice "The fine article." 0))
+        article-2 (ds/save! (Article. "Article 2" bob "TFA 2." 0))
+        article-3 (ds/save! (Article. "Article 3" alice "TFA 3." 0))]
+    (is (= 2 (count (ds/query :kind Article :filter (= :author alice)))))))
+
+
 (deftest key-strings
   (is (= "Note(\"1\")" (ds/key-str "Note" "1")))
   (is (= "Note(1)" (ds/key-str "Note" 1)))

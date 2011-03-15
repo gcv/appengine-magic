@@ -490,7 +490,7 @@
              entity-record-type]
       :or {keys-only? false, filter [], sort [],
            count-only? false, in-transaction? false}}]
-  ;; Normalize :filter and :sort keywords (into lists, even if only one is gen),
+  ;; Normalize :filter and :sort keywords (into lists, even if only one is given),
   ;; then turn them into QueryFilter and QuerySort objects.
   (let [filter (if (every? sequential? filter) filter (vector filter))
         filter `(list ~@(map (fn [[op k v]] `(list (keyword '~op) ~k ~v)) filter))
