@@ -1,7 +1,11 @@
 (ns appengine-magic.services.memcache
   (:refer-clojure :exclude (contains? get))
+  (:use [appengine-magic.utils :only [record]])
+  (:require [appengine-magic.core :as core]
+            [appengine-magic.services.datastore :as ds])
   (:import [com.google.appengine.api.memcache MemcacheService MemcacheServiceFactory
-            MemcacheService$SetPolicy]))
+            MemcacheService$SetPolicy]
+           appengine_magic.services.datastore.EntityProtocol))
 
 
 (defonce *memcache-service* (atom nil))
@@ -68,27 +72,57 @@
             (.delete service key-or-keys)))))
 
 
+(defn- to-entity-cast [value]
+  (if (and (= :interactive (core/appengine-environment-type))
+           (instance? EntityProtocol value))
+      (let [obj-meta (merge (meta value) {:type (.getName (class value))})
+            obj-map (into {} value)]
+        (with-meta obj-map obj-meta))
+      value))
+
+
+(defn- to-entity-cast-many [value-map]
+  (if (= :interactive (core/appengine-environment-type))
+      (into {} (map (fn [[k v]] [k (to-entity-cast v)]) value-map))
+      value-map))
+
+
+(defn- from-entity-cast [value]
+  (if (and (= :interactive (core/appengine-environment-type))
+           (not (nil? (meta value)))
+           (clojure.core/contains? (meta value) :type))
+      (let [claimed-class (Class/forName (:type (meta value)))]
+        (with-meta (record claimed-class value) (dissoc (meta value) :type)))
+      value))
+
+
+(defn- from-entity-cast-many [value-map]
+  (if (= :interactive (core/appengine-environment-type))
+      (into {} (map (fn [[k v]] [k (from-entity-cast v)]) value-map))
+      (into {} value-map)))
+
+
 (defn get
   "If (sequential? key-or-keys), returns values as a map."
   [key-or-keys & {:keys [namespace]}]
   (let [service (get-memcache-service :namespace namespace)]
     (if (sequential? key-or-keys)
-        (into {} (.getAll service key-or-keys))
-        (.get service key-or-keys))))
+        (from-entity-cast-many (.getAll service key-or-keys))
+        (from-entity-cast (.get service key-or-keys)))))
 
 
 (defn put! [key value & {:keys [namespace expiration policy]
                          :or {policy :always}}]
   (let [service (get-memcache-service :namespace namespace)
         policy (*policy-type-map* policy)]
-    (.put service key value expiration policy)))
+    (.put service key (to-entity-cast value) expiration policy)))
 
 
 (defn put-map! [values & {:keys [namespace expiration policy]
                           :or {policy :always}}]
   (let [service (get-memcache-service :namespace namespace)
         policy (*policy-type-map* policy)]
-    (.putAll service values expiration policy)))
+    (.putAll service (to-entity-cast-many values) expiration policy)))
 
 
 (defn increment!

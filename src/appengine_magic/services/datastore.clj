@@ -109,7 +109,15 @@
    field becomes the key. If a record has no :key metadata tags, then a key is
    automatically generated for it. In either case, the key becomes part of the
    entity's metadata. Entity retrieval operations must set the :key metadata on
-   returned entity records."
+   returned entity records.
+
+   In addition, any field may be marked with a ^:clj metadata tag. This tag
+   means that the field's value goes through prn-str on its way out and through
+   read-string on its way in. It allows automatic serialization for some types
+   not directly supported by the datastore."
+  (get-clj-properties [this]
+    "Returns a set of all properties which pass through the Clojure reader on
+     their way in and out of the datastore.")
   (get-key-object [this] [this parent]
     "Returns nil if no tag is specified in the record definition, and no :key
      metadata exists. Otherwise returns a Key object. Specify optional entity
@@ -189,27 +197,34 @@
 
 (defn get-entity-object-helper [entity-record kind]
   (let [key-object (get-key-object entity-record)
-        entity (if key-object
-                   (Entity. key-object)
-                   (Entity. kind))]
+        clj-properties (get-clj-properties entity-record)
+        entity-meta (meta entity-record)
+        entity (cond key-object (Entity. key-object)
+                     (contains? entity-meta :parent) (Entity. kind (:parent entity-meta))
+                     :else (Entity. kind))]
     (doseq [[property-kw value] entity-record]
-      (let [property-name (.substring (str property-kw) 1)]
-        (.setProperty entity property-name (coerce-clojure-type value))))
+      (.setProperty entity (name property-kw) (if (contains? clj-properties property-kw)
+                                                  (Text. (prn-str value))
+                                                  (coerce-clojure-type value))))
     entity))
 
 
 (defn save!-helper [entity-record]
-  (.put (get-datastore-service) (get-entity-object entity-record)))
+  (let [new-key (.put (get-datastore-service) (get-entity-object entity-record))]
+    (with-meta entity-record (merge (meta entity-record) {:key new-key}))))
 
 
 (defn- save-many-helper! [entity-record-seq]
-  (let [entities (map get-entity-object entity-record-seq)]
-    (.put (get-datastore-service) entities)))
+  (let [entities (map get-entity-object entity-record-seq)
+        new-keys (.put (get-datastore-service) entities)]
+    (map (fn [e k]
+           (with-meta e (merge (meta e) {:key k})))
+         entity-record-seq new-keys)))
 
 
 
 ;;; ----------------------------------------------------------------------------
-;;; query helper objects and functions
+;;; query helper objects and functions; do not use these directly
 ;;; ----------------------------------------------------------------------------
 
 (defrecord QueryFilter [operator property value])
@@ -244,7 +259,7 @@
               (not (nil? filter-property-kw))
               (not (nil? filter-value))
               (keyword? filter-property-kw))
-         (let [filter-property (.substring (str filter-property-kw) 1)
+         (let [filter-property (name filter-property-kw)
                filter-value (if (extends? EntityProtocol (class filter-value))
                                 (get-key-object filter-value)
                                 filter-value)]
@@ -263,8 +278,7 @@
          (and (not (nil? sort-property-kw))
               (not (nil? sort-direction))
               (keyword? sort-property-kw))
-         (let [sort-property (.substring (str sort-property-kw) 1)]
-           (.addSort query-object sort-property sort-direction))
+         (.addSort query-object (name sort-property-kw) sort-direction)
          ;; no sort definition
          (and (nil? sort-property-kw) (nil? sort-direction))
          nil
@@ -282,11 +296,13 @@
     fetch-options-object))
 
 
-(defn- entity->properties [raw-properties]
+(defn- entity->properties [raw-properties clj-properties]
   (reduce (fn [m [k v]]
-            (assoc m
-              (keyword k)
-              (coerce-java-type v)))
+            (let [k (keyword k)]
+             (assoc m k (if (contains? clj-properties k)
+                            (binding [*read-eval* false]
+                              (read-string (.getValue v)))
+                            (coerce-java-type v)))))
           {}
           raw-properties))
 
@@ -322,7 +338,9 @@
               model-record (record entity-record-type)]
           (map #(let [v (.getValue %)]
                   (with-meta
-                    (merge model-record (entity->properties (.getProperties v)))
+                    (merge model-record
+                           (entity->properties (.getProperties v)
+                                               (get-clj-properties model-record)))
                     {:key (.getKey v)}))
                entities))
         ;; handles singleton values
@@ -331,7 +349,8 @@
               raw-properties (into {} (.getProperties entity))
               entity-record (record entity-record-type)]
           (with-meta
-            (merge entity-record (entity->properties raw-properties))
+            (merge entity-record (entity->properties raw-properties
+                                                     (get-clj-properties entity-record)))
             {:key (.getKey entity)})))))
 
 
@@ -358,10 +377,28 @@
 (defmacro defentity [name properties &
                      {:keys [kind]
                       :or {kind (unqualified-name name)}}]
-  (let [key-property-name (first (filter #(= (:tag (meta %)) :key) properties))
-        key-property (if key-property-name (keyword (str key-property-name)) nil)]
+  ;; TODO: Clojure 1.3: Remove the ugly Clojure version check.
+  (let [clj13? (fn [] (and (= 1 (:major *clojure-version*))
+                           (= 3 (:minor *clojure-version*))))
+        key-property-name (if (clj13?)
+                              (first (filter #(contains? (meta %) :key) properties))
+                              (first (filter #(= (:tag (meta %)) :key) properties)))
+        ;; TODO: Clojure 1.3: Remove unnecessary call to str.
+        key-property (if key-property-name (keyword (str key-property-name)) nil)
+        ;; XXX: The keyword and str composition below works
+        ;; around a weird Clojure bug (see
+        ;; http://groups.google.com/group/clojure-dev/browse_thread/thread/655f6e7d1b312f17).
+        ;; TODO: This bug is fixed in Clojure 1.3 after alpha4 came out (see
+        ;; http://dev.clojure.org/jira/browse/CLJ-693).
+        clj-properties (if (clj13?)
+                           (set (map (comp keyword str)
+                                     (filter #(contains? (meta %) :clj) properties)))
+                           (set (map (comp keyword str)
+                                     (filter #(= (:tag (meta %)) :clj) properties))))]
     `(defrecord ~name ~properties
        EntityProtocol
+       (get-clj-properties [this#]
+         ~clj-properties)
        (get-key-object [this#]
          (get-key-object-helper this# ~key-property ~kind nil))
        (get-key-object [this# parent#]
@@ -381,11 +418,15 @@
 
 
 (defmacro new* [entity-record-type property-values & {:keys [parent]}]
-  `(let [parent# ~parent
-         entity# (new ~entity-record-type ~@property-values)]
-     (if (nil? parent#)
-         entity#
-         (with-meta entity# {:key (get-key-object entity# parent#)}))))
+  (let [props-expr (cond (vector? property-values) `(new ~entity-record-type ~@property-values)
+                         (map? property-values) `(record ~entity-record-type ~property-values)
+                         :else (throw (IllegalArgumentException. "bad argument to new*")))]
+    `(let [entity# ~props-expr
+           parent# ~parent]
+       (if (nil? parent#)
+           entity#
+           (with-meta entity# {:key (get-key-object entity# parent#)
+                               :parent (get-key-object parent#)})))))
 
 
 ;;; Note that the code relies on the API's implicit transaction tracking
@@ -402,12 +443,12 @@
              (throw err#))))))
 
 
-(defn query* [kind ancestor filters sorts keys-only?
-              count-only? in-transaction?
-              limit offset
-              start-cursor end-cursor
-              prefetch-size chunk-size
-              entity-record-type]
+(defn query-helper [kind ancestor filters sorts keys-only?
+                    count-only? in-transaction?
+                    limit offset
+                    start-cursor end-cursor
+                    prefetch-size chunk-size
+                    entity-record-type]
   (let [query-object (make-query-object kind ancestor filters sorts keys-only?)
         fetch-options-object (make-fetch-options-object limit offset prefetch-size chunk-size)
         prepared-query (if (and in-transaction? *current-transaction*)
@@ -426,7 +467,9 @@
                                        ;; unknown type; just use a basic EntityProtocol
                                        (EntityBase.))]
                   (map #(with-meta
-                          (merge model-record (entity->properties (.getProperties %)))
+                          (merge model-record
+                                 (entity->properties (.getProperties %)
+                                                     (get-clj-properties model-record)))
                           {:key (.getKey %)})
                        results)))))
 
@@ -447,7 +490,7 @@
              entity-record-type]
       :or {keys-only? false, filter [], sort [],
            count-only? false, in-transaction? false}}]
-  ;; Normalize :filter and :sort keywords (into lists, even if only one is gen),
+  ;; Normalize :filter and :sort keywords (into lists, even if only one is given),
   ;; then turn them into QueryFilter and QuerySort objects.
   (let [filter (if (every? sequential? filter) filter (vector filter))
         filter `(list ~@(map (fn [[op k v]] `(list (keyword '~op) ~k ~v)) filter))
@@ -477,9 +520,89 @@
                               (QuerySort. sort-property# sort-dir#))
                             (QuerySort. sort-spec# Query$SortDirection/ASCENDING)))
                       ~sort)]
-       (query* ~kind ~ancestor filter# sort# ~keys-only?
-               ~count-only? ~in-transaction?
-               ~limit ~offset
-               ~start-cursor ~end-cursor
-               ~prefetch-size ~chunk-size
-               ~entity-record-type))))
+       (query-helper ~kind ~ancestor filter# sort# ~keys-only?
+                     ~count-only? ~in-transaction?
+                     ~limit ~offset
+                     ~start-cursor ~end-cursor
+                     ~prefetch-size ~chunk-size
+                     ~entity-record-type))))
+
+
+(defn- get-key-str-helper [key]
+  (let [str-key (str key)]
+    (if (empty? str-key)
+        (throw (IllegalArgumentException.
+                (str "get-key-str must be called on an object with a datastore key, "
+                     "i.e., an object already persisted with save!")))
+        str-key)))
+
+
+(defn key-str
+  "Given an object, or a kind and an object, returns a string representation of
+   the object's key, e.g., \"User(10)\". It must be called after an object
+   already has acquired a key. The kind may be a string representing a datastore
+   kind, or an entity record defined with defentity. This function provides a
+   useful general-purpose mechanism for determining a unique identifier for a
+   datastore entity. Note that the resulting key string cannot, by itself, be
+   used for datastore queries. It is likely to be more helpful for saving
+   entities in, e.g., memcache.
+
+   The object argument can be the result of a KeyFactory/keyToString call, an
+   existing Key, or an existing entity record instance.
+
+   > (key-str \"ahNhcHBlbmdpbmUtbWFnaWMtYXBwcgoLEgRVc2VyGAgM\")
+   \"User(8)\"
+   > (key-str User 8)
+   \"User(8)\"
+   > (key-str Person \"alice@example.com\")
+   \"Person(\"alice@example.com\")\"
+   > (key-str user-object)
+   \"User(8)\""
+  ([obj]
+     (let [key (cond
+                ;; an entity; use its existing key
+                (extends? EntityProtocol (class obj))
+                (get-key-object obj)
+                ;; already a Key; use it
+                (instance? Key obj)
+                obj
+                ;; a string; make a Key
+                (string? obj)
+                (KeyFactory/stringToKey obj))]
+       (get-key-str-helper key)))
+  ([kind obj]
+     (let [kind (cond
+                 ;; already a string
+                 (string? kind)
+                 kind
+                 ;; probably an entity class
+                 (class? kind)
+                 (unqualified-name kind)
+                 ;; no clue
+                 :else (throw (IllegalArgumentException. "unsupported kind argument type")))
+           key (cond
+                ;; an entity; use its existing key
+                (extends? EntityProtocol (class obj))
+                (get-key-object obj)
+                ;; already a Key; use it
+                (instance? Key obj)
+                obj
+                ;; something else
+                :else
+                (KeyFactory/createKey kind (coerce-key-value-type obj)))]
+       (get-key-str-helper key))))
+
+
+(defn key-id [entity]
+  (when entity
+    (.getId (get-key-object entity))))
+
+
+(defn key-name [entity]
+  (when entity
+    (.getName (get-key-object entity))))
+
+
+(defn key-kind [entity]
+  (when entity
+    (.getKind (get-key-object entity))))

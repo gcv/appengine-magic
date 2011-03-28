@@ -1,19 +1,39 @@
 (ns appengine-magic.local-env-helpers
   (:use appengine-magic.utils)
-  (:require [clojure.string :as str])
   (:import java.io.File
            [com.google.apphosting.api ApiProxy ApiProxy$Environment]
            [com.google.appengine.tools.development ApiProxyLocalFactory ApiProxyLocalImpl
             LocalServerEnvironment]
-           com.google.appengine.api.labs.taskqueue.dev.LocalTaskQueue))
+           com.google.appengine.api.taskqueue.dev.LocalTaskQueue))
 
 
 (defonce *current-app-id* (atom nil))
+(defonce *current-app-version* (atom nil))
+
+(defonce *current-server-port* (atom nil))
+
+
+(defn make-thread-environment-proxy [& {:keys [user-email user-admin?]}]
+  (proxy [ApiProxy$Environment] []
+    (isLoggedIn [] (or (boolean user-email) false))
+    (getAuthDomain [] "")
+    (getRequestNamespace [] "")
+    (getDefaultNamespace [] "")
+    (getAttributes [] (java.util.HashMap.))
+    (getEmail [] (or user-email ""))
+    (isAdmin [] (or (Boolean/parseBoolean user-admin?) false))
+    (getAppId [] @*current-app-id*)
+    (getVersionId [] @*current-app-version*)))
 
 
 (defn appengine-init [#^File dir, port]
   (let [appengine-web-file (File. dir "WEB-INF/appengine-web.xml")
-        application-id (first (xpath-value appengine-web-file "//application"))
+        application-id (if (.exists appengine-web-file)
+                           (first (xpath-value appengine-web-file "//application"))
+                           "appengine-magic-app")
+        application-version (if (.exists appengine-web-file)
+                                (first (xpath-value appengine-web-file "//version"))
+                                "")
         proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
                       (getAppDir [] dir)
@@ -22,7 +42,12 @@
                       (waitForServerToStart [] nil))
         api-proxy (.create proxy-factory environment)]
     (reset! *current-app-id* application-id)
-    (ApiProxy/setDelegate api-proxy)))
+    (reset! *current-app-version* application-version)
+    (reset! *current-server-port* port)
+    (ApiProxy/setDelegate api-proxy)
+    ;; This installs a thread environment onto the REPL thread and allows App
+    ;; Engine API calls to work in the REPL.
+    (ApiProxy/setEnvironmentForCurrentThread (make-thread-environment-proxy))))
 
 
 (defn appengine-clear []
@@ -30,28 +55,3 @@
   (ApiProxy/clearEnvironmentForCurrentThread)
   (.stop (.getService (ApiProxy/getDelegate) LocalTaskQueue/PACKAGE))
   (.stop (ApiProxy/getDelegate)))
-
-
-(defn local-environment-proxy [req]
-  (let [servlet-cookies (:servlet-cookies req)
-        login-cookie (:value (get servlet-cookies "dev_appserver_login"))
-        [user-email user-admin _] (when login-cookie (str/split login-cookie #":"))]
-    (proxy [ApiProxy$Environment] []
-      (isLoggedIn [] (boolean user-email))
-      (getAuthDomain [] "")
-      (getRequestNamespace [] "")
-      (getDefaultNamespace [] "")
-      (getAttributes [] (java.util.HashMap.))
-      (getEmail [] (or user-email ""))
-      (isAdmin [] (Boolean/parseBoolean user-admin))
-      (getAppId [] @*current-app-id*))))
-
-
-(defmacro with-appengine [proxy & body]
-  `(last (doall [(ApiProxy/setEnvironmentForCurrentThread ~proxy) ~@body])))
-
-
-(defn environment-decorator [application]
-  (fn [req]
-    (with-appengine (local-environment-proxy req)
-      (application req))))

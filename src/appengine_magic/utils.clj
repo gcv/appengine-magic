@@ -3,11 +3,10 @@
            java.nio.ByteBuffer
            [java.nio.channels Channel Channels ReadableByteChannel WritableByteChannel]
            org.xml.sax.InputSource
-           javax.xml.parsers.DocumentBuilderFactory
-           [javax.xml.xpath XPathFactory XPathConstants]
-           javax.xml.transform.TransformerFactory
-           javax.xml.transform.dom.DOMSource
-           javax.xml.transform.stream.StreamResult))
+           [javax.xml parsers.DocumentBuilderFactory
+            xpath.XPathFactory xpath.XPathConstants
+            transform.TransformerFactory transform.dom.DOMSource
+            transform.stream.StreamResult]))
 
 
 ;;; Adapted from: http://groups.google.com/group/clojure/msg/5206fac13144ea99
@@ -41,6 +40,23 @@
         (when (.hasRemaining buf)
           (.write out-channel buf)
           (recur))))))
+
+
+(defn derefify-future
+  "Cribbed from clojure.core/future-call. Returns the result of a custom
+   function of the future itself for deref."
+  [f & {:keys [deref-fn] :or {deref-fn (fn [f] (.get f))}}]
+  (reify
+    ;; clojure.lang.IDeref interface
+    clojure.lang.IDeref
+    (deref [this] (deref-fn this))
+    ;; java.util.concurrent.Future interface
+    java.util.concurrent.Future
+    (get [_] (.get f))
+    (get [_ timeout unit] (.get f timeout unit))
+    (isCancelled [_] (.isCancelled f))
+    (isDone [_] (.isDone f))
+    (cancel [_ interrupt?] (.cancel f interrupt?))))
 
 
 (defn dash_ [s]
@@ -95,3 +111,18 @@
       (finally
        (when (instance? FileInputStream in-stream)
          (.close in-stream))))))
+
+
+(defn os-type []
+  (let [os-name (.toLowerCase (System/getProperty "os.name"))]
+    (cond (.startsWith os-name "mac os x")      :mac
+          (.startsWith os-name "windows")       :windows
+          (.startsWith os-name "linux")         :linux
+          (re-matches #".*bsd.*" os-name)       :bsd
+          (or (.startsWith os-name "solaris")
+              (.startsWith os-name "sunos")
+              (.startsWith os-name "irix")
+              (.startsWith os-name "hp-ux")
+              (.startsWith os-name "aix")
+              (re-matches #".*unix.*" os-name)) :unix
+              :else nil)))

@@ -18,17 +18,16 @@ README file tries to describe everything you need to know to use App Engine with
 Clojure, but does not explain the details of App Engine semantics. Please refer
 to Google's official documentation for details.
 
-Please read the [HISTORY](HISTORY.md) file to learn what changed in recent
-releases.
+Please read the project's HISTORY file to learn what changed in recent releases.
 
 
 
 ## Dependencies
 
-* Clojure 1.2.0
-* Leiningen 1.3.1
-* Google App Engine SDK 1.3.7
-* swank-clojure 1.2.1 (optional)
+* Clojure 1.2.1
+* Leiningen 1.5.0
+* Google App Engine SDK 1.4.2
+* swank-clojure 1.3.0 (optional)
 
 
 
@@ -52,11 +51,13 @@ To use appengine-magic effectively, you need the following:
    `def-appengine-app`.
 5. Web application resources. This primarily includes web application
    descriptors. `lein appengine-new` generates those and places them in the
-   `resources/WEB-INF/` directory. You should also place all static files that
-   your application uses in `resources/`.
+   `war/WEB-INF/` directory. You should also place all static files that your
+   application uses in `war/`.
 
-Here is a sample `core.clj`, using Compojure (other Ring-compatible frameworks,
-such as [Moustache](https://github.com/cgrand/moustache), also work):
+Here is a sample `core.clj`, using
+[Compojure](https://github.com/weavejester/compojure) (other Ring-compatible
+frameworks, such as [Moustache](https://github.com/cgrand/moustache), also
+work):
 
     (ns simple-example.core
       (:use compojure.core)
@@ -78,6 +79,12 @@ such as [Moustache](https://github.com/cgrand/moustache), also work):
 
     (ae/def-appengine-app simple-example-app #'simple-example-app-handler)
 
+If you wish to emit HTML or XML from your application, you should use a
+specialized Clojure server-side templating library, e.g.,
+[Enlive](https://github.com/cgrand/enlive) or
+[Hiccup](https://github.com/weavejester/hiccup). None of the appengine-magic
+examples rely on these libraries.
+
 
 
 ## Getting Started
@@ -94,17 +101,18 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.3.4"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.4.0"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
-   tasks available.
+   tasks available. If you already have the App Engine SDK installed locally,
+   and do not wish to wait for Maven to download it again as a dependency, you
+   may optionally run the provided `install-artifacts.sh` script first.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
    (which has a sample Ring handler and uses the `def-appengine-app` macro),
    `app_servlet.clj` (the entry point for the application),
-   `resources/WEB-INF/web.xml` (a servlet descriptor), and
-   `resources/WEB-INF/appengine-web.xml` (an App Engine application
-   descriptor). These files should contain reasonable starting defaults for your
-   application.
+   `war/WEB-INF/web.xml` (a servlet descriptor), and
+   `war/WEB-INF/appengine-web.xml` (an App Engine application descriptor). These
+   files should contain reasonable starting defaults for your application.
 
 With regard to AOT-compilation, if your project needs it, then you must include
 `<project>.app_servlet` in Leiningen's `:aot` directive. Otherwise, omit the
@@ -113,12 +121,12 @@ AOT-compiling the entry point servlet and cleaning up afterwards.
 
 The default `.gitignore` file produced by Leiningen works well with the
 resulting project, but do take a careful look at it. In particular, you should
-avoid checking in `resources/WEB-INF/lib/` or `resources/WEB-INF/classes/`: let
-Leiningen take care of managing those directories.
+avoid checking in `war/WEB-INF/lib/` or `war/WEB-INF/classes/`: let Leiningen
+take care of managing those directories.
 
 NB: When editing the Leiningen `project.clj` file, do not point `:compile-path`
-or `:library-path` to `resources/WEB-INF/classes/` and
-`resources/WEB-INF/lib/`. This will interfere with deployment.
+or `:library-path` to `war/WEB-INF/classes/` and `war/WEB-INF/lib/`. This will
+interfere with deployment.
 
 
 ### Development process
@@ -135,12 +143,17 @@ any framework which produces a Ring-compatible handler. Then, just pass the
 resulting Ring handler to `def-appengine-app`.
 
 To test your work interactively, you can control a Jetty instance from the REPL
-using `appengine-magic.core/start` and `appengine-magic.core/stop`. Examples
-(assuming you are in your application's `core` namespace and your application is
-named `foo`):
+using `appengine-magic.core/start` and `appengine-magic.core/stop`. In addition,
+a convenience function, `appengine-magic.core/serve`, will either start or restart
+a running instance. Examples (assuming you are in your application's `core`
+namespace and your application is named `foo`):
 
     (require '[appengine-magic.core :as ae])
 
+    ;; recommended: use this to start or restart an app
+    (ae/serve foo-app)
+
+    ;; or use these lower-level functions
     (ae/start foo-app)
     (ae/stop)
     (ae/start foo-app :port 8095)
@@ -149,31 +162,29 @@ named `foo`):
 Recompiling the functions which make up your Ring handler should produce
 instantaneous results.
 
+If you use SLIME, then the `swank.core/break` function works even inside a Ring
+handler.
+
 
 ### Testing with dev_appserver.sh
 
 1. `lein appengine-prepare`. This AOT-compiles the entry point servlet, makes a
    jar of your application, and copies it, along with all your library
-   dependencies, to your application's `resources/WEB-INF/lib/` directories.
-2. Run `dev_appserver.sh` with a path to your application's `resources/`
-   directory.
+   dependencies, to your application's `war/WEB-INF/lib/` directories.
+2. Run `dev_appserver.sh` with a path to your application's `war/` directory.
 
 
-### Static resources
+### Static files
 
-Just put all static files into your application's `resources/` directory. If you
-put a file called `index.html` there, it will become a default welcome file.
+Just put all static files into your application's `war/` directory. If you put a
+file called `index.html` there, it will become a default welcome file.
 
 
 ### Classpath resources
 
 Put all classpath resources you expect to need at runtime in `resources/`. You
 can then access them using the `appengine-magic.core/open-resource-stream`,
-which returns a `java.io.BufferedInputStream` instance. Please note that, by
-default, App Engine then makes these resources available as static files. To
-change this behavior, you need to modify `appengine-web.xml` file. See [Google
-documentation](http://code.google.com/appengine/docs/java/config/appconfig.html)
-for details.
+which returns a `java.io.BufferedInputStream` instance.
 
 Do not use direct methods like `java.io.File` or
 `ClassLoader/getSystemClassLoader` to access classpath resources; they do not
@@ -185,20 +196,30 @@ work consistently across all App Engine environments.
 1. First of all, be careful. You must manually maintain the version field in
    `appengine-web.xml` and you should understand its implications. Refer to
    Google App Engine documentation for more information.
-2. `lein appengine-prepare` prepares the `resources/` directory with the latest
+2. `lein appengine-prepare` prepares the `war/` directory with the latest
    classes and libraries for deployment.
 3. When you are ready to deploy, just run `appcfg.sh update` with a path to your
-   application's `resources/` directory.
+   application's `war/` directory.
 
 
 ### Checking the runtime environment
 
-It is sometimes useful to know if the current execution environment is the
-production App Engine, `dev_appserver.sh`, or the interactive REPL. For example,
-you may wish to return more detailed error messages and stack traces in
-non-production mode. `appengine-magic.core/appengine-environment-type` returns a
-keyword corresponding to the current environment: `:production`,
-`:dev-appserver`, and `:interactive`.
+- `appengine-magic.core/appengine-environment-type`: returns a keyword
+  corresponding to the current environment: `:production`, `:dev-appserver`, and
+  `:interactive`. Useful if you want to, e.g., return more detailed error
+  messages and stack traces in non-production mode.
+- `appengine-magic.core/appengine-app-id`: returns the ID of the running
+  application.
+- `appengine-magic.core/appengine-app-version`: returns the current deployed
+  version string.
+- `appengine-magic.core/appengine-base-url`: returns a string with the base
+  hostname of the current application, e.g., `http://my-app.appspot.com`. In
+  production, this always points to the `appspot.com` domain. In interactive
+  mode, this always points to `localhost`, but also includes the correct
+  port. The `:https?` keyword determines if the schema in the URL should be
+  `https://`, but is ignored in interactive mode. This function does not work in
+  `dev_appserver.sh` at all (it is difficult from within the application
+  environment to determine the correct port).
 
 
 ### Automatic testing code
@@ -280,11 +301,64 @@ service. App Engine takes care decoding the upload in its internal handlers, and
 the upload callbacks do not contain multipart data.
 
 
+### Managing multiple environments
+
+Most web applications use several environments internally: production, plus
+various staging and development installations. App Engine supports multiple
+versions in its `appengine-web.xml` file, but does nothing to help deal with
+installing to different full environments. Since different versions of App
+Engine applications share the same blobstore and datastore, distinguishing
+between production and staging using only versions is dangerous.
+
+`appengine-magic` has a mechanism to help deal with multiple environments. The
+Leiningen `appengine-update` task replaces the use of `appcfg.sh update`, and a
+new entry in `project.clj` manages applications and versions.
+
+1. Rename your `WEB-INF/application-web.xml` file to
+   `WEB-INF/application-web.xml.tmpl`. For safety reasons, `appengine-update`
+   will not run if a normal `application-web.xml` exists. For clarity, you
+   should blank out the contents of the `<application>` and `<version>` tags of
+   the template file (but leave the tags in place).
+2. Add a new entry to `project.clj`: `:appengine-app-versions`. This entry is a
+   map from application name to application version. Example:
+
+       :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
+                                "myapp-staging"    "2010-11-27 22:05"
+                                "myapp-dev1"       "2830"
+                                "myapp-dev2"       "2893"}
+
+   The `myapp-` key strings correspond to App Engine applications, registered
+   and managed through the App Engine console. The value strings are the
+   versions `appengine-update` will install if invoked on that application.
+3. Add a new entry to `project.clj`: `:appengine-sdk`. The App Engine SDK
+   location is necessary to execute the actual production deployment. This value
+   can be just a string, representing a path. Alternatively, for teams whose
+   members keep the App Engine SDK in different locations, this value can be a
+   map from username to path string. Examples:
+
+       :appengine-sdk "/opt/appengine-java-sdk"
+       :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
+                       "bob"     "/Users/bob/lib/appengine-java-sdk"
+                       "charlie" "/home/charlie/appengine/sdk/current"}
+
+4. Run `lein appengine-update <application>`, where the argument is an
+   application name from the `:appengine-app-versions` map.
+
+If you use this mechanism, be aware that `dev_appserver.sh` will no longer work
+(since your project no longer defines a simple `appengine-web.xml` file). To run
+that process, use `lein appengine-dev-appserver <application>`.
+
+You may also force a specific version string if you pass it as an optional
+argument to `appengine-update`: `lein appengine-update <application> <version>`.
+
+
 
 ## App Engine Services
 
 appengine-magic provides convenience wrappers for using App Engine services from
-Clojure.
+Clojure. Most of these API calls will work when invoked from the REPL, but only
+if an application is running — that is, it was launched using
+`appengine-magic.core/start`.
 
 
 ### User service
@@ -374,6 +448,49 @@ A few simple examples:
     (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
       (ds/delete! (ds/query :kind Book :filter (= :author geoff))))
 
+The next example (which uses Compojure) demonstrates the use of entity groups
+and transactions.
+
+    (use '[clojure.pprint :only [pprint]]
+         'compojure.core)
+    (require '[appengine-magic.core :as ae]
+             '[appengine-magic.services.datastore :as ds])
+
+    (ds/defentity Parent [^:key name, children])
+    (ds/defentity Child [^:key name])
+
+    (defroutes entity-group-example-app-handler
+      (GET  "/" [] {:headers {"Content-Type" "text/plain"} :body "started"})
+      (POST "/new/:parent-name/:child-name" [parent-name child-name]
+            (let [parent (or (ds/retrieve Parent parent-name)
+                             ;; Note the use of ds/save! here. Unless an entity has
+                             ;; been saved to the datastore, children cannot join
+                             ;; the entity group.
+                             (ds/save! (Parent. parent-name [])))
+                  ;; Note the use of ds/new* here: it is required so that a :parent
+                  ;; entity may be specified in the instantiation of a child entity.
+                  child (ds/new* Child [child-name] :parent parent)]
+              ;; Updating the parent and the child together occurs in a transaction.
+              (ds/with-transaction
+                (ds/save! (assoc parent
+                            :members (conj (:children parent) child-name)))
+                (ds/save! child))
+              {:headers {"Content-Type" "text/plain"}
+               :body "done"}))
+      (GET  "/parents" []
+            (let [parents (ds/query :kind Parent)]
+              {:headers {"Content-Type" "text/plain"}
+               :body (str (with-out-str (pprint parents))
+                          "\n"
+                          (with-out-str (pprint (map ds/get-key-object parents))))}))
+      (GET  "/children" []
+            (let [children (ds/query :kind Child)]
+              {:headers {"Content-Type" "text/plain"}
+               :body (str (with-out-str (pprint children))
+                          "\n"
+                          (with-out-str (pprint (map ds/get-key-object children))))}))
+      (ANY  "*" [] {:status 404 :body "not found" :headers {"Content-Type" "text/plain"}}))
+
 - `defentity` (optional keyword: `:kind`): defines an entity record type
   suitable for storing in the App Engine datastore. These entities work just
   like Clojure records. Internally, they implement an additional protocol,
@@ -388,11 +505,24 @@ A few simple examples:
   Clojure conventions to instantiate entity records, but creating entities
   destined for entity groups requires using `new*`. To put the new entity into a
   group, use the `:parent` keyword with the parent entity. Instantiating an
-  entity does not automatically write it to the datastore.
+  entity does not automatically write it to the datastore. `new*` accepts either
+  a vector of slot values or a map of slots.
 - `get-key-object`: this returns the primary Key object of the given entity. For
   a newly-instantiated entity lacking an explicit primary key, this method
   returns nil. Entities properly brought under entity groups using `new*` will
   have hierarchical keys. You should rarely need to use this explicitly.
+- `key-str`: this utility function returns the string representation of a Key
+  object. The Key object may be given directly, or as the encoded result of call
+  to `com.google.appengine.api.datastore.KeyFactory/keyToString`. In addition,
+  the Key may be constructed by passing `key-str` the type (or kind string) of
+  the object and its ID. This function is probably most useful for generating
+  human-readable keys for storing entities in maps or memcache.
+- `key-id`: this utility function returns the numeric identifier of the numeric
+  key of the given entity.
+- `key-name`: this utility function returns the string identifier of the string
+  key of the given entity.
+- `key-kind`: this utility function returns the kind, as a string, of the given
+  entity.
 - `save!`: calling this method on an entity writes it to the datastore, using
   the primary key returned by calling `get-key-object` on the entity. May be
   called on a sequence of entities.
@@ -436,6 +566,20 @@ A few simple examples:
     `com.google.appengine.api.blobstore.BlobKey`.
   * `as-text`: casts a string to `com.google.appengine.api.datastore.Text`.
   * `as-link`: casts a string to `com.google.appengine.api.datastore.Link`.
+
+The Clojure interface to the Datastore has an additional feature: any entity
+field may be marked with the `^:clj` metadata tag:
+
+    (ds/defentity TestEntity [^:key test-id, ^:clj some-table])
+
+The values of fields marked with the `^:clj` tag will go into the datastore as
+strings produced by Clojure's `prn-str` function, and they will be retrieved as
+Clojure objects read by `read-string`. In other words, `^:clj` fields will be
+serialized and retrieved using Clojure's reader. This is quite helpful for
+dealing with types which the datastore does not support: specifically maps (not
+even `java.util.HashMap` works) and sets (not even `java.util.HashSet`
+works). Keep in mind, however, that these fields are stored as instances of
+`com.google.appengine.api.datastore.Text`, which the datastore does not index.
 
 
 ### Blobstore
@@ -526,6 +670,20 @@ This is confusing, but a Compojure example will help.
            (blobs/serve req blob-key)))
 
     (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
+
+Note that the Blobstore API primarily allows for browser-driven file
+uploads. appengine-magic includes a hack which allows an application to upload a
+blob without a browser.
+
+- `upload-hack <contents> <success-path>`: upload contents into the
+  blobstore. When the upload completes, App Engine will make a request to the
+  `<success-path>` URL, just like in a regular blobstore upload. This callback
+  should record the blob key of the uploaded data. `<contents>` is either a
+  single map, or a vector of maps, each with the following keys:
+  * `:field`: the name of the imitation form field; used as keys in the result
+    of `uploaded-blobs`.
+  * `:filename`
+  * `:bytes`: byte array of the uploaded data.
 
 
 ### Mail service
@@ -642,52 +800,117 @@ HTTP requests to external services.
     without an error; if false, throws an exception instead.
   * `:follow-redirects`: if true (default), follows request redirects.
   * `:deadline`: deadline for the requst, in seconds, expressed as a double.
-- `fetch-async <url>` (optional keywords same as `fetch`): works like `fetch`,
-  but returns a future-like object. May block when derefed if it has not yet
-  finished loading.
+  * `:async?`: if true, returns a future-like object. May block when derefed if
+  it has not yet finished loading.
+
+
+### Images service
+
+With `appengine-magic.services.images`, an application can (1) apply simple
+transformations to images, either in the blobstore or saved in byte arrays, and
+(2) access blobstore images through a CDN, with limited resizing capability.
+
+- `get-image <image-arg>`: if `image-arg` is a string or a blob key, returns an
+  image reference to this blob; if `image-arg` is a byte array, returns an image
+  corresponding to this byte array.
+- `serving-url <blob-key>`: returns a URL pointing directly at a blob image in a
+  Google content delivery network.
+  * `:size`: some resized versions of the given blob are available.
+  * `:crop?`: some sizes can be cropped instead of resized.
+- `transform <image-arg> <transforms>`: applies one or more transformations to
+  an image and returns the result as an instance of
+  `com.google.appengine.api.images.Image`. `Image/getImageData` returns an array
+  of bytes, useful as a response body. The `image-arg` argument can be an
+  instance of `Image`, or a string blob key reference, or a byte array. The
+  `transforms` argument is a vector of transformation objects, created using the
+  transformation functions below.Keyword arguments:
+  * `:async?`: if true, makes the `transform` function return a future-like
+    object.
+  * `:quality`: a value from 1 to 100.
+  * `:format`: the output format, either `:jpeg` (alternatively `:jpg`) or
+    `:png`.
+- Transformation functions:
+  * `crop* <left-x> <top-y> <right-x> <bottom-y>`: crops an image, each argument
+    is a fractional value from 0.0 to 1.0.
+  * `im-feeling-lucky*`: tries to automatically correct color and contrast; does
+    nothing in the development environment.
+  * `resize* <width> <height>`
+  * `rotate* <degrees-clockwise>`
+  * `horizontal-flip*`
+  * `vertical-flip*`
+
+
+### Channel service
+
+App Engine has an implementation of server push through its Channel service
+(`appengine-magic.services.channel`). Using it requires a combination of
+client-side JavaScript event callbacks, and channel management on the
+server.
+
+Conceptually, the server maintains one or more channels associated with a client
+ID (this is a small number; it is probably safest to assume only one channel per
+ID). The server opens a channel, which generates a channel token. This token
+must be passed to the connecting client; the client then uses the token to
+receive messages from the server.
+
+- `create-channel <client-id>`: creates a new channel and returns a token;
+  JavaScript code will use this token to connect to the server.
+- `make-message <client-id> <message-string>`: makes a message object destined
+  for all channels associated with the given client ID.
+- `send <message-object>`: sends the given message object.
+- `send <client-id> <message-string>`: sends the given string to the given
+  client.
+
+NB: The current version of the Channel service does not help with channel
+bookkeeping. It probably cleans up idle channels internally, but does not inform
+the application of this. The application is responsible for keeping track of
+active channels.
+
+The client needs to load the JavaScript code at `/_ah/channel/jsapi`:
+
+    <script src="/_ah/channel/jsapi" type="text/javascript"></script>
+
+Once this library loads, the client must initiate a request in which the server
+can return the channel ID. Once this is done, the rest of the client API looks
+like this:
+
+    // read this from a normal server response
+    var channel_token = ...;
+
+    // open a "socket" to the server
+    var channel = new goog.appengine.Channel(channel_token);
+    var socket = channel.open();
+
+    // implement these callbacks to take action when an event occurs
+    socket.onopen = function(evt) { var data = evt.data; ... };
+    socket.onmessage = function(evt) { var data = evt.data; ... };
+    socket.onerror = function(evt) { var data = evt.data; ... };
+    socket.onclose = function(evt) { var data = evt.data; ... };
+
+NB: The development implementations of the Channel service just poll the server
+for updates, and merely emulate server push. If you watch a browser request
+console, you'll see the polling requests.
 
 
 
 ## Limitations
 
 
-### Using App Engine API calls
-
-Most App Engine services do not work when invoked without an initialized App
-Engine context. For the time being, this context only exists (1) inside an
-application's Ring handlers, and (2) in the automatic testing environment
-provided by `appengine-magic.testing`. This means that you cannot directly
-invoke most App Engine API functions from the REPL.
-
-
 ### Incomplete features
-
-When using the interactive REPL environment, some App Engine services are more
-limited than in `dev_appserver.sh` or in deployment. Because the App Engine
-SDK's jars are a mess, and many are not available in Maven repositories,
-providing the same functionality in an interactive Clojure environment is tricky
-and error-prone. In particular, the administration console, `/_ah/admin` is not
-available in the REPL environment.
 
 The following Google services are not yet tested in the REPL environment:
 
-- Images
-- Multitenancy
+- Datastore async queries
+- Datastore cursors
+- Compositing in the Images API
+- Multitenancy (namespaces)
+- Metadata queries (in the datastore API)
+- Capabilities
 - OAuth
 - XMPP
 
 They may still work, but appengine-magic does not provide convenient Clojure
 interfaces for them, and may lack mappings for any necessary supporting URLs.
-
-
-### Resource duplication
-
-The `appengine-prepare` task currently copies all your static files and other
-resources into the jar file containing your application. This means that these
-resources deploy to App Engine both as separate files, and inside the jar. This
-should not cause problems for the time being (except for increased space), and
-will be fixed when Leiningen 1.4 comes out (which supports a `:jar-exclusions`
-project property).
 
 
 
@@ -715,7 +938,9 @@ Many thanks to:
 * Brian Gruber
 * Marko Kocić
 * Conrad Barski
+* Yuri Niyazov
 * Alex Bolodurin
+* Stefan Kamphausen
 * Masashi Iizuka
 
 

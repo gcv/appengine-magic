@@ -1,7 +1,7 @@
 (ns appengine-magic.services.task-queues
   (:require [appengine-magic.services.datastore :as ds])
   (:import java.util.Date
-           [com.google.appengine.api.labs.taskqueue Queue QueueFactory
+           [com.google.appengine.api.taskqueue Queue QueueFactory
             TaskOptions$Builder TaskOptions$Method]))
 
 
@@ -41,16 +41,18 @@
   (when-not (map? params)
     (throw (IllegalArgumentException. "add! :params must be a map")))
   (let [queue-obj (get-task-queue :queue queue)
-        opts (TaskOptions$Builder/url url)]
+        opts (TaskOptions$Builder/withUrl url)]
     ;; headers
     (doseq [[header-name header-value] headers]
       (.header opts header-name header-value))
     ;; params
     (doseq [[param-name param-value] params]
-      (.param opts param-name (cond
-                               (string? param-value) param-value
-                               (instance? (class (byte-array 0)) param-value) param-value
-                               :else (str param-value))))
+      (.param opts
+              (name param-name)
+              (cond
+               (string? param-value) param-value
+               (instance? (class (byte-array 0)) param-value) param-value
+               :else (str param-value))))
     ;; HTTP method for hitting task
     (.method opts (*task-http-methods* method))
     ;; payload

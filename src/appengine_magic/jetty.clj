@@ -10,32 +10,23 @@
 (defn- proxy-multihandler
   "Returns a Jetty Handler implementation for the given map of relative URLs to
    handlers. Each handler may be a Ring handler or an HttpServlet instance."
-  [all-handlers]
-  (let [all-contexts (ContextHandlerCollection.)]
-    (doseq [[relative-url url-handlers] all-handlers]
-      (let [url-handlers (if (sequential? url-handlers) url-handlers [url-handlers])
-            context (Context. all-contexts relative-url Context/SESSIONS)]
-        (doseq [handler url-handlers]
-          (cond
-           ;; plain servlets
-           (instance? HttpServlet handler)
-           (.addServlet context (ServletHolder. handler) "/*")
-           ;; plain filters
-           (instance? Filter handler)
-           (.addFilter context (FilterHolder. handler) "/*" Handler/ALL)
-           ;; a Ring handler
-           :else
-           (.addServlet context (ServletHolder. (servlet handler)) "/*")))))
+  [filters all-handlers]
+  (let [all-contexts (ContextHandlerCollection.)
+        context (Context. all-contexts "/" Context/SESSIONS)]
+    (doseq [[url filter-objs] filters]
+      (let [filter-objs (if (sequential? filter-objs) filter-objs [filter-objs])]
+        (doseq [filter-obj filter-objs]
+          (.addFilter context (FilterHolder. filter-obj) url Handler/ALL))))
+    (doseq [[relative-url url-handler] all-handlers]
+      (.addServlet context (ServletHolder. url-handler) relative-url))
     all-contexts))
 
 
-(defn #^Server start [handlers &
+(defn #^Server start [filter-map servlet-map &
                       {:keys [port join?] :or {port 8080 join? false}}]
   (let [server (Server. port)]
     (doto server
-      (.setHandler (if (map? handlers)
-                       (proxy-multihandler handlers)
-                       (proxy-multihandler {"/" handlers})))
+      (.setHandler (proxy-multihandler filter-map servlet-map))
       (.start))
     (when join? (.join server))
     server))

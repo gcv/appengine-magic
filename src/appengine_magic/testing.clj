@@ -1,10 +1,12 @@
 (ns appengine-magic.testing
+  (:use [appengine-magic.utils :only [os-type]])
   (:import [com.google.appengine.tools.development.testing LocalServiceTestHelper
             LocalServiceTestConfig
             LocalMemcacheServiceTestConfig LocalMemcacheServiceTestConfig$SizeUnit
             LocalMailServiceTestConfig
             LocalDatastoreServiceTestConfig
-            LocalUserServiceTestConfig]))
+            LocalUserServiceTestConfig]
+           [com.google.apphosting.api ApiProxy]))
 
 
 (def *memcache-size-units*
@@ -52,8 +54,11 @@
       (.setMaxTxnLifetimeMs ldstc max-txn-lifetime-ms))
     (when-not (nil? max-query-lifetime-ms)
       (.setMaxQueryLifetimeMs ldstc max-query-lifetime-ms))
-    (when-not (nil? backing-store-location)
-      (.setBackingStoreLocation ldstc backing-store-location))
+    (if-not (nil? backing-store-location)
+        (.setBackingStoreLocation ldstc backing-store-location)
+        (.setBackingStoreLocation ldstc (if (= :windows (os-type))
+                                            "NUL"
+                                            "/dev/null")))
     ldstc))
 
 
@@ -72,10 +77,14 @@
 
 (defn- make-local-services-fixture-fn [services hook-helper]
   (fn [test-fn]
-    (let [helper (hook-helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services)))]
+    (let [environment (ApiProxy/getCurrentEnvironment)
+          delegate (ApiProxy/getDelegate)
+          helper (hook-helper (LocalServiceTestHelper. (into-array LocalServiceTestConfig services)))]
       (.setUp helper)
       (test-fn)
-      (.tearDown helper))))
+      (.tearDown helper)
+      (ApiProxy/setEnvironmentForCurrentThread environment)
+      (ApiProxy/setDelegate delegate))))
 
 
 (defn- local-services-helper
