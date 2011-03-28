@@ -8,7 +8,7 @@
 
 
 (deftest stats
-  (is (= (appengine-magic.services.memcache.Statistics. 0 0 0 0 0 0)
+  (is (= (appengine_magic.services.memcache.Statistics. 0 0 0 0 0 0)
          (memcache/statistics))))
 
 
