@@ -1,4 +1,4 @@
-## 0.4.0 (???)
+## 0.4.0 (2011-03-27)
 
 * Added `appengine-magic.services.datastore/key-id`,
   `appengine-magic.services.datastore/key-name`, and

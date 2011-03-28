@@ -24,10 +24,10 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 ## Dependencies
 
-* Clojure 1.2.0
-* Leiningen 1.4.0
+* Clojure 1.2.1
+* Leiningen 1.5.0
 * Google App Engine SDK 1.4.2
-* swank-clojure 1.2.1 (optional)
+* swank-clojure 1.3.0 (optional)
 
 
 
@@ -101,7 +101,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.4.0-SNAPSHOT"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.4.0"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available. If you already have the App Engine SDK installed locally,
