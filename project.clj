@@ -1,9 +1,9 @@
 (defproject appengine-magic "0.4.0-SNAPSHOT"
   :description "Google App Engine library for Clojure."
-  :min-lein-version "1.4.0"
+  :min-lein-version "1.5.0"
   :repositories {"releases" "http://appengine-magic-mvn.googlecode.com/svn/releases/"
                  "snapshots" "http://appengine-magic-mvn.googlecode.com/svn/snapshots/"}
-  :dependencies [[org.clojure/clojure "1.2.0"]
+  :dependencies [[org.clojure/clojure "1.2.1"]
                  [ring/ring-core "0.3.7"]
                  [org.apache.commons/commons-exec "1.1"]
                  ;; App Engine supporting essentials
@@ -25,4 +25,4 @@
                  [com.google.appengine/appengine-local-runtime-shared "1.4.2"]
                  [com.google.appengine/appengine-testing "1.4.2"]
                  [com.google.appengine/appengine-tools-api "1.4.2"]]
-  :dev-dependencies [[swank-clojure "1.2.1"]])
+  :dev-dependencies [[swank-clojure "1.3.0"]])

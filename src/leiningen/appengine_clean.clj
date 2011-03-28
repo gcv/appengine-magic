@@ -1,6 +1,6 @@
 (ns leiningen.appengine-clean
   "Cleans out appengine library area."
-  (:require lancet)
+  (:require [lancet.core :as lancet])
   (:import java.io.File))
 
 

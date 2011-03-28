@@ -1,7 +1,8 @@
 (ns leiningen.appengine-prepare
   "Prepares a the Google App Engine application for deployment."
   (:use appengine-magic.utils)
-  (:require leiningen.compile leiningen.jar leiningen.util.file lancet)
+  (:require leiningen.compile leiningen.jar leiningen.util.file
+            [lancet.core :as lancet])
   (:import java.io.File))
 
 
