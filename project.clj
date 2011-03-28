@@ -25,4 +25,4 @@
                  [com.google.appengine/appengine-local-runtime-shared "1.4.2"]
                  [com.google.appengine/appengine-testing "1.4.2"]
                  [com.google.appengine/appengine-tools-api "1.4.2"]]
-  :dev-dependencies [[swank-clojure "1.3.0"]])
+  :dev-dependencies [[swank-clojure "1.3.0" :exclusions [org.clojure/clojure]]])
