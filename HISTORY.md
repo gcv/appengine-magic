@@ -1,3 +1,8 @@
+## 0.4.1 (2011-04-03)
+
+* Basic support for App Engine SDK 1.4.3.
+
+
 ## 0.4.0 (2011-03-27)
 
 * Added `appengine-magic.services.datastore/key-id`,
