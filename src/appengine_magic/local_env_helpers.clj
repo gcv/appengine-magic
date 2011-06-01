@@ -36,6 +36,7 @@
                                 "")
         proxy-factory (ApiProxyLocalFactory.)
         environment (proxy [LocalServerEnvironment] []
+                      (enforceApiDeadlines [] true)
                       (getAppDir [] dir)
                       (getAddress [] "localhost")
                       (getPort [] port)
