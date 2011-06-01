@@ -26,7 +26,7 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 * Clojure 1.2.1
 * Leiningen 1.5.0
-* Google App Engine SDK 1.4.3
+* Google App Engine SDK 1.5.0
 * swank-clojure 1.3.0 (optional)
 
 
@@ -900,6 +900,7 @@ console, you'll see the polling requests.
 
 The following Google services are not yet tested in the REPL environment:
 
+- Pull queues (from App Engine SDK 1.5.0)
 - Deferred API (from App Engine SDK 1.4.3)
 - Remote API (from App Engine SDK 1.4.3)
 - Files API (from App Engine SDK 1.4.3)

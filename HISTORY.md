@@ -1,6 +1,7 @@
 ## 0.4.2 (???)
 
 * Concurrent requests are now enabled by default in all new projects.
+* Basic support for App Engine SDK 1.5.0.
 
 
 ## 0.4.1 (2011-04-03)
