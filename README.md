@@ -341,6 +341,9 @@ new entry in `project.clj` manages applications and versions.
                        "bob"     "/Users/bob/lib/appengine-java-sdk"
                        "charlie" "/home/charlie/appengine/sdk/current"}
 
+   If the APPENGINE_HOME environment variable is set, its value will
+   be used if no :appengine-sdk entry is found in the project.clj
+   file.
 4. Run `lein appengine-update <application>`, where the argument is an
    application name from the `:appengine-app-versions` map.
 
