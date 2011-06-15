@@ -40,7 +40,7 @@
     (let [#^String uri (:uri req)]
       (if (.startsWith uri "/WEB-INF")
           (app req)
-          (do (println "Here") ((wrap-file-info (wrap-file app war-root)) req))))))
+          ((wrap-file-info (wrap-file app war-root)) req)))))
 
 
 (defmacro def-appengine-app [app-var-name handler & {:keys [war-root]}]
