@@ -3,7 +3,8 @@
 (use 'appengine-magic.local-env-helpers
      '[appengine-magic.servlet :only [servlet]]
      '[appengine-magic.swank :only [wrap-swank]]
-     '[ring.middleware.file :only [wrap-file]])
+     '[ring.middleware.file :only [wrap-file]]
+     '[ring.middleware.file-info :only [wrap-file-info]])
 
 (require '[clojure.string :as str]
          '[appengine-magic.jetty :as jetty]
@@ -39,7 +40,7 @@
     (let [#^String uri (:uri req)]
       (if (.startsWith uri "/WEB-INF")
           (app req)
-          ((wrap-file app war-root) req)))))
+          ((wrap-file-info (wrap-file app war-root)) req)))))
 
 
 (defmacro def-appengine-app [app-var-name handler & {:keys [war-root]}]
