@@ -1,7 +1,9 @@
-## 0.4.2 (???)
+## 0.4.2 (2011-06-21)
 
+* Added `appengine-magic.services.channel/parse-presence` to support presence
+  notifications from the Channel service.
 * Concurrent requests are now enabled by default in all new projects.
-* Basic support for App Engine SDK 1.5.0.
+* Basic support for App Engine SDK 1.5.1.
 
 
 ## 0.4.1 (2011-04-03)
