@@ -11,9 +11,9 @@
         appengine-sdk (cond
                        ;; not given
                        (nil? appengine-sdk)
-		       (if-let [from-env (System/getenv "APPENGINE_HOME")]
-			 from-env
-			 (lein/abort (str task-name "no App Engine SDK specified: set :appengine-sdk in project.clj, or APPENGINE_HOME in the environment")))
+                       (if-let [from-env (System/getenv "APPENGINE_HOME")]
+                           from-env
+                           (lein/abort (str task-name "no App Engine SDK specified: set :appengine-sdk in project.clj, or APPENGINE_HOME in the environment")))
                        ;; a string
                        (string? appengine-sdk)
                        appengine-sdk
