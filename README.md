@@ -952,6 +952,9 @@ Many thanks to:
 * Alex Bolodurin
 * Stefan Kamphausen
 * Masashi Iizuka
+* Dave Lambert
+* Brian Rowe
+* Tobias Raeder
 
 
 
