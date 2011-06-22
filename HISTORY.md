@@ -1,3 +1,15 @@
+## 0.4.2 (2011-06-21)
+
+* Basic support for App Engine SDK 1.5.1.
+* Improved static file Content-Type handling in development mode (thanks to
+  Brian Rowe and Tobias Raeder).
+* Respect the `APPENGINE_HOME` environment variable if `project.clj` omits
+  `:appengine-sdk` (thanks to Dave Lambert).
+* Added `appengine-magic.services.channel/parse-presence` to support presence
+  notifications from the Channel service.
+* Concurrent requests are now enabled by default in all new projects.
+
+
 ## 0.4.1 (2011-04-03)
 
 * Basic support for App Engine SDK 1.4.3.

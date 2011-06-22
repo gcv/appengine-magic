@@ -8,4 +8,6 @@
   <static-files/>
   <resource-files/>
 
+  <threadsafe>true</threadsafe>
+
 </appengine-web-app>

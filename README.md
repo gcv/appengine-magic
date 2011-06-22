@@ -25,9 +25,9 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 ## Dependencies
 
 * Clojure 1.2.1
-* Leiningen 1.5.0
-* Google App Engine SDK 1.4.3
-* swank-clojure 1.3.0 (optional)
+* Leiningen 1.5.2
+* Google App Engine SDK 1.5.1
+* swank-clojure 1.3.1 (optional)
 
 
 
@@ -101,7 +101,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.4.1"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.4.2"]` to your
    `:dev-dependencies`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available. If you already have the App Engine SDK installed locally,
@@ -341,6 +341,9 @@ new entry in `project.clj` manages applications and versions.
                        "bob"     "/Users/bob/lib/appengine-java-sdk"
                        "charlie" "/home/charlie/appengine/sdk/current"}
 
+   If the APPENGINE_HOME environment variable is set, its value will
+   be used if no :appengine-sdk entry is found in the project.clj
+   file.
 4. Run `lein appengine-update <application>`, where the argument is an
    application name from the `:appengine-app-versions` map.
 
@@ -860,6 +863,9 @@ receive messages from the server.
 - `send <message-object>`: sends the given message object.
 - `send <client-id> <message-string>`: sends the given string to the given
   client.
+- `parse-presence <ring-request-map>`: returns a ClientStatus record, containing
+  two fields: `:status` and `:id`. If the client just connected, the `:status`
+  is `:connected`; otherwise `:disconnected`.
 
 NB: The current version of the Channel service does not help with channel
 bookkeeping. It probably cleans up idle channels internally, but does not inform
@@ -900,6 +906,7 @@ console, you'll see the polling requests.
 
 The following Google services are not yet tested in the REPL environment:
 
+- Pull queues (from App Engine SDK 1.5.0)
 - Deferred API (from App Engine SDK 1.4.3)
 - Remote API (from App Engine SDK 1.4.3)
 - Files API (from App Engine SDK 1.4.3)
@@ -945,6 +952,9 @@ Many thanks to:
 * Alex Bolodurin
 * Stefan Kamphausen
 * Masashi Iizuka
+* Dave Lambert
+* Brian Rowe
+* Tobias Raeder
 
 
 
