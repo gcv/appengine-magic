@@ -186,6 +186,11 @@ Put all classpath resources you expect to need at runtime in `resources/`. You
 can then access them using the `appengine-magic.core/open-resource-stream`,
 which returns a `java.io.BufferedInputStream` instance.
 
+You may also use `appengine-magic.core/resource-url` to find a classpath
+resource's internal URL. This URL will not be externally visible (it will not be
+an HTTP URL), but you may use it to refer to classpath resources from within the
+application's code.
+
 Do not use direct methods like `java.io.File` or
 `ClassLoader/getSystemClassLoader` to access classpath resources; they do not
 work consistently across all App Engine environments.
@@ -955,6 +960,7 @@ Many thanks to:
 * Dave Lambert
 * Brian Rowe
 * Tobias Raeder
+* Mark Rathwell
 
 
 

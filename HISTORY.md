@@ -1,6 +1,8 @@
 ## 0.4.3 (2011-07-30)
 
 * Basic support for App Engine SDK 1.5.2.
+* Added support for reading classpath resources by their internal URLs through
+  the `appengine-magic.core/resource-url` function (thanks to Mark Rathwell).
 
 
 ## 0.4.2 (2011-06-21)
