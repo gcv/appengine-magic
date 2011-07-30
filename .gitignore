@@ -4,3 +4,4 @@ pom.xml
 /classes
 *.class
 *.jar
+*~
