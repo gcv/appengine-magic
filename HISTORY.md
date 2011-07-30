@@ -1,3 +1,8 @@
+## 0.4.3 (2011-07-30)
+
+* Basic support for App Engine SDK 1.5.2.
+
+
 ## 0.4.2 (2011-06-21)
 
 * Basic support for App Engine SDK 1.5.1.
