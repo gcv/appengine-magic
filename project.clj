@@ -1,10 +1,10 @@
-(defproject appengine-magic "0.4.2"
+(defproject appengine-magic "0.4.3-SNAPSHOT"
   :description "Google App Engine library for Clojure."
-  :min-lein-version "1.5.0"
+  :min-lein-version "1.6.1"
   :repositories {"releases" "http://appengine-magic-mvn.googlecode.com/svn/releases/"
                  "snapshots" "http://appengine-magic-mvn.googlecode.com/svn/snapshots/"}
   :dependencies [[org.clojure/clojure "1.2.1"]
-                 [ring/ring-core "0.3.8"]
+                 [ring/ring-core "0.3.11"]
                  [org.apache.commons/commons-exec "1.1"]
                  ;; App Engine supporting essentials
                  [javax.servlet/servlet-api "2.5"]
@@ -18,11 +18,11 @@
                  [taglibs/standard "1.1.2"] ; repackaged-appengine-jakarta-standard-1.1.2.jar
                  [commons-el "1.0"]
                  ;; main App Engine libraries
-                 [com.google.appengine/appengine-api-1.0-sdk "1.5.1"]
-                 [com.google.appengine/appengine-api-labs "1.5.1"]
-                 [com.google.appengine/appengine-api-stubs "1.5.1"]
-                 [com.google.appengine/appengine-local-runtime "1.5.1"]
-                 [com.google.appengine/appengine-local-runtime-shared "1.5.1"]
-                 [com.google.appengine/appengine-testing "1.5.1"]
-                 [com.google.appengine/appengine-tools-api "1.5.1"]]
+                 [com.google.appengine/appengine-api-1.0-sdk "1.5.2"]
+                 [com.google.appengine/appengine-api-labs "1.5.2"]
+                 [com.google.appengine/appengine-api-stubs "1.5.2"]
+                 [com.google.appengine/appengine-local-runtime "1.5.2"]
+                 [com.google.appengine/appengine-local-runtime-shared "1.5.2"]
+                 [com.google.appengine/appengine-testing "1.5.2"]
+                 [com.google.appengine/appengine-tools-api "1.5.2"]]
   :dev-dependencies [[swank-clojure "1.3.1" :exclusions [org.clojure/clojure]]])
