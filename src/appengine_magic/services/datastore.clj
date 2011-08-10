@@ -164,6 +164,9 @@
    (cond (instance? clojure.lang.APersistentMap v) (to-java-hashmap v) ; broken in GAE 1.3.7
          (instance? clojure.lang.APersistentSet v) (to-java-hashset v) ; broken in GAE 1.3.7
          (extends? EntityProtocol (class v)) (get-key-object v)
+	 (or (instance? clojure.lang.PersistentList v)
+	     (instance? clojure.lang.PersistentVector v))
+	 (map #(if (extends? EntityProtocol (class %)) (get-key-object %) %) v) ; ReferenceList support
          :else v)))
 
 
