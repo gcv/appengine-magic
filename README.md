@@ -102,7 +102,7 @@ functionality.
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
 3. Edit `project.clj`: add `[appengine-magic "0.4.3"]` to your
-   `:dev-dependencies`.
+   `:dev-dependencies` (not `:dependencies`).
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available. If you already have the App Engine SDK installed locally,
    and do not wish to wait for Maven to download it again as a dependency, you
