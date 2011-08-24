@@ -1,6 +1,7 @@
 (ns leiningen.appengine-prepare
   "Prepares a the Google App Engine application for deployment."
-  (:use appengine-magic.utils)
+  (:use appengine-magic.utils
+        [leiningen.core :only [abort]])
   (:require leiningen.compile leiningen.jar leiningen.util.file
             [lancet.core :as lancet])
   (:import java.io.File))
@@ -19,6 +20,10 @@
         compile-path-exists? (.isDirectory compile-path)
         compile-path-empty? (= 0 (-> compile-path .list seq count))]
     (println "preparing App Engine application" prj-display-name "for deployment")
+    ;; check for basic correctness
+    (when (some (fn [x] (= 'appengine-magic (first x)))
+                (:dependencies project))
+      (abort "project.clj error: put appengine-magic in :dev-dependencies, not :dependencies"))
     ;; compile all; when successful (status is 0), continue to prepare
     (when (= 0 (leiningen.compile/compile (if (contains? project :aot)
                                               project
