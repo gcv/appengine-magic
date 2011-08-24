@@ -1,6 +1,7 @@
-## 0.4.4 (???)
+## 0.4.4 (2011-08-24)
 
 * Basic support for App Engine SDK 1.5.3.
+* Various small enhancements.
 
 
 ## 0.4.3 (2011-07-30)
