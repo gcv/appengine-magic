@@ -48,7 +48,7 @@
       (lancet/copy {:todir (.getPath target-lib-dir)}
                    (lancet/fileset
                     {:dir lib-dev-dir
-                     :includes (str "appengine-magic*,ring-core*,servlet-api*,"
+                     :includes (str "appengine-magic*,ring-core*,"
                                     "commons-io*,commons-codec*,commons-fileupload*,"
                                     "appengine-api-1.0-sdk*,appengine-api-labs*")})))
     ;; Projects which do not normally use AOT may need some cleanup. This should
