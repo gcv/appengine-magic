@@ -39,6 +39,7 @@
                       (enforceApiDeadlines [] true)
                       (simulateProductionLatencies [] true)
                       (getAppDir [] dir)
+                      (getHostName [] "localhost")
                       (getAddress [] "localhost")
                       (getPort [] port)
                       (waitForServerToStart [] nil))
