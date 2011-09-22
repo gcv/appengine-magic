@@ -119,3 +119,12 @@
         a2 (Author. "A2")]
     (ds/save! [a1 a2])
     (is (ds/query :kind Author :chunk-size 10 :prefetch-size 10))))
+
+
+(deftest count-many-objects
+  (let [max 1200
+        make-author (fn make-author [x]
+                      (ds/save! (Author. (str "Author " x))))]
+    (dotimes [i max]
+      (make-author i))
+    (is (= max (ds/query :kind Author :count-only? true)))))

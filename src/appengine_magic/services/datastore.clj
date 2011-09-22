@@ -460,7 +460,7 @@
         result-type (if (and (instance? Class kind) (extends? EntityProtocol kind))
                         kind
                         entity-record-type)
-        result-count (.countEntities prepared-query)]
+        result-count (.countEntities prepared-query fetch-options-object)]
     (cond count-only? result-count
           (zero? result-count) (list)
           :else (let [results (seq (.asIterable prepared-query fetch-options-object))
