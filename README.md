@@ -59,25 +59,27 @@ Here is a sample `core.clj`, using
 frameworks, such as [Moustache](https://github.com/cgrand/moustache), also
 work):
 
-    (ns simple-example.core
-      (:use compojure.core)
-      (:require [appengine-magic.core :as ae]))
+```clojure
+(ns simple-example.core
+  (:use compojure.core)
+  (:require [appengine-magic.core :as ae]))
 
-    (defroutes simple-example-app-handler
-      (GET "/" req
-           {:status 200
-            :headers {"Content-Type" "text/plain"}
-            :body "Hello, world!"})
-      (GET "/hello/:name" [name]
-           {:status 200
-            :headers {"Content-Type" "text/plain"}
-            :body (format "Hello, %s!" name)})
-      (ANY "*" _
-           {:status 200
-            :headers {"Content-Type" "text/plain"}
-            :body "not found"}))
+(defroutes simple-example-app-handler
+  (GET "/" req
+       {:status 200
+        :headers {"Content-Type" "text/plain"}
+        :body "Hello, world!"})
+  (GET "/hello/:name" [name]
+       {:status 200
+        :headers {"Content-Type" "text/plain"}
+        :body (format "Hello, %s!" name)})
+  (ANY "*" _
+       {:status 200
+        :headers {"Content-Type" "text/plain"}
+        :body "not found"}))
 
-    (ae/def-appengine-app simple-example-app #'simple-example-app-handler)
+(ae/def-appengine-app simple-example-app #'simple-example-app-handler)
+```
 
 If you wish to emit HTML or XML from your application, you should use a
 specialized Clojure server-side templating library, e.g.,
@@ -148,16 +150,18 @@ a convenience function, `appengine-magic.core/serve`, will either start or resta
 a running instance. Examples (assuming you are in your application's `core`
 namespace and your application is named `foo`):
 
-    (require '[appengine-magic.core :as ae])
+```clojure
+(require '[appengine-magic.core :as ae])
 
-    ;; recommended: use this to start or restart an app
-    (ae/serve foo-app)
+;; recommended: use this to start or restart an app
+(ae/serve foo-app)
 
-    ;; or use these lower-level functions
-    (ae/start foo-app)
-    (ae/stop)
-    (ae/start foo-app :port 8095)
-    (ae/stop)
+;; or use these lower-level functions
+(ae/start foo-app)
+(ae/stop)
+(ae/start foo-app :port 8095)
+(ae/stop)
+```
 
 Recompiling the functions which make up your Ring handler should produce
 instantaneous results.
@@ -234,10 +238,12 @@ but all tests must bootstrap App Engine services in order to run. The
 `appengine-magic.testing` namespace provides several functions usable as
 `clojure.test` fixtures to help you do so. The easiest way to get started is:
 
-    (use 'clojure.test)
-    (require '[appengine-magic.testing :as ae-testing])
+```clojure
+(use 'clojure.test)
+(require '[appengine-magic.testing :as ae-testing])
 
-    (use-fixtures :each (ae-testing/local-services :all))
+(use-fixtures :each (ae-testing/local-services :all))
+```
 
 Then, write `deftest` forms normally; you can use App Engine services just as you
 would in application code.
@@ -257,49 +263,51 @@ Ring equivalent, except file upload parameters become maps with a `:bytes` key
 
 A full Compojure example (includes features from the Datastore service):
 
-    (use 'compojure.core
-         '[appengine-magic.multipart-params :only [wrap-multipart-params]])
+```clojure
+(use 'compojure.core
+     '[appengine-magic.multipart-params :only [wrap-multipart-params]])
 
-    (require '[appengine-magic.core :as ae]
-             '[appengine-magic.services.datastore :as ds])
+(require '[appengine-magic.core :as ae]
+         '[appengine-magic.services.datastore :as ds])
 
-    (ds/defentity Image [^:key name, content-type, data])
+(ds/defentity Image [^:key name, content-type, data])
 
-    (defroutes upload-images-demo-app-handler
-      ;; HTML upload form
-      (GET "/upload" _
-           {:status 200
-            :headers {"Content-Type" "text/html"}
-            :body (str "<html><body>"
-                       "<form action=\"/done\" "
-                       "method=\"post\" enctype=\"multipart/form-data\">"
-                       "<input type=\"file\" name=\"file-upload\">"
-                       "<input type=\"submit\" value=\"Submit\">"
-                       "</form>"
-                       "</body></html>")})
-      ;; handles the uploaded data
-      (POST "/done" _
-            (wrap-multipart-params
-             (fn [req]
-               (let [img (get (:params req) "file-upload")
-                     img-entity (Image. (:filename img)
-                                        (:content-type img)
-                                        (ds/as-blob (:bytes img)))]
-                 (ds/save! img-entity)
-                 {:status 200
-                  :headers {"Content-Type" "text/plain"}
-                  :body (with-out-str
-                          (println (:params req)))}))))
-      ;; hit this route to retrieve an uploaded file
-      (GET ["/img/:name", :name #".*"] [name]
-           (let [img (ds/retrieve Image name)]
-             (if (nil? img)
-                 {:status 404}
-                 {:status 200
-                  :headers {"Content-Type" (:content-type img)}
-                  :body (.getBytes (:data img))}))))
+(defroutes upload-images-demo-app-handler
+  ;; HTML upload form
+  (GET "/upload" _
+       {:status 200
+        :headers {"Content-Type" "text/html"}
+        :body (str "<html><body>"
+                   "<form action=\"/done\" "
+                   "method=\"post\" enctype=\"multipart/form-data\">"
+                   "<input type=\"file\" name=\"file-upload\">"
+                   "<input type=\"submit\" value=\"Submit\">"
+                   "</form>"
+                   "</body></html>")})
+  ;; handles the uploaded data
+  (POST "/done" _
+        (wrap-multipart-params
+         (fn [req]
+           (let [img (get (:params req) "file-upload")
+                 img-entity (Image. (:filename img)
+                                    (:content-type img)
+                                    (ds/as-blob (:bytes img)))]
+             (ds/save! img-entity)
+             {:status 200
+              :headers {"Content-Type" "text/plain"}
+              :body (with-out-str
+                      (println (:params req)))}))))
+  ;; hit this route to retrieve an uploaded file
+  (GET ["/img/:name", :name #".*"] [name]
+       (let [img (ds/retrieve Image name)]
+         (if (nil? img)
+             {:status 404}
+             {:status 200
+              :headers {"Content-Type" (:content-type img)}
+              :body (.getBytes (:data img))}))))
 
-    (ae/def-appengine-app upload-images-demo-app #'upload-images-demo-app-handler)
+(ae/def-appengine-app upload-images-demo-app #'upload-images-demo-app-handler)
+```
 
 Please note that you do not need to use this middleware with the Blobstore
 service. App Engine takes care decoding the upload in its internal handlers, and
@@ -327,11 +335,12 @@ new entry in `project.clj` manages applications and versions.
 2. Add a new entry to `project.clj`: `:appengine-app-versions`. This entry is a
    map from application name to application version. Example:
 
-       :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
-                                "myapp-staging"    "2010-11-27 22:05"
-                                "myapp-dev1"       "2830"
-                                "myapp-dev2"       "2893"}
-
+    ```clojure
+     :appengine-app-versions {"myapp-production" "2010-11-25 11:15"
+                              "myapp-staging"    "2010-11-27 22:05"
+                              "myapp-dev1"       "2830"
+                              "myapp-dev2"       "2893"}
+    ```
    The `myapp-` key strings correspond to App Engine applications, registered
    and managed through the App Engine console. The value strings are the
    versions `appengine-update` will install if invoked on that application.
@@ -341,11 +350,12 @@ new entry in `project.clj` manages applications and versions.
    members keep the App Engine SDK in different locations, this value can be a
    map from username to path string. Examples:
 
-       :appengine-sdk "/opt/appengine-java-sdk"
-       :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
-                       "bob"     "/Users/bob/lib/appengine-java-sdk"
-                       "charlie" "/home/charlie/appengine/sdk/current"}
-
+    ```clojure
+     :appengine-sdk "/opt/appengine-java-sdk"
+     :appengine-sdk {"alice"   "/opt/appengine-java-sdk"
+                     "bob"     "/Users/bob/lib/appengine-java-sdk"
+                     "charlie" "/home/charlie/appengine/sdk/current"}
+    ```
    If the APPENGINE_HOME environment variable is set, its value will
    be used if no :appengine-sdk entry is found in the project.clj
    file.
@@ -422,82 +432,86 @@ interface for the App Engine datastore.
 
 A few simple examples:
 
-    (require '[appengine-magic.services.datastore :as ds])
+```clojure
+(require '[appengine-magic.services.datastore :as ds])
 
-    (ds/defentity Author [^:key name, birthday])
-    (ds/defentity Book [^:key isbn, title, author])
+(ds/defentity Author [^:key name, birthday])
+(ds/defentity Book [^:key isbn, title, author])
 
-    ;; Writes three authors to the datastore.
-    (let [will (Author. "Shakespeare, William" nil)
-          geoff (Author. "Chaucer, Geoffrey" "1343")
-          oscar (Author. "Wilde, Oscar" "1854-10-16")]
-      ;; First, just write Will, without a birthday.
-      (ds/save! will)
-      ;; Now overwrite Will with an entity containing a birthday, and also
-      ;; write the other two authors.
-      (ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
+;; Writes three authors to the datastore.
+(let [will (Author. "Shakespeare, William" nil)
+      geoff (Author. "Chaucer, Geoffrey" "1343")
+      oscar (Author. "Wilde, Oscar" "1854-10-16")]
+  ;; First, just write Will, without a birthday.
+  (ds/save! will)
+  ;; Now overwrite Will with an entity containing a birthday, and also
+  ;; write the other two authors.
+  (ds/save! [(assoc will :birthday "1564"), geoff, oscar]))
 
-    ;; Retrieves two authors and writes book entites.
-    (let [will (first (ds/query :kind Author :filter (= :name "Shakespeare, William")))
-          geoff (first (ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
-                                                       (= :birthday "1343")]))]
-      (ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
-      (ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
-      (ds/save! (Book. "0393039854" "The First Folio" will)))
+;; Retrieves two authors and writes book entites.
+(let [will (first (ds/query :kind Author :filter (= :name "Shakespeare, William")))
+      geoff (first (ds/query :kind Author :filter [(= :name "Chaucer, Geoffrey")
+                                                   (= :birthday "1343")]))]
+  (ds/save! (Book. "0393925870" "The Canterbury Tales" geoff))
+  (ds/save! (Book. "143851557X" "Troilus and Criseyde" geoff))
+  (ds/save! (Book. "0393039854" "The First Folio" will)))
 
-    ;; Retrieves all Chaucer books in the datastore, sorting by descending title and
-    ;; then by ISBN.
-    (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
-      (ds/query :kind Book
-                :filter (= :author geoff)
-                :sort [[title :dsc] :isbn]))
+;; Retrieves all Chaucer books in the datastore, sorting by descending title and
+;; then by ISBN.
+(let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
+  (ds/query :kind Book
+            :filter (= :author geoff)
+            :sort [[title :dsc] :isbn]))
 
-    ;; Deletes all books by Chaucer.
-    (let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
-      (ds/delete! (ds/query :kind Book :filter (= :author geoff))))
+;; Deletes all books by Chaucer.
+(let [geoff (ds/retrieve Author "Chaucer, Geoffrey")]
+  (ds/delete! (ds/query :kind Book :filter (= :author geoff))))
+```
 
 The next example (which uses Compojure) demonstrates the use of entity groups
 and transactions.
 
-    (use '[clojure.pprint :only [pprint]]
-         'compojure.core)
-    (require '[appengine-magic.core :as ae]
-             '[appengine-magic.services.datastore :as ds])
+```clojure
+(use '[clojure.pprint :only [pprint]]
+     'compojure.core)
+(require '[appengine-magic.core :as ae]
+         '[appengine-magic.services.datastore :as ds])
 
-    (ds/defentity Parent [^:key name, children])
-    (ds/defentity Child [^:key name])
+(ds/defentity Parent [^:key name, children])
+(ds/defentity Child [^:key name])
 
-    (defroutes entity-group-example-app-handler
-      (GET  "/" [] {:headers {"Content-Type" "text/plain"} :body "started"})
-      (POST "/new/:parent-name/:child-name" [parent-name child-name]
-            (let [parent (or (ds/retrieve Parent parent-name)
-                             ;; Note the use of ds/save! here. Unless an entity has
-                             ;; been saved to the datastore, children cannot join
-                             ;; the entity group.
-                             (ds/save! (Parent. parent-name [])))
-                  ;; Note the use of ds/new* here: it is required so that a :parent
-                  ;; entity may be specified in the instantiation of a child entity.
-                  child (ds/new* Child [child-name] :parent parent)]
-              ;; Updating the parent and the child together occurs in a transaction.
-              (ds/with-transaction
-                (ds/save! (assoc parent
-                            :members (conj (:children parent) child-name)))
-                (ds/save! child))
-              {:headers {"Content-Type" "text/plain"}
-               :body "done"}))
-      (GET  "/parents" []
-            (let [parents (ds/query :kind Parent)]
-              {:headers {"Content-Type" "text/plain"}
-               :body (str (with-out-str (pprint parents))
-                          "\n"
-                          (with-out-str (pprint (map ds/get-key-object parents))))}))
-      (GET  "/children" []
-            (let [children (ds/query :kind Child)]
-              {:headers {"Content-Type" "text/plain"}
-               :body (str (with-out-str (pprint children))
-                          "\n"
-                          (with-out-str (pprint (map ds/get-key-object children))))}))
-      (ANY  "*" [] {:status 404 :body "not found" :headers {"Content-Type" "text/plain"}}))
+(defroutes entity-group-example-app-handler
+  (GET  "/" [] {:headers {"Content-Type" "text/plain"} :body "started"})
+  (POST "/new/:parent-name/:child-name" [parent-name child-name]
+        (let [parent (or (ds/retrieve Parent parent-name)
+                         ;; Note the use of ds/save! here. Unless an entity has
+                         ;; been saved to the datastore, children cannot join
+                         ;; the entity group.
+                         (ds/save! (Parent. parent-name [])))
+              ;; Note the use of ds/new* here: it is required so that a :parent
+              ;; entity may be specified in the instantiation of a child entity.
+              child (ds/new* Child [child-name] :parent parent)]
+          ;; Updating the parent and the child together occurs in a transaction.
+          (ds/with-transaction
+            (ds/save! (assoc parent
+                        :members (conj (:children parent) child-name)))
+            (ds/save! child))
+          {:headers {"Content-Type" "text/plain"}
+           :body "done"}))
+  (GET  "/parents" []
+        (let [parents (ds/query :kind Parent)]
+          {:headers {"Content-Type" "text/plain"}
+           :body (str (with-out-str (pprint parents))
+                      "\n"
+                      (with-out-str (pprint (map ds/get-key-object parents))))}))
+  (GET  "/children" []
+        (let [children (ds/query :kind Child)]
+          {:headers {"Content-Type" "text/plain"}
+           :body (str (with-out-str (pprint children))
+                      "\n"
+                      (with-out-str (pprint (map ds/get-key-object children))))}))
+  (ANY  "*" [] {:status 404 :body "not found" :headers {"Content-Type" "text/plain"}}))
+```
 
 - `defentity` (optional keyword: `:kind`): defines an entity record type
   suitable for storing in the App Engine datastore. These entities work just
@@ -578,7 +592,9 @@ and transactions.
 The Clojure interface to the Datastore has an additional feature: any entity
 field may be marked with the `^:clj` metadata tag:
 
-    (ds/defentity TestEntity [^:key test-id, ^:clj some-table])
+```clojure
+(ds/defentity TestEntity [^:key test-id, ^:clj some-table])
+```
 
 The values of fields marked with the `^:clj` tag will go into the datastore as
 strings produced by Clojure's `prn-str` function, and they will be retrieved as
@@ -634,50 +650,52 @@ writes entities into the datastore: `__BlobInfo__` and
 
 This is confusing, but a Compojure example will help.
 
-    (use 'compojure.core)
+```clojure
+(use 'compojure.core)
 
-    (require '[appengine-magic.core :as ae]
-             '[appengine-magic.services.datastore :as ds]
-             '[appengine-magic.services.blobstore :as blobs])
+(require '[appengine-magic.core :as ae]
+         '[appengine-magic.services.datastore :as ds]
+         '[appengine-magic.services.blobstore :as blobs])
 
-    (ds/defentity UploadedFile [^:key blob-key])
+(ds/defentity UploadedFile [^:key blob-key])
 
-    (defroutes upload-demo-app-handler
-      ;; HTML upload form; note the upload-url call
-      (GET "/upload" _
-           {:status 200
-            :headers {"Content-Type" "text/html"}
-            :body (str "<html><body>"
-                       "<form action=\""
-                       (blobs/upload-url "/done")
-                       "\" method=\"post\" enctype=\"multipart/form-data\">"
-                       "<input type=\"file\" name=\"file1\">"
-                       "<input type=\"file\" name=\"file2\">"
-                       "<input type=\"file\" name=\"file3\">"
-                       "<input type=\"submit\" value=\"Submit\">"
-                       "</form>"
-                       "</body></html>")})
-      ;; success callback
-      (POST "/done" req
-           (let [blob-map (blobs/uploaded-blobs req)]
-             (ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
-                        (UploadedFile. (.getKeyString (blob-map "file2")))
-                        (UploadedFile. (.getKeyString (blob-map "file3")))])
-             (blobs/callback-complete req "/list")))
-      ;; a list of all uploaded files with links
-      (GET "/list" _
-           {:status 200
-            :headers {"Content-Type" "text/html"}
-            :body (apply str `["<html><body>"
-                               ~@(map #(format " <a href=\"/serve/%s\">file</a>"
-                                               (:blob-key %))
-                                      (ds/query :kind UploadedFile))
-                               "</body></html>"])})
-      ;; serves the given blob by key
-      (GET "/serve/:blob-key" {{:strs [blob-key]} :params :as req}
-           (blobs/serve req blob-key)))
+(defroutes upload-demo-app-handler
+  ;; HTML upload form; note the upload-url call
+  (GET "/upload" _
+       {:status 200
+        :headers {"Content-Type" "text/html"}
+        :body (str "<html><body>"
+                   "<form action=\""
+                   (blobs/upload-url "/done")
+                   "\" method=\"post\" enctype=\"multipart/form-data\">"
+                   "<input type=\"file\" name=\"file1\">"
+                   "<input type=\"file\" name=\"file2\">"
+                   "<input type=\"file\" name=\"file3\">"
+                   "<input type=\"submit\" value=\"Submit\">"
+                   "</form>"
+                   "</body></html>")})
+  ;; success callback
+  (POST "/done" req
+       (let [blob-map (blobs/uploaded-blobs req)]
+         (ds/save! [(UploadedFile. (.getKeyString (blob-map "file1")))
+                    (UploadedFile. (.getKeyString (blob-map "file2")))
+                    (UploadedFile. (.getKeyString (blob-map "file3")))])
+         (blobs/callback-complete req "/list")))
+  ;; a list of all uploaded files with links
+  (GET "/list" _
+       {:status 200
+        :headers {"Content-Type" "text/html"}
+        :body (apply str `["<html><body>"
+                           ~@(map #(format " <a href=\"/serve/%s\">file</a>"
+                                           (:blob-key %))
+                                  (ds/query :kind UploadedFile))
+                           "</body></html>"])})
+  ;; serves the given blob by key
+  (GET "/serve/:blob-key" {{:strs [blob-key]} :params :as req}
+       (blobs/serve req blob-key)))
 
-    (ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
+(ae/def-appengine-app upload-demo-app #'upload-demo-app-handler)
+```
 
 Note that the Blobstore API primarily allows for browser-driven file
 uploads. appengine-magic includes a hack which allows an application to upload a
@@ -726,34 +744,35 @@ application add a Ring handler for POST methods for URLs which begin with
 NB: With Compojure, the only route which seems to work in the production App
 Engine for handling mail is `/_ah/mail/*`.
 
-    (use 'compojure.core)
+```clojure
+(use 'compojure.core)
 
-    (require '[appengine-magic.core :as ae]
-             '[appengine-magic.services.mail :as mail])
+(require '[appengine-magic.core :as ae]
+         '[appengine-magic.services.mail :as mail])
 
-    (defroutes mail-demo-app-handler
-      ;; sending
-      (GET "/mail" _
-           (let [att1 (mail/make-attachment "hello.txt" (.getBytes "hello world"))
-                 att2 (mail/make-attachment "jk.txt" (.getBytes "just kidding"))
-                 msg (mail/make-message :from "one@example.com"
-                                        :to "two@example.com"
-                                        :cc ["three@example.com" "four@example.com"]
-                                        :subject "Test message."
-                                        :text-body "Sent from appengine-magic."
-                                        :attachments [att1 att2])]
-             (mail/send msg)
-             {:status 200
-              :headers {"Content-Type" "text/plain"}
-              :body "sent"}))
-      ;; receiving
-      (POST "/_ah/mail/*" req
-           (let [msg (mail/parse-message req)]
-             ;; use the resulting MailMessage object
-             {:status 200})))
+(defroutes mail-demo-app-handler
+  ;; sending
+  (GET "/mail" _
+       (let [att1 (mail/make-attachment "hello.txt" (.getBytes "hello world"))
+             att2 (mail/make-attachment "jk.txt" (.getBytes "just kidding"))
+             msg (mail/make-message :from "one@example.com"
+                                    :to "two@example.com"
+                                    :cc ["three@example.com" "four@example.com"]
+                                    :subject "Test message."
+                                    :text-body "Sent from appengine-magic."
+                                    :attachments [att1 att2])]
+         (mail/send msg)
+         {:status 200
+          :headers {"Content-Type" "text/plain"}
+          :body "sent"}))
+  ;; receiving
+  (POST "/_ah/mail/*" req
+       (let [msg (mail/parse-message req)]
+         ;; use the resulting MailMessage object
+         {:status 200})))
 
-    (ae/def-appengine-app mail-demo-app #'mail-demo-app-handler)
-
+(ae/def-appengine-app mail-demo-app #'mail-demo-app-handler)
+```
 
 ### Task Queues service
 
@@ -879,24 +898,28 @@ active channels.
 
 The client needs to load the JavaScript code at `/_ah/channel/jsapi`:
 
-    <script src="/_ah/channel/jsapi" type="text/javascript"></script>
+```html
+<script src="/_ah/channel/jsapi" type="text/javascript"></script>
+```
 
 Once this library loads, the client must initiate a request in which the server
 can return the channel ID. Once this is done, the rest of the client API looks
 like this:
 
-    // read this from a normal server response
-    var channel_token = ...;
+```javascript
+// read this from a normal server response
+var channel_token = ...;
 
-    // open a "socket" to the server
-    var channel = new goog.appengine.Channel(channel_token);
-    var socket = channel.open();
+// open a "socket" to the server
+var channel = new goog.appengine.Channel(channel_token);
+var socket = channel.open();
 
-    // implement these callbacks to take action when an event occurs
-    socket.onopen = function(evt) { var data = evt.data; ... };
-    socket.onmessage = function(evt) { var data = evt.data; ... };
-    socket.onerror = function(evt) { var data = evt.data; ... };
-    socket.onclose = function(evt) { var data = evt.data; ... };
+// implement these callbacks to take action when an event occurs
+socket.onopen = function(evt) { var data = evt.data; ... };
+socket.onmessage = function(evt) { var data = evt.data; ... };
+socket.onerror = function(evt) { var data = evt.data; ... };
+socket.onclose = function(evt) { var data = evt.data; ... };
+```
 
 NB: The development implementations of the Channel service just poll the server
 for updates, and merely emulate server push. If you watch a browser request
