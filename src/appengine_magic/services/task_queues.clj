@@ -30,7 +30,9 @@
              queue)))))
 
 
-(defn add! [& {:keys [queue url join-current-transaction? params headers payload method
+;; TODO: Support adding multiple tasks at once.
+(defn add! [& {:keys [queue url task-name
+                      join-current-transaction? params headers payload method
                       countdown-ms eta-ms eta]
                :or {join-current-transaction? false
                     params {}
@@ -45,6 +47,9 @@
     ;; headers
     (doseq [[header-name header-value] headers]
       (.header opts header-name header-value))
+    ;; task naming
+    (when task-name
+      (.taskName opts task-name))
     ;; params
     (doseq [[param-name param-value] params]
       (.param opts
@@ -90,3 +95,14 @@
     (if join-current-transaction?
         (.add queue-obj ds/*current-transaction* opts)
         (.add queue-obj opts))))
+
+
+(defn purge! [& {:keys [queue]}]
+  (let [queue-obj (get-task-queue :queue queue)]
+    (.purge queue-obj)))
+
+
+;; TODO: Support deleting multiple tasks at once.
+(defn delete! [task & {:keys [queue]}]
+  (let [queue-obj (get-task-queue :queue queue)]
+    (.deleteTask queue-obj task)))
