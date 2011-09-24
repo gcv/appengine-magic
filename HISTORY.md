@@ -1,3 +1,13 @@
+## 0.4.6 (???)
+
+* Added support for `:before-save` and `:after-load` hooks to `defentity`.
+  (TODO: Write documentation for this feature.) Both take a function which takes
+  and returns an entity record, and applies this function as a transformation to
+  the entity. `:before-save` does this before it writes something to the
+  datastore, and `:after-load` does this right after a datastore read, and
+  returns the transformed entity from `retrieve` and `query` results.
+
+
 ## 0.4.5 (2011-09-24)
 
 * Basic support for App Engine SDK 1.5.4.
