@@ -15,6 +15,14 @@
 
 
 ;;; ----------------------------------------------------------------------------
+;;; forward declarations
+;;; ----------------------------------------------------------------------------
+
+(declare run-after-load)
+
+
+
+;;; ----------------------------------------------------------------------------
 ;;; helper variables and constants
 ;;; ----------------------------------------------------------------------------
 
@@ -124,6 +132,8 @@
      group parent.")
   (get-entity-object [this]
     "Returns a datastore Entity object instance for the record.")
+  (run-after-load [this]
+    "Invokes the after-load callback.")
   (save! [this]
     "Writes the given entity to the data store."))
 
@@ -198,8 +208,9 @@
                    "entity has no valid :key metadata, and has no fields marked :key")))))
 
 
-(defn get-entity-object-helper [entity-record kind]
-  (let [key-object (get-key-object entity-record)
+(defn get-entity-object-helper [entity-record kind before-save]
+  (let [entity-record (before-save entity-record)
+        key-object (get-key-object entity-record)
         clj-properties (get-clj-properties entity-record)
         entity-meta (meta entity-record)
         entity (cond key-object (Entity. key-object)
@@ -341,16 +352,17 @@
               model-record (record entity-record-type)]
           (map #(let [v (.getValue %)]
                   (with-meta
-                    (merge model-record
-                           (entity->properties (.getProperties v)
-                                               (get-clj-properties model-record)))
+                    (run-after-load
+                     (merge model-record
+                            (entity->properties (.getProperties v)
+                                                (get-clj-properties model-record))))
                     {:key (.getKey v)}))
                entities))
         ;; handles singleton values
         (let [key-object (make-key-from-value key-value-or-values parent)
               entity (.get (get-datastore-service) key-object)
               raw-properties (into {} (.getProperties entity))
-              entity-record (record entity-record-type)]
+              entity-record (run-after-load (record entity-record-type))]
           (with-meta
             (merge entity-record (entity->properties raw-properties
                                                      (get-clj-properties entity-record)))
@@ -378,8 +390,10 @@
 
 
 (defmacro defentity [name properties &
-                     {:keys [kind]
-                      :or {kind (unqualified-name name)}}]
+                     {:keys [kind before-save after-load]
+                      :or {kind (unqualified-name name)
+                           before-save identity
+                           after-load identity}}]
   ;; TODO: Clojure 1.3: Remove the ugly Clojure version check.
   (let [clj13? (fn [] (and (= 1 (:major *clojure-version*))
                            (= 3 (:minor *clojure-version*))))
@@ -407,7 +421,9 @@
        (get-key-object [this# parent#]
          (get-key-object-helper this# ~key-property ~kind parent#))
        (get-entity-object [this#]
-         (get-entity-object-helper this# ~kind))
+         (get-entity-object-helper this# ~kind ~before-save))
+       (run-after-load [this#]
+         (~after-load this#))
        (save! [this#]
          (save!-helper this#)))))
 
@@ -494,9 +510,10 @@
                                        ;; unknown type; just use a basic EntityProtocol
                                        (EntityBase.))]
                   (map #(with-meta
-                          (merge model-record
-                                 (entity->properties (.getProperties %)
-                                                     (get-clj-properties model-record)))
+                          (run-after-load
+                           (merge model-record
+                                  (entity->properties (.getProperties %)
+                                                      (get-clj-properties model-record))))
                           {:key (.getKey %)})
                        results)))))
 

@@ -15,6 +15,14 @@
 (ds/defentity Parent [name child-counter])
 (ds/defentity Child [name parent])
 
+(ds/defentity O1 [x]
+  :before-save (fn [entity] (assoc entity :x (inc (:x entity)))))
+(ds/defentity O2 [x]
+  :after-load (fn [entity] (assoc entity :x (dec (:x entity)))))
+(ds/defentity O3 [x y]
+  :before-save #(assoc % :x (str "modified before save " x))
+  :after-load #(assoc % :y (str "modified after load " y)))
+
 
 (deftest basics
   (let [alice (Author. "Alice")
@@ -128,3 +136,17 @@
     (dotimes [i max]
       (make-author i))
     (is (= max (ds/query :kind Author :count-only? true)))))
+
+
+(deftest lifecycle-callbacks
+  (let [o1 (ds/save! (O1. 1))]
+    (is (= 2 (:x (first (ds/query :kind O1))))))
+  (let [o2 (ds/save! (O2. 1))]
+    (is (= 0 (:x (first (ds/query :kind O2))))))
+  (let [o3 (O3. 10 20)]
+    (is (= 10 (:x o3)))
+    (is (= 20 (:y o3)))
+    (ds/save! o3)
+    (let [o3 (first (ds/query :kind O3))]
+      (is (= "modified before save 10" (:x o3)))
+      (is (= "modified after load 20" (:y o3))))))
