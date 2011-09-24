@@ -420,6 +420,30 @@
   (save! [this] (save-many-helper! this)))
 
 
+;;; TODO: new* is a mistake. Its current implementation prevents property-values
+;;; from being evaluated and used if the argument is a variable, or the result
+;;; of a function call. Unfortunately, undoing this is not easy. The following
+;;; implementation, though it superficially works, is both dangerous (because it
+;;; uses eval), and does not pass tests.
+;;
+;; (defmacro new* [entity-record-type property-values & {:keys [parent]}]
+;;   `(let [property-values# ~property-values
+;;          entity# (cond (map? property-values#) (record ~entity-record-type property-values#)
+;;                   (vector? property-values#) (eval `(new ~~entity-record-type ~@property-values#)))
+;;          parent# ~parent]
+;;      (if (nil? parent#)
+;;          entity#
+;;          (with-meta entity# {:key (get-key-object entity# parent#)
+;;                              :parent (get-key-object parent#)}))))
+;;
+;;; The key difficulty is in vectors stored in variables which contain the
+;;; record's slot values in order. Dealing with the vector value would require
+;;; the equivalent of (apply new ~entity-record-type ~property-values), but
+;;; apply cannot be used on macros or special forms.
+;;;
+;;; The correct solution to this problem is to deprecate new* and encourage
+;;; anyone who needs entity group creation to use an alternative function which
+;;; populates the :parent metadata correctly.
 (defmacro new* [entity-record-type property-values & {:keys [parent]}]
   (let [props-expr (cond (vector? property-values) `(new ~entity-record-type ~@property-values)
                          (map? property-values) `(record ~entity-record-type ~property-values)
