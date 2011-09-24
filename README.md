@@ -26,7 +26,7 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 * Clojure 1.2.1
 * Leiningen 1.6.1
-* Google App Engine SDK 1.5.3
+* Google App Engine SDK 1.5.4
 * swank-clojure 1.3.1 (optional)
 
 
@@ -103,7 +103,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.4.4"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.4.5"]` to your
    `:dev-dependencies` (not `:dependencies`).
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available. If you already have the App Engine SDK installed locally,
@@ -774,6 +774,7 @@ Engine for handling mail is `/_ah/mail/*`.
 (ae/def-appengine-app mail-demo-app #'mail-demo-app-handler)
 ```
 
+
 ### Task Queues service
 
 The `appengine-magic.services.task-queues` namespace has helper functions for
@@ -785,15 +786,15 @@ tasks](http://code.google.com/appengine/docs/java/config/cron.html) (`cron.xml`)
 is useful.
 
 Use the `add!` function to add a new task to a queue, and provide a callback URL
-which implements the actual work performed by the task. The current App Engine
-SDK does not seem to have any API calls for removing tasks from a queue, but
-does support this from the administration console.
+which implements the actual work performed by the task.
 
-- `add! :url <callback-url>` (optional keywords: `:queue`,
+- `add! :url <callback-url>` (optional keywords: `:queue`, `:task-name`,
   `:join-current-transaction?`, `:params`, `:headers`, `:payload`, `:method`,
-  `:countdown-ms`, `:eta-ms`, `:eta`). The `:url` keyword is required.
+  `:countdown-ms`, `:eta-ms`, `:eta`). The `:url` keyword is required. This
+  function returns a task handle object.
   * `:queue`: name of the queue to use; if omitted, uses the system default
     queue. If provided, the queue must be defined in `queue.xml`.
+  * `:task-name`: an optional name for the task.
   * `:join-current-transaction?`: defaults to false. If true, and if this occurs
     inside a datastore transaction context, then only adds this task to the
     queue if the transaction commits successfully.
@@ -811,6 +812,13 @@ does support this from the administration console.
     schedules a task for the given number of milliseconds from the beginning of
     the epoch. `:eta` schedules execution for the time given by the a
     `java.util.Date` object.
+- `purge!` (optional keyword: `:queue`). Removes all tasks from the given queue.
+  * `:queue`: name of the queue to use; if omitted, uses the system default
+    queue.
+- `delete! <task>` (optional keyword: `:queue`). Deletes the given task from the
+  given queue. The task may be specified by its name or by its handle object.
+  * `:queue`: name of the queue to use; if omitted, uses the system default
+    queue.
 
 
 ### URL Fetch service
@@ -938,6 +946,7 @@ The following Google services are not yet tested in the REPL environment:
 - Deferred API (from App Engine SDK 1.4.3)
 - Remote API (from App Engine SDK 1.4.3)
 - Files API (from App Engine SDK 1.4.3)
+- Adding and removing multiple tasks from queues in a single request
 - Datastore async queries
 - Datastore cursors
 - Compositing in the Images API
@@ -986,6 +995,7 @@ Many thanks to:
 * Mark Rathwell
 * Jieren Chen
 * Sridhar Ratnakumar
+* Justin Barton
 
 
 

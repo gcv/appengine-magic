@@ -9,6 +9,7 @@
             transform.stream.StreamResult]))
 
 
+;;; TODO: In Clojure 1.3, stop using this macro.
 ;;; Adapted from: http://groups.google.com/group/clojure/msg/5206fac13144ea99
 (defmacro record
   "A dynamic factory for Clojure record objects. Takes either a map of key-value

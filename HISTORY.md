@@ -1,3 +1,11 @@
+## 0.4.5 (2011-09-24)
+
+* Basic support for App Engine SDK 1.5.4.
+* Datastore object counts are no longer limited to 1000 (thanks to Justin
+  Barton).
+* Added support for deleting tasks from task queues.
+
+
 ## 0.4.4 (2011-08-24)
 
 * Basic support for App Engine SDK 1.5.3.
