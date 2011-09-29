@@ -6,6 +6,10 @@
   the entity. `:before-save` does this before it writes something to the
   datastore, and `:after-load` does this right after a datastore read, and
   returns the transformed entity from `retrieve` and `query` results.
+* Made an internal change which improves support for interactive REPL use from
+  various programming tools. Clojure modes in Eclipse, IntelliJ IDEA, and
+  NetBeans should now work. VimClojure, SLIME (swank-clojure), and plain REPL
+  (`lein repl`) use should unaffected by this change.
 
 
 ## 0.4.5 (2011-09-24)
