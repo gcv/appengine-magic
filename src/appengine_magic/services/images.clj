@@ -11,16 +11,16 @@
 ;;; helpers
 ;;; ----------------------------------------------------------------------------
 
-(defonce *images-service* (atom nil))
+(defonce ^:dynamic *images-service* (atom nil))
 
 
-(defonce *output-formats*
+(defonce ^:dynamic *output-formats*
   {:jpg ImagesService$OutputEncoding/JPEG
    :jpeg ImagesService$OutputEncoding/JPEG
    :png ImagesService$OutputEncoding/PNG})
 
 
-;; (defonce *composite-anchor*
+;; (defonce ^:dynamic *composite-anchor*
 ;;   {:bottom Composite$Anchor/BOTTOM_CENTER
 ;;    :bottom-left Composite$Anchor/BOTTOM_LEFT
 ;;    :bottom-right Composite$Anchor/BOTTOM_RIGHT

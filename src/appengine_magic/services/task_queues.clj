@@ -5,11 +5,11 @@
             TaskOptions$Builder TaskOptions$Method]))
 
 
-(defonce *default-queue* (atom nil))
-(defonce *named-queues* (atom {}))
+(defonce ^:dynamic *default-queue* (atom nil))
+(defonce ^:dynamic *named-queues* (atom {}))
 
 
-(defonce *task-http-methods*
+(defonce ^:dynamic *task-http-methods*
   {:post TaskOptions$Method/POST
    :delete TaskOptions$Method/DELETE
    :get TaskOptions$Method/GET

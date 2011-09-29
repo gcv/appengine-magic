@@ -2,7 +2,7 @@
   (:import [com.google.appengine.api.users User UserService UserServiceFactory]))
 
 
-(defonce *user-service* (atom nil))
+(defonce ^:dynamic *user-service* (atom nil))
 
 
 (defn get-user-service []

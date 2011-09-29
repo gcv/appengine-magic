@@ -9,13 +9,13 @@
            [com.google.apphosting.api ApiProxy]))
 
 
-(def *memcache-size-units*
+(def ^:dynamic *memcache-size-units*
      {:bytes LocalMemcacheServiceTestConfig$SizeUnit/BYTES
       :kb LocalMemcacheServiceTestConfig$SizeUnit/KB
       :mb LocalMemcacheServiceTestConfig$SizeUnit/MB})
 
 
-(def *logging-levels*
+(def ^:dynamic *logging-levels*
      {:all java.util.logging.Level/ALL
       :severe java.util.logging.Level/SEVERE
       :warning java.util.logging.Level/WARNING

@@ -26,18 +26,18 @@
 ;;; helper variables and constants
 ;;; ----------------------------------------------------------------------------
 
-(defonce *datastore-service* (atom nil))
+(defonce ^:dynamic *datastore-service* (atom nil))
 
 
-(defonce *current-transaction* nil)
+(defonce ^:dynamic *current-transaction* nil)
 
 
-(defonce *datastore-read-policy-map*
+(defonce ^:dynamic *datastore-read-policy-map*
   {:eventual ReadPolicy$Consistency/EVENTUAL
    :strong ReadPolicy$Consistency/STRONG})
 
 
-(defonce *datastore-implicit-transaction-policy-map*
+(defonce ^:dynamic *datastore-implicit-transaction-policy-map*
   {:auto ImplicitTransactionManagementPolicy/AUTO
    :none ImplicitTransactionManagementPolicy/NONE})
 
