@@ -8,11 +8,11 @@
            appengine_magic.services.datastore.EntityProtocol))
 
 
-(defonce ^:dynamic *memcache-service* (atom nil))
-(defonce ^:dynamic *namespaced-memcache-services* (atom {}))
+(defonce ^{:dynamic true} *memcache-service* (atom nil))
+(defonce ^{:dynamic true} *namespaced-memcache-services* (atom {}))
 
 
-(defonce ^:dynamic *policy-type-map*
+(defonce ^{:dynamic true} *policy-type-map*
   {:always MemcacheService$SetPolicy/SET_ALWAYS
    :add-if-not-present MemcacheService$SetPolicy/ADD_ONLY_IF_NOT_PRESENT
    :replace-only MemcacheService$SetPolicy/REPLACE_ONLY_IF_PRESENT})

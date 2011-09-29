@@ -79,7 +79,7 @@
 ;;; development server controls
 ;;; ----------------------------------------------------------------------------
 
-(defonce ^:dynamic *server* (atom nil))
+(defonce ^{:dynamic true} *server* (atom nil))
 
 
 (defn start [appengine-app & {:keys [port join?] :or {port 8080, join? false}}]

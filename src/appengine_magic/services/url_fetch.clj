@@ -8,7 +8,7 @@
             HTTPRequest
             HTTPMethod]))
 
-(defonce ^:dynamic *urlfetch-service* (atom nil))
+(defonce ^{:dynamic true} *urlfetch-service* (atom nil))
 
 (defn get-urlfetch-service []
   (do (when (nil? @*urlfetch-service*)

@@ -8,7 +8,7 @@
            org.apache.commons.io.IOUtils))
 
 
-(defonce ^:dynamic *blobstore-service* (atom nil))
+(defonce ^{:dynamic true} *blobstore-service* (atom nil))
 
 
 (defn get-blobstore-service []

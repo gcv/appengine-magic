@@ -3,7 +3,7 @@
   (:import [com.google.appengine.api.channel ChannelServiceFactory ChannelMessage]))
 
 
-(defonce ^:dynamic *channel-service* (atom nil))
+(defonce ^{:dynamic true} *channel-service* (atom nil))
 
 
 (defrecord ClientStatus [id status])

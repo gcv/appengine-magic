@@ -7,10 +7,10 @@
            com.google.appengine.api.taskqueue.dev.LocalTaskQueue))
 
 
-(defonce ^:dynamic *current-app-id* (atom nil))
-(defonce ^:dynamic *current-app-version* (atom nil))
+(defonce ^{:dynamic true} *current-app-id* (atom nil))
+(defonce ^{:dynamic true} *current-app-version* (atom nil))
 
-(defonce ^:dynamic *current-server-port* (atom nil))
+(defonce ^{:dynamic true} *current-server-port* (atom nil))
 
 
 (defn make-thread-environment-proxy [& {:keys [user-email user-admin?]}]

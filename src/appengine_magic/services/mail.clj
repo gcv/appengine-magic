@@ -5,7 +5,7 @@
             MailService$Message MailService$Attachment]))
 
 
-(defonce ^:dynamic *mail-service* (atom nil))
+(defonce ^{:dynamic true} *mail-service* (atom nil))
 
 
 (defn get-mail-service []
