@@ -77,7 +77,7 @@
 (defrecord #^{:private true} MessagePart [filename content-type data])
 
 
-(defn- deconstruct-message [#^MimeMessage message]
+(defn- deconstruct-message [#^javax.mail.internet.MimeMessage message]
   (let [all-subparts (fn [part]
                        (map #(.getBodyPart part %) (range (.getCount part))))
         subparts (fn subparts [part]
