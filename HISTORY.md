@@ -10,6 +10,7 @@
   various programming tools. Clojure modes in Eclipse, IntelliJ IDEA, and
   NetBeans should now work. VimClojure, SLIME (swank-clojure), and plain REPL
   (`lein repl`) use should unaffected by this change.
+* Support for Clojure 1.3.
 
 
 ## 0.4.5 (2011-09-24)

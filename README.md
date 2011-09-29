@@ -24,10 +24,9 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 ## Dependencies
 
-* Clojure 1.2.1
+* Clojure 1.2.1 or Clojure 1.3.0
 * Leiningen 1.6.1
 * Google App Engine SDK 1.5.4
-* swank-clojure 1.3.1 (optional)
 
 
 
