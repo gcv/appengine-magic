@@ -86,6 +86,6 @@
                :payload payload)))
 
 
-(if (core/in-appengine-interactive-mode?)
+(if (= :interactive (core/appengine-environment-type))
     (load "blobstore_local")
     (load "blobstore_google"))
