@@ -3,8 +3,8 @@
   :min-lein-version "1.6.1"
   :repositories {"releases" "http://appengine-magic-mvn.googlecode.com/svn/releases/"
                  "snapshots" "http://appengine-magic-mvn.googlecode.com/svn/snapshots/"}
-  :dependencies [[org.clojure/clojure "1.2.1"]
-                 [ring/ring-core "0.3.11"]
+  :exclusions [org.clojure/clojure]
+  :dependencies [[ring/ring-core "0.3.11"]
                  [org.apache.commons/commons-exec "1.1"]
                  ;; App Engine supporting essentials
                  [javax.servlet/servlet-api "2.5"]
@@ -25,4 +25,5 @@
                  [com.google.appengine/appengine-local-runtime-shared "1.5.4"]
                  [com.google.appengine/appengine-testing "1.5.4"]
                  [com.google.appengine/appengine-tools-api "1.5.4"]]
-  :dev-dependencies [[swank-clojure "1.3.1" :exclusions [org.clojure/clojure]]])
+  :dev-dependencies [[org.clojure/clojure "1.2.1"]
+                     [swank-clojure "1.3.2"]])
