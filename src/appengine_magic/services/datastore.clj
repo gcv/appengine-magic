@@ -374,7 +374,12 @@
                  :or {kind (unqualified-name (.getName entity-record-type))}}]
   (try
     (retrieve-helper entity-record-type key-value-or-values :parent parent :kind kind)
-    (catch EntityNotFoundException _ nil)))
+    ;; XXX: Clojure 1.2.x only:
+    (catch EntityNotFoundException _ nil)
+    ;; XXX: Clojure 1.3.x:
+    (catch Exception ex (if (isa? (class (.getCause ex)) EntityNotFoundException)
+                            nil
+                            (throw ex)))))
 
 
 (defn exists? [entity-record-type key-value-or-values &

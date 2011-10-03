@@ -38,6 +38,8 @@
       (is (= alice alice-queried))
       (is (= bob bob-retrieved))
       (is (= charlie charlie-retrieved)))
+    ;; retrieve non-stored entity
+    (is (nil? (ds/retrieve Author "Drew")))
     ;; sorted query
     (let [[charlie-queried bob-queried alice-queried] (ds/query :kind Author
                                                                 :sort [[:name :desc]])]
