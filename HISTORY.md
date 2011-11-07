@@ -1,11 +1,7 @@
-## 0.4.6 (???)
+## 0.4.6 (2011-11-07)
 
+* Basic support for App Engine SDK 1.5.5.
 * Added support for `:before-save` and `:after-load` hooks to `defentity`.
-  (TODO: Write documentation for this feature.) Both take a function which takes
-  and returns an entity record, and applies this function as a transformation to
-  the entity. `:before-save` does this before it writes something to the
-  datastore, and `:after-load` does this right after a datastore read, and
-  returns the transformed entity from `retrieve` and `query` results.
 * Made an internal change which improves support for interactive REPL use from
   various programming tools. Clojure modes in Eclipse, IntelliJ IDEA, and
   NetBeans should now work. VimClojure, SLIME (swank-clojure), and plain REPL
