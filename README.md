@@ -24,10 +24,9 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 ## Dependencies
 
-* Clojure 1.2.1
+* Clojure 1.2.1 or Clojure 1.3.0
 * Leiningen 1.6.1
-* Google App Engine SDK 1.5.4
-* swank-clojure 1.3.1 (optional)
+* Google App Engine SDK 1.5.5
 
 
 
@@ -103,7 +102,7 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.4.5"]` to your
+3. Edit `project.clj`: add `[appengine-magic "0.4.6-SNAPSHOT"]` to your
    `:dev-dependencies` (not `:dependencies`).
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available. If you already have the App Engine SDK installed locally,
@@ -513,16 +512,19 @@ and transactions.
   (ANY  "*" [] {:status 404 :body "not found" :headers {"Content-Type" "text/plain"}}))
 ```
 
-- `defentity` (optional keyword: `:kind`): defines an entity record type
-  suitable for storing in the App Engine datastore. These entities work just
-  like Clojure records. Internally, they implement an additional protocol,
-  EntityProtocol, which provides the `save!` method. When defining an entity,
-  you may specify `^:key` metadata on any one field of the record, and the
-  datastore will use this as the primary key. Omitting the key will make the
-  datastore assign an automatic primary key to the entity. Specifying the
-  optional `:kind` keyword (a string value) causes App Engine to save the entity
-  under the given "kind" name — like a datastore table. This allows kinds to
-  remain disjoint from entity record types.
+- `defentity` (optional keywords: `:kind`, `:before-save`, `:after-load`):
+  defines an entity record type suitable for storing in the App Engine
+  datastore. These entities work just like Clojure records. Internally, they
+  implement an additional protocol, EntityProtocol, which provides the `save!`
+  method. When defining an entity, you may specify `^:key` metadata on any one
+  field of the record, and the datastore will use this as the primary key.
+  Omitting the key will make the datastore assign an automatic primary key to
+  the entity. Specifying the optional `:kind` keyword (a string value) causes
+  App Engine to save the entity under the given "kind" name — like a datastore
+  table. This allows kinds to remain disjoint from entity record types. The
+  `:before-save` and `:after-load` keywords allow specifying a hook for
+  transforming the entity on its way into the datastore before it is saved, or
+  on its way out of the datastore after it is read.
 - `new*`: instantiates a datastore entity record. You may also use standard
   Clojure conventions to instantiate entity records, but creating entities
   destined for entity groups requires using `new*`. To put the new entity into a
@@ -942,6 +944,7 @@ console, you'll see the polling requests.
 
 The following Google services are not yet tested in the REPL environment:
 
+- Asynchronous Memcache API requests (from App Engine SDK 1.6.0)
 - Pull queues (from App Engine SDK 1.5.0)
 - Deferred API (from App Engine SDK 1.4.3)
 - Remote API (from App Engine SDK 1.4.3)

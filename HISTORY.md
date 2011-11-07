@@ -1,3 +1,14 @@
+## 0.4.6 (2011-11-07)
+
+* Basic support for App Engine SDK 1.5.5.
+* Added support for `:before-save` and `:after-load` hooks to `defentity`.
+* Made an internal change which improves support for interactive REPL use from
+  various programming tools. Clojure modes in Eclipse, IntelliJ IDEA, and
+  NetBeans should now work. VimClojure, SLIME (swank-clojure), and plain REPL
+  (`lein repl`) use should unaffected by this change.
+* Support for Clojure 1.3.
+
+
 ## 0.4.5 (2011-09-24)
 
 * Basic support for App Engine SDK 1.5.4.

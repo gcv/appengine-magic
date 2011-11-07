@@ -8,7 +8,7 @@
            org.apache.commons.io.IOUtils))
 
 
-(defonce *blobstore-service* (atom nil))
+(defonce ^{:dynamic true} *blobstore-service* (atom nil))
 
 
 (defn get-blobstore-service []
@@ -86,6 +86,6 @@
                :payload payload)))
 
 
-(if (core/in-appengine-interactive-mode?)
+(if (= :interactive (core/appengine-environment-type))
     (load "blobstore_local")
     (load "blobstore_google"))

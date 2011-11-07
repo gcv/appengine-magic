@@ -9,22 +9,22 @@
            [com.google.apphosting.api ApiProxy]))
 
 
-(def *memcache-size-units*
-     {:bytes LocalMemcacheServiceTestConfig$SizeUnit/BYTES
-      :kb LocalMemcacheServiceTestConfig$SizeUnit/KB
-      :mb LocalMemcacheServiceTestConfig$SizeUnit/MB})
+(def ^{:dynamic true} *memcache-size-units*
+  {:bytes LocalMemcacheServiceTestConfig$SizeUnit/BYTES
+   :kb LocalMemcacheServiceTestConfig$SizeUnit/KB
+   :mb LocalMemcacheServiceTestConfig$SizeUnit/MB})
 
 
-(def *logging-levels*
-     {:all java.util.logging.Level/ALL
-      :severe java.util.logging.Level/SEVERE
-      :warning java.util.logging.Level/WARNING
-      :info java.util.logging.Level/INFO
-      :config java.util.logging.Level/CONFIG
-      :fine java.util.logging.Level/FINE
-      :finer java.util.logging.Level/FINER
-      :finest java.util.logging.Level/FINEST
-      :off java.util.logging.Level/OFF})
+(def ^{:dynamic true} *logging-levels*
+  {:all java.util.logging.Level/ALL
+   :severe java.util.logging.Level/SEVERE
+   :warning java.util.logging.Level/WARNING
+   :info java.util.logging.Level/INFO
+   :config java.util.logging.Level/CONFIG
+   :fine java.util.logging.Level/FINE
+   :finer java.util.logging.Level/FINER
+   :finest java.util.logging.Level/FINEST
+   :off java.util.logging.Level/OFF})
 
 
 (defn memcache [& {:keys [max-size size-units]}]
