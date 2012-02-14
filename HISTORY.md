@@ -1,3 +1,9 @@
+## 0.4.7 (2012-02-13)
+
+* Fixed a bug in the application order of `:after-load` hooks (thanks to Shawn
+  Lewis).
+
+
 ## 0.4.6 (2011-11-07)
 
 * Basic support for App Engine SDK 1.5.5.
