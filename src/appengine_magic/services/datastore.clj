@@ -362,10 +362,11 @@
         (let [key-object (make-key-from-value key-value-or-values parent)
               entity (.get (get-datastore-service) key-object)
               raw-properties (into {} (.getProperties entity))
-              entity-record (run-after-load (record entity-record-type))]
+              entity-record (record entity-record-type)]
           (with-meta
-            (merge entity-record (entity->properties raw-properties
-                                                     (get-clj-properties entity-record)))
+            (run-after-load
+              (merge entity-record (entity->properties raw-properties
+                                                      (get-clj-properties entity-record))))
             {:key (.getKey entity)})))))
 
 
