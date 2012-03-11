@@ -97,7 +97,7 @@ You need a copy of the Google App Engine SDK installed
 somewhere. appengine-magic cannot replace its `dev_appserver.sh` and `appcfg.sh`
 functionality.
 
-1. `lein new` <project-name>
+1. `lein new project-name`
 2. Optional: `rm src/<project-name>/core.clj` to clean out the default
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
@@ -105,9 +105,11 @@ functionality.
 3. Edit `project.clj`: add `[appengine-magic "0.4.7"]` to your
    `:dev-dependencies` (not `:dependencies`).
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
-   tasks available. If you already have the App Engine SDK installed locally,
-   and do not wish to wait for Maven to download it again as a dependency, you
-   may optionally run the provided `install-artifacts.sh` script first.
+   tasks available.  If lein does not fetch appengine-magic, temporarily add
+   appengine-magic "0.4.7" to :dependencies and run `lein deps` again. If you
+   already have the App Engine SDK installed locally, and do not wish to wait
+   for Maven to download it again as a dependency, you may optionally run the
+   provided `install-artifacts.sh` script first.
 5. `lein appengine-new`. This sets up four files for your project: `core.clj`
    (which has a sample Ring handler and uses the `def-appengine-app` macro),
    `app_servlet.clj` (the entry point for the application),
