@@ -58,7 +58,10 @@
 
 (defn make-appengine-request-environment-filter []
   (reify javax.servlet.Filter
-    (init [_ _])
+    (init [_ filter-config]
+      (.setAttribute (.getServletContext filter-config)
+                     "com.google.appengine.devappserver.ApiProxyLocal"
+                     (ApiProxy/getDelegate)))
     (destroy [_])
     (doFilter [_ req resp chain]
       (let [all-cookies (.getCookies req)
