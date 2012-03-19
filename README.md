@@ -25,7 +25,7 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 ## Dependencies
 
 * Clojure 1.2.1 or Clojure 1.3.0
-* Leiningen 1.6.1
+* Leiningen 1.7.0
 * Google App Engine SDK 1.5.5
 
 
