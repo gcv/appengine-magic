@@ -26,7 +26,7 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 * Clojure 1.2.1 or Clojure 1.3.0
 * Leiningen 1.7.0
-* Google App Engine SDK 1.5.5
+* Google App Engine SDK 1.6.3.1
 
 
 
@@ -1000,6 +1000,7 @@ Many thanks to:
 * Sridhar Ratnakumar
 * Justin Barton
 * Shawn Lewis
+* Christoph Mewes
 
 
 

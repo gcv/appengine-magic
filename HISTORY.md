@@ -1,11 +1,10 @@
-## 0.4.9 (2012-03-15)
+## 0.5.0 (2012-03-19)
 
-* Add servlet LocalApiProxy property to container to fix LocalChannelServlet
-  and others. (Christoph Mewes)
+* Basic support for App Engine SDK 1.6.3.1. Added servlet LocalApiProxy property
+  to container to fix LocalChannelServlet (thanks to Christoph Mewes).
+* Added option to use high replication datastore localy (thanks to Christoph
+  Mewes).
 
-## 0.4.8 (2012-03-14)
-
-* Added option to use high replication datastore localy. (Christoph Mewes)
 
 ## 0.4.7 (2012-02-13)
 
