@@ -58,7 +58,10 @@
 
 (defn make-appengine-request-environment-filter []
   (reify javax.servlet.Filter
-    (init [_ _])
+    (init [_ filter-config]
+      (.setAttribute (.getServletContext filter-config)
+                     "com.google.appengine.devappserver.ApiProxyLocal"
+                     (ApiProxy/getDelegate)))
     (destroy [_])
     (doFilter [_ req resp chain]
       (let [all-cookies (.getCookies req)
@@ -82,10 +85,11 @@
 (defonce ^{:dynamic true} *server* (atom nil))
 
 
-(defn start [appengine-app & {:keys [port join?] :or {port 8080, join? false}}]
+(defn start [appengine-app & {:keys [port join? high-replication in-memory]
+                              :or {port 8080, join? false, high-replication false, in-memory false}}]
   (let [war-root (java.io.File. (:war-root appengine-app))
         handler-servlet (servlet (:handler appengine-app))]
-    (appengine-init war-root port)
+    (appengine-init war-root port high-replication in-memory)
     (reset!
      *server*
      (jetty/start
@@ -135,6 +139,7 @@
     (reset! *server* nil)))
 
 
-(defn serve [appengine-app & {:keys [port] :or {port 8080}}]
+(defn serve [appengine-app & {:keys [port high-replication in-memory]
+                              :or {port 8080, high-replication false, in-memory false}}]
   (stop)
-  (start appengine-app :port port))
+  (start appengine-app :port port :high-replication high-replication :in-memory in-memory))

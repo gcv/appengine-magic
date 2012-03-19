@@ -1,3 +1,12 @@
+## 0.4.9 (2012-03-15)
+
+* Add servlet LocalApiProxy property to container to fix LocalChannelServlet
+  and others. (Christoph Mewes)
+
+## 0.4.8 (2012-03-14)
+
+* Added option to use high replication datastore localy. (Christoph Mewes)
+
 ## 0.4.7 (2012-02-13)
 
 * Fixed a bug in the application order of `:after-load` hooks (thanks to Shawn
