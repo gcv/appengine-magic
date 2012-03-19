@@ -1,4 +1,4 @@
-(defproject appengine-magic "0.4.9"
+(defproject appengine-magic "0.5.0"
   :description "Google App Engine library for Clojure."
   :min-lein-version "1.7.0"
   :repositories {"releases" "http://appengine-magic-mvn.googlecode.com/svn/releases/"
@@ -14,7 +14,7 @@
                  ;; App Engine administrative interface support
                  [tomcat/jasper-runtime "5.0.28"]
                  [org.apache.geronimo.specs/geronimo-jsp_2.1_spec "1.0.1"]
-                 [jstl "1.1.2"] ; repackaged-appengine-jakarta-jstl-1.1.2.jar
+                 [javax.servlet/jstl "1.1.2"] ; repackaged-appengine-jakarta-jstl-1.1.2.jar
                  [taglibs/standard "1.1.2"] ; repackaged-appengine-jakarta-standard-1.1.2.jar
                  [commons-el "1.0"]
                  ;; main App Engine libraries
