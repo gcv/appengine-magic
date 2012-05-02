@@ -505,23 +505,22 @@
                            (.prepare (get-datastore-service) query-object))
         result-type (if (and (instance? Class kind) (extends? EntityProtocol kind))
                         kind
-                        entity-record-type)
-        result-count (.countEntities prepared-query fetch-options-object)]
-    (cond count-only? result-count
-          (zero? result-count) (list)
-          :else (let [results (seq (.asIterable prepared-query fetch-options-object))
-                      model-record (if result-type
-                                       ;; we know this type; good
-                                       (record result-type)
-                                       ;; unknown type; just use a basic EntityProtocol
-                                       (EntityBase.))]
-                  (map #(with-meta
-                          (run-after-load
-                           (merge model-record
-                                  (entity->properties (.getProperties %)
-                                                      (get-clj-properties model-record))))
-                          {:key (.getKey %)})
-                       results)))))
+                        entity-record-type)]
+    (if count-only?
+      (.countEntities prepared-query fetch-options-object)
+      (let [results (seq (.asIterable prepared-query fetch-options-object))
+            model-record (if result-type
+                             ;; we know this type; good
+                             (record result-type)
+                             ;; unknown type; just use a basic EntityProtocol
+                             (EntityBase.))]
+        (map #(with-meta
+                (run-after-load
+                 (merge model-record
+                        (entity->properties (.getProperties %)
+                                            (get-clj-properties model-record))))
+                {:key (.getKey %)})
+             results)))))
 
 
 (defmacro query
