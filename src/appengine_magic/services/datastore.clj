@@ -401,9 +401,10 @@
                            before-save identity
                            after-load identity}}]
   ;; TODO: Clojure 1.3: Remove the ugly Clojure version check.
-  (let [clj13? (fn [] (and (= 1 (:major *clojure-version*))
-                           (= 3 (:minor *clojure-version*))))
-        key-property-name (if (clj13?)
+  (let [clj13+? (fn [] (or (< 1 (:major *clojure-version*))
+                           (and (= 1 (:major *clojure-version*))
+                                (<= 3 (:minor *clojure-version*)))))
+        key-property-name (if (clj13+?)
                               (first (filter #(contains? (meta %) :key) properties))
                               (first (filter #(= (:tag (meta %)) :key) properties)))
         ;; TODO: Clojure 1.3: Remove unnecessary call to str.
@@ -413,7 +414,7 @@
         ;; http://groups.google.com/group/clojure-dev/browse_thread/thread/655f6e7d1b312f17).
         ;; TODO: This bug is fixed in Clojure 1.3 after alpha4 came out (see
         ;; http://dev.clojure.org/jira/browse/CLJ-693).
-        clj-properties (if (clj13?)
+        clj-properties (if (clj13+?)
                            (set (map (comp keyword str)
                                      (filter #(contains? (meta %) :clj) properties)))
                            (set (map (comp keyword str)
