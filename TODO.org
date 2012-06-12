@@ -1,0 +1,33 @@
+* Version 0.5.1
+*** Clojure 1.4
+*** Latest SDK support
+*** Eliminate appengine-magic.core/in-appengine-interactive-mode?
+    - send a message to the clojure-web-dev mailing list, requesting beta testing
+    - close out tickets requesting IntelliJ and CCW support
+*** Deprecate new* (maybe some Clojure 1.3 features will help?)
+*** Blobstore size limits (SDK 1.5.4)
+*** Prospective search? (SDK 1.5.4)
+*** Datastore index retrieval feature
+*** Remote API
+*** Deferred API
+*** Files API instead of the blobstore hack
+*** Start using Ring's new multipart middleware
+    - May not work: if that part of Ring loads, will it have classloader
+      problems in production App Engine?
+*** Datastore cursors
+    Use .asQueryResultIterable in ds/query*, then store enough in resulting
+    sequence metadata to be able to retrieve the cursor.
+*** Async datastore requests?
+*** Investigate MapReduce (for migrations, if nothing else)
+
+
+* Version 0.6.0 (or 1.0.0)
+*** docstrings
+*** User-level Leiningen plugin (for a smoother appengine-new task)?
+*** Finish implementing the App Engine interface
+    - [ ] Compositing in the Images API
+    - [ ] Metadata queries
+    - [ ] Capabilities (checking specific App Engine services for outage times)
+    - [ ] OAuth
+    - [ ] XMPP
+    - [ ] Multitenancy
