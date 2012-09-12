@@ -24,7 +24,7 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 ## Dependencies
 
-* Clojure 1.2.1 or Clojure 1.3.0
+* Clojure 1.4.0
 * Leiningen 1.7.0
 * Google App Engine SDK 1.6.3.1
 
@@ -269,7 +269,7 @@ A full Compojure example (includes features from the Datastore service):
 (require '[appengine-magic.core :as ae]
          '[appengine-magic.services.datastore :as ds])
 
-(ds/defentity Image [^:key name, content-type, data])
+(ds/defentity Image [^{:tag :key} name, content-type, data])
 
 (defroutes upload-images-demo-app-handler
   ;; HTML upload form
@@ -434,8 +434,8 @@ A few simple examples:
 ```clojure
 (require '[appengine-magic.services.datastore :as ds])
 
-(ds/defentity Author [^:key name, birthday])
-(ds/defentity Book [^:key isbn, title, author])
+(ds/defentity Author [^{:tag :key} name, birthday])
+(ds/defentity Book [^{:tag :key} isbn, title, author])
 
 ;; Writes three authors to the datastore.
 (let [will (Author. "Shakespeare, William" nil)
@@ -476,8 +476,8 @@ and transactions.
 (require '[appengine-magic.core :as ae]
          '[appengine-magic.services.datastore :as ds])
 
-(ds/defentity Parent [^:key name, children])
-(ds/defentity Child [^:key name])
+(ds/defentity Parent [^{:tag :key} name, children])
+(ds/defentity Child [^{:tag :key} name])
 
 (defroutes entity-group-example-app-handler
   (GET  "/" [] {:headers {"Content-Type" "text/plain"} :body "started"})
@@ -516,7 +516,7 @@ and transactions.
   defines an entity record type suitable for storing in the App Engine
   datastore. These entities work just like Clojure records. Internally, they
   implement an additional protocol, EntityProtocol, which provides the `save!`
-  method. When defining an entity, you may specify `^:key` metadata on any one
+  method. When defining an entity, you may specify `^{:tag :key}` metadata on any one
   field of the record, and the datastore will use this as the primary key.
   Omitting the key will make the datastore assign an automatic primary key to
   the entity. Specifying the optional `:kind` keyword (a string value) causes
@@ -595,7 +595,7 @@ The Clojure interface to the Datastore has an additional feature: any entity
 field may be marked with the `^:clj` metadata tag:
 
 ```clojure
-(ds/defentity TestEntity [^:key test-id, ^:clj some-table])
+(ds/defentity TestEntity [^{:tag :key} test-id, ^:clj some-table])
 ```
 
 The values of fields marked with the `^:clj` tag will go into the datastore as
@@ -659,7 +659,7 @@ This is confusing, but a Compojure example will help.
          '[appengine-magic.services.datastore :as ds]
          '[appengine-magic.services.blobstore :as blobs])
 
-(ds/defentity UploadedFile [^:key blob-key])
+(ds/defentity UploadedFile [^{:tag :key} blob-key])
 
 (defroutes upload-demo-app-handler
   ;; HTML upload form; note the upload-url call

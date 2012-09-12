@@ -36,7 +36,7 @@
                     (let [versions (if (contains? project :appengine-app-versions)
                                        (:appengine-app-versions project)
                                        (lein/abort (str task-name
-                                                        "requires :appengine-app-versions"
+                                                        " requires :appengine-app-versions"
                                                         " in project.clj")))]
                       (cond
                        ;; not a map
