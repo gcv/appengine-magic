@@ -1,8 +1,10 @@
 (ns leiningen.appengine-prepare
   "Prepares a the Google App Engine application for deployment."
   (:use appengine-magic.utils
-        [leiningen.core :only [abort]])
-  (:require leiningen.compile leiningen.jar leiningen.util.file
+        [leiningen.core.main :only [abort]])
+  (:require leiningen.compile leiningen.jar leiningen.clean
+            [leiningen.core.classpath :as classpath]
+            ;; FIXME: Remove the Lancet dependency.
             [lancet.core :as lancet])
   (:import java.io.File))
 
@@ -11,14 +13,14 @@
   (let [prj-application (or (:appengine-application project) (:name project))
         prj-display-name (or (:appengine-display-name project) (:name project))
         prj-servlet (or (:appengine-entry-servlet project) "app_servlet")
+        dependencies (classpath/resolve-dependencies :dependencies project) ; FIXME: Does this work?
         war-dir (File. (or (:appengine-app-war-root project) "war"))
-        lib-dir (File. (:library-path project))
-        lib-dev-dir (File. lib-dir "dev")
         web-inf-dir (File. war-dir "WEB-INF")
         target-lib-dir (File. web-inf-dir "lib")
         compile-path (File. (:compile-path project))
         compile-path-exists? (.isDirectory compile-path)
         compile-path-empty? (= 0 (-> compile-path .list seq count))]
+    (println dependencies)
     (println "preparing App Engine application" prj-display-name "for deployment")
     ;; check for basic correctness
     (when (some (fn [x] (= 'appengine-magic (first x)))
@@ -44,21 +46,17 @@
         (lancet/move {:file (leiningen.jar/get-jar-filename project)
                       :todir (.getPath target-lib-dir)})
         ;; copy important dependencies into WEB-INF/lib
+        ;; FIXME: This needs to exclude development-only dependencies.
         (lancet/copy {:todir (.getPath target-lib-dir)}
-                     (lancet/fileset {:dir lib-dir :includes "*" :excludes "dev"}))
-        (lancet/copy {:todir (.getPath target-lib-dir)}
-                     (lancet/fileset
-                      {:dir lib-dev-dir
-                       :includes (str "appengine-magic*,ring-core*,"
-                                      "commons-io*,commons-codec*,commons-fileupload*,"
-                                      "appengine-api-1.0-sdk*,appengine-api-labs*")}))))
+                     (lancet/fileset {:dir lib-dir
+                                      :includes "*"}))))
     ;; Projects which do not normally use AOT may need some cleanup. This should
     ;; happen regardless of compilation success or failure.
     (when-not (contains? project :aot)
       (cond
        ;; never had a classes/ directory; unlikely with Leiningen
        (not compile-path-exists?)
-       (leiningen.util.file/delete-file-recursively compile-path true)
+       (leiningen.clean/delete-file-recursively compile-path true)
        ;; had an empty classes/ directory
        compile-path-empty?
        (doseq [entry-name (.list compile-path)]

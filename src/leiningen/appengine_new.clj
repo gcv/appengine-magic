@@ -44,7 +44,7 @@
       (.mkdir web-inf-dir)
       (println "created WEB-INF directory" (.getPath web-inf-dir)))
     ;; write some base source files
-    (let [src-dir (File. (:source-path project))
+    (let [src-dir (File. (first (:source-paths project)))
           src-base-namespace-dir (File. src-dir (dash_ prj-application))
           entry-servlet-file (File. src-base-namespace-dir (str prj-servlet ".clj"))
           core-ns-file (File. src-base-namespace-dir "core.clj")]
