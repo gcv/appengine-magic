@@ -1,6 +1,5 @@
 * Version 0.5.1
-*** Clojure 1.4
-*** Latest SDK support
+*** Latest SDK support (in progress)
 *** Eliminate appengine-magic.core/in-appengine-interactive-mode?
     - send a message to the clojure-web-dev mailing list, requesting beta testing
     - close out tickets requesting IntelliJ and CCW support
@@ -21,9 +20,13 @@
 *** Investigate MapReduce (for migrations, if nothing else)
 
 
+* Version 0.5.2
+*** Some App Engine 1.6 features
+*** Some App Engine 1.7 features
+
+
 * Version 0.6.0 (or 1.0.0)
 *** docstrings
-*** User-level Leiningen plugin (for a smoother appengine-new task)?
 *** Finish implementing the App Engine interface
     - [ ] Compositing in the Images API
     - [ ] Metadata queries

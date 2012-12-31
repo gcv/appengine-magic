@@ -1,3 +1,11 @@
+## 0.5.1-SNAPSHOT (not yet released)
+
+* Basic support for App Engine SDK 1.7.4.
+* Switched to Leiningen 2. It is now required for projects using
+  appengine-magic.
+* Removed support for versions of Clojure prior to 1.4.
+
+
 ## 0.5.0 (2012-03-19)
 
 * Basic support for App Engine SDK 1.6.3.1. Added servlet LocalApiProxy property

@@ -22,11 +22,27 @@ Please read the project's HISTORY file to learn what changed in recent releases.
 
 
 
+## Current Status
+
+The code on this branch adds experimental support for App Engine SDK 1.7.4 and
+Leiningen 2.0. A stable older version is available
+[at the v0.5.0 tag](https://github.com/gcv/appengine-magic/tree/v0.5.0).
+
+
+### TODO for a stable 0.5.1 release
+
+* fix the `appengine-prepare` Leiningen task (see code comments)
+* fix the strange startup error related to the blob store
+* fix the `_ah/admin` console — some links do not work
+* retest all supported App Engine services — server push (at least) is broken
+
+
+
 ## Dependencies
 
 * Clojure 1.4.0
-* Leiningen 1.7.0
-* Google App Engine SDK 1.6.3.1
+* Leiningen 2.0
+* Google App Engine SDK 1.7.4
 
 
 
@@ -102,8 +118,8 @@ functionality.
    `core.clj` file created by Leiningen. You need to do this so that
    appengine-magic can create a default file which correctly invokes the
    `def-appengine-app` macro.
-3. Edit `project.clj`: add `[appengine-magic "0.5.0"]` to your
-   `:dev-dependencies` (not `:dependencies`).
+3. Edit `project.clj`: add `[appengine-magic "0.5.1-SNAPSHOT"]` to both your
+   `:dependencies` and `:plugins`.
 4. `lein deps`. This fetches appengine-magic, and makes its Leiningen plugin
    tasks available. If you already have the App Engine SDK installed locally,
    and do not wish to wait for Maven to download it again as a dependency, you
@@ -124,10 +140,6 @@ The default `.gitignore` file produced by Leiningen works well with the
 resulting project, but do take a careful look at it. In particular, you should
 avoid checking in `war/WEB-INF/lib/` or `war/WEB-INF/classes/`: let Leiningen
 take care of managing those directories.
-
-NB: When editing the Leiningen `project.clj` file, do not point `:compile-path`
-or `:library-path` to `war/WEB-INF/classes/` and `war/WEB-INF/lib/`. This will
-interfere with deployment.
 
 
 ### Development process
@@ -944,6 +956,8 @@ console, you'll see the polling requests.
 
 The following Google services are not yet tested in the REPL environment:
 
+- Anything added in App Engine SDK 1.6.0
+- Anything added in App Engine SDK 1.7.0
 - Asynchronous Memcache API requests (from App Engine SDK 1.6.0)
 - Pull queues (from App Engine SDK 1.5.0)
 - Deferred API (from App Engine SDK 1.4.3)
