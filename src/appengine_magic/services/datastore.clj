@@ -375,12 +375,7 @@
                  :or {kind (unqualified-name (.getName entity-record-type))}}]
   (try
     (retrieve-helper entity-record-type key-value-or-values :parent parent :kind kind)
-    ;; XXX: Clojure 1.2.x only:
-    (catch EntityNotFoundException _ nil)
-    ;; XXX: Clojure 1.3.x:
-    (catch Exception ex (if (isa? (class (.getCause ex)) EntityNotFoundException)
-                            nil
-                            (throw ex)))))
+    (catch EntityNotFoundException _ nil)))
 
 
 (defn exists? [entity-record-type key-value-or-values &
@@ -400,24 +395,9 @@
                       :or {kind (unqualified-name name)
                            before-save identity
                            after-load identity}}]
-  ;; TODO: Clojure 1.3: Remove the ugly Clojure version check.
-  (let [clj13? (fn [] (and (= 1 (:major *clojure-version*))
-                           (= 3 (:minor *clojure-version*))))
-        key-property-name (if (clj13?)
-                              (first (filter #(contains? (meta %) :key) properties))
-                              (first (filter #(= (:tag (meta %)) :key) properties)))
-        ;; TODO: Clojure 1.3: Remove unnecessary call to str.
-        key-property (if key-property-name (keyword (str key-property-name)) nil)
-        ;; XXX: The keyword and str composition below works
-        ;; around a weird Clojure bug (see
-        ;; http://groups.google.com/group/clojure-dev/browse_thread/thread/655f6e7d1b312f17).
-        ;; TODO: This bug is fixed in Clojure 1.3 after alpha4 came out (see
-        ;; http://dev.clojure.org/jira/browse/CLJ-693).
-        clj-properties (if (clj13?)
-                           (set (map (comp keyword str)
-                                     (filter #(contains? (meta %) :clj) properties)))
-                           (set (map (comp keyword str)
-                                     (filter #(= (:tag (meta %)) :clj) properties))))]
+  (let [key-property-name (first (filter #(contains? (meta %) :key) properties))
+        key-property (if key-property-name (keyword key-property-name) nil)
+        clj-properties (set (map keyword (filter #(contains? (meta %) :clj) properties)))]
     `(defrecord ~name ~properties
        EntityProtocol
        (get-clj-properties [this#]
