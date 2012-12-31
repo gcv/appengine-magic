@@ -1,8 +1,9 @@
-.DS_Store
-.lein-deps-sum
-pom.xml
-/lib
-/classes
 *.class
 *.jar
 *~
+.DS_Store
+.lein-deps-sum
+/classes
+/lib
+/target
+pom.xml
