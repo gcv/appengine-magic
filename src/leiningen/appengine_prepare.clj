@@ -48,7 +48,7 @@
         ;; copy important dependencies into WEB-INF/lib
         ;; FIXME: This needs to exclude development-only dependencies.
         (lancet/copy {:todir (.getPath target-lib-dir)}
-                     (lancet/fileset {:dir lib-dir
+                     (lancet/fileset {:dir target-lib-dir
                                       :includes "*"}))))
     ;; Projects which do not normally use AOT may need some cleanup. This should
     ;; happen regardless of compilation success or failure.
@@ -61,4 +61,4 @@
        compile-path-empty?
        (doseq [entry-name (.list compile-path)]
          (let [entry (File. compile-path entry-name)]
-           (leiningen.util.file/delete-file-recursively entry true)))))))
+           (leiningen.clean/delete-file-recursively entry true)))))))
