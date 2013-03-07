@@ -61,4 +61,4 @@
        compile-path-empty?
        (doseq [entry-name (.list compile-path)]
          (let [entry (File. compile-path entry-name)]
-           (leiningen.util.file/delete-file-recursively entry true)))))))
+           (leiningen.clean/delete-file-recursively entry true)))))))
