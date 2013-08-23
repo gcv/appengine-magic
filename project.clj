@@ -26,4 +26,6 @@
                  [com.google.appengine/appengine-local-runtime "1.7.4"]
                  [com.google.appengine/appengine-local-runtime-shared "1.7.4"]
                  [com.google.appengine/appengine-testing "1.7.4"]
-                 [com.google.appengine/appengine-tools-api "1.7.4"]])
+                 [com.google.appengine/appengine-tools-api "1.7.4"]
+                 ;; for the Leiningen plugin
+                 [lancet "1.0.2"]])

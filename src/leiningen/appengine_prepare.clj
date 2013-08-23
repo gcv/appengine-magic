@@ -5,7 +5,8 @@
   (:require leiningen.compile leiningen.jar leiningen.clean
             [leiningen.core.classpath :as classpath]
             ;; FIXME: Remove the Lancet dependency.
-            [lancet.core :as lancet])
+            [lancet.core :as lancet]
+            [clojure.string :as string])
   (:import java.io.File))
 
 
@@ -48,8 +49,9 @@
         ;; copy important dependencies into WEB-INF/lib
         ;; FIXME: This needs to exclude development-only dependencies.
         (lancet/copy {:todir (.getPath target-lib-dir)}
-                     (lancet/fileset {:dir lib-dir
-                                      :includes "*"}))))
+                     (lancet/fileset {:dir "" :includes
+                                      (string/join (for [dep dependencies]
+                                         (.getPath dep)) ",")}))))
     ;; Projects which do not normally use AOT may need some cleanup. This should
     ;; happen regardless of compilation success or failure.
     (when-not (contains? project :aot)
@@ -61,4 +63,4 @@
        compile-path-empty?
        (doseq [entry-name (.list compile-path)]
          (let [entry (File. compile-path entry-name)]
-           (leiningen.util.file/delete-file-recursively entry true)))))))
+           (leiningen.clean/delete-file-recursively entry true)))))))
