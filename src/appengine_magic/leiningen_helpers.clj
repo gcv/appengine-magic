@@ -1,6 +1,6 @@
 (ns appengine-magic.leiningen-helpers
   (:use appengine-magic.utils)
-  (:require [leiningen.core :as lein])
+  (:require [leiningen.core.main :as lein])
   (:import java.io.File
            com.google.appengine.tools.admin.AppCfg
            [org.apache.commons.exec CommandLine DefaultExecutor]))
