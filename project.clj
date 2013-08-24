@@ -28,4 +28,4 @@
                  [com.google.appengine/appengine-testing "1.7.4"]
                  [com.google.appengine/appengine-tools-api "1.7.4"]
                  ;; for the Leiningen plugin
-                 [lancet "1.0.2"]])
+                 [me.raynes/fs "1.4.4"]])

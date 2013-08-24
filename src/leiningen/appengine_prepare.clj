@@ -3,15 +3,22 @@
   (:use appengine-magic.utils
         [leiningen.core.main :only [abort]])
   (:require leiningen.compile leiningen.jar leiningen.clean
+            [leiningen.core.project :as lein-project]
             [leiningen.core.classpath :as classpath]
-            ;; FIXME: Remove the Lancet dependency.
-            [lancet.core :as lancet]
+            [me.raynes.fs :as fs]
             [clojure.string :as string])
   (:import java.io.File))
 
+(defn- copy-to-dir [file dir]
+  (let [dir (if (isa? (type dir) File) dir (File. dir)) 
+        file-path (if (isa? (type file) File) (.getPath file) file)
+        dest-file (File. dir (fs/base-name file))]
+    (println "Copying" file-path "to" (.getPath dir))
+    (fs/copy file dest-file)))
 
 (defn appengine-prepare [project]
-  (let [prj-application (or (:appengine-application project) (:name project))
+  (let [project (lein-project/set-profiles project (dissoc (:profiles project) :dev) [:dev])
+        prj-application (or (:appengine-application project) (:name project))
         prj-display-name (or (:appengine-display-name project) (:name project))
         prj-servlet (or (:appengine-entry-servlet project) "app_servlet")
         dependencies (classpath/resolve-dependencies :dependencies project) ; FIXME: Does this work?
@@ -34,24 +41,25 @@
                         :keep-non-project-classes true
                         :aot [(symbol (format "%s.%s"
                                               (_dash prj-application)
-                                              prj-servlet))]))]
-      (when (= 0 (leiningen.compile/compile project))
+                                              prj-servlet))])) 
+          ]
+        ;; Leiningen will throw an exception if compile has failed
+        (leiningen.compile/compile project)
         ;; delete existing content of target lib/
-        (lancet/delete {:dir (.getPath target-lib-dir)})
+        (fs/delete-dir target-lib-dir)
         ;; prepare destination lib/ directory
-        (lancet/mkdir {:dir target-lib-dir})
+        (fs/mkdir target-lib-dir)
         ;; make a jar of the compiled app, and put it in WEB-INF/lib
-        (leiningen.jar/jar (merge project
+        (let [{jar-file [:extension "jar"]} (leiningen.jar/jar (merge project
                                   {:omit-source true
-                                   :jar-exclusions [#"^WEB-INF/appengine-generated.*$"]}))
-        (lancet/move {:file (leiningen.jar/get-jar-filename project)
-                      :todir (.getPath target-lib-dir)})
+                                  :jar-exclusions [#"^WEB-INF/appengine-generated.*$"]}))
+              ]
+          (copy-to-dir jar-file target-lib-dir))
         ;; copy important dependencies into WEB-INF/lib
-        ;; FIXME: This needs to exclude development-only dependencies.
-        (lancet/copy {:todir (.getPath target-lib-dir)}
-                     (lancet/fileset {:dir "" :includes
-                                      (string/join (for [dep dependencies]
-                                         (.getPath dep)) ",")}))))
+        (doseq [dep dependencies] 
+          (copy-to-dir dep target-lib-dir))
+      )
+
     ;; Projects which do not normally use AOT may need some cleanup. This should
     ;; happen regardless of compilation success or failure.
     (when-not (contains? project :aot)
