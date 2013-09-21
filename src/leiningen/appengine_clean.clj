@@ -1,6 +1,6 @@
 (ns leiningen.appengine-clean
   "Cleans out appengine library area."
-  (:require [lancet.core :as lancet])
+  (:require [me.raynes.fs :as fs])
   (:import java.io.File))
 
 
@@ -10,4 +10,4 @@
         web-inf-dir (File. war-dir "WEB-INF")
         target-lib-dir (File. web-inf-dir "lib")]
     (println "cleaning out App Engine application" prj-application)
-    (lancet/delete {:dir (.getPath target-lib-dir)})))
+    (fs/delete-dir target-lib-dir)))
