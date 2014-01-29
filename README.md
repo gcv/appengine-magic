@@ -31,7 +31,6 @@ Leiningen 2.0. A stable older version is available
 
 ### TODO for a stable 0.5.1 release
 
-* fix the `appengine-prepare` Leiningen task (see code comments)
 * fix the strange startup error related to the blob store
 * fix the `_ah/admin` console — some links do not work
 * retest all supported App Engine services — server push (at least) is broken
@@ -1015,6 +1014,7 @@ Many thanks to:
 * Justin Barton
 * Shawn Lewis
 * Christoph Mewes
+* Avishai Ish-Shalom
 
 
 
