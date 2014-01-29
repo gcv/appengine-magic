@@ -3,6 +3,7 @@
 *~
 .DS_Store
 .lein-deps-sum
+.lein-env
 /classes
 /lib
 /target
