@@ -1,6 +1,6 @@
 (ns appengine-magic.leiningen-helpers
   (:use appengine-magic.utils)
-  (:require [leiningen.core :as lein])
+  (:require [leiningen.core.main :as lein])
   (:import java.io.File
            com.google.appengine.tools.admin.AppCfg
            [org.apache.commons.exec CommandLine DefaultExecutor]))
@@ -13,7 +13,7 @@
                        (nil? appengine-sdk)
                        (if-let [from-env (System/getenv "APPENGINE_HOME")]
                            from-env
-                           (lein/abort (str task-name "no App Engine SDK specified: set :appengine-sdk in project.clj, or APPENGINE_HOME in the environment")))
+                           (lein/abort task-name "no App Engine SDK specified: set :appengine-sdk in project.clj, or APPENGINE_HOME in the environment"))
                        ;; a string
                        (string? appengine-sdk)
                        appengine-sdk
@@ -23,8 +23,8 @@
                              raw (get appengine-sdk username)]
                          (when (nil? raw)
                            (lein/abort
-                            (format "no valid App Engine SDK directory defined for user %s"
-                                    username)))
+                            "no valid App Engine SDK directory defined for user"
+                                    username))
                          raw))
         appengine-sdk (let [appengine-sdk (File. appengine-sdk)]
                         (when-not (.isDirectory appengine-sdk)
@@ -35,9 +35,9 @@
                     version ; just use the given version
                     (let [versions (if (contains? project :appengine-app-versions)
                                        (:appengine-app-versions project)
-                                       (lein/abort (str task-name
-                                                        " requires :appengine-app-versions"
-                                                        " in project.clj")))]
+                                       (lein/abort task-name
+                                                        "requires :appengine-app-versions"
+                                                        "in project.clj"))]
                       (cond
                        ;; not a map
                        (not (map? versions))
@@ -53,9 +53,9 @@
         in-appengine-web-xml-tmpl (File. web-inf-dir "appengine-web.xml.tmpl")
         out-appengine-web-xml (File. web-inf-dir "appengine-web.xml")]
     (when (not (.exists in-appengine-web-xml-tmpl))
-      (lein/abort (str task-name "requires WEB-INF/appengine-web.xml.tmpl template file")))
+      (lein/abort task-name "requires WEB-INF/appengine-web.xml.tmpl template file"))
     (when (.exists out-appengine-web-xml)
-      (lein/abort (str task-name "cannot run when a WEB-INF/appengine-web.xml file exists")))
+      (lein/abort task-name "cannot run when a WEB-INF/appengine-web.xml file exists"))
     (try
       (xpath-replace-all in-appengine-web-xml-tmpl out-appengine-web-xml
                          {"//application" app-name
