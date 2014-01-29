@@ -10,7 +10,7 @@
   (:import java.io.File))
 
 (defn- copy-to-dir [file dir]
-  (let [dir (if (isa? (type dir) File) dir (File. dir)) 
+  (let [dir (if (isa? (type dir) File) dir (File. dir))
         file-path (if (isa? (type file) File) (.getPath file) file)
         dest-file (File. dir (fs/base-name file))]
     (println "Copying" file-path "to" (.getPath dir))
@@ -41,8 +41,7 @@
                         :keep-non-project-classes true
                         :aot [(symbol (format "%s.%s"
                                               (_dash prj-application)
-                                              prj-servlet))])) 
-          ]
+                                              prj-servlet))]))]
         ;; Leiningen will throw an exception if compile has failed
         (leiningen.compile/compile project)
         ;; delete existing content of target lib/
@@ -52,11 +51,10 @@
         ;; make a jar of the compiled app, and put it in WEB-INF/lib
         (let [{jar-file [:extension "jar"]} (leiningen.jar/jar (merge project
                                   {:omit-source true
-                                  :jar-exclusions [#"^WEB-INF/appengine-generated.*$"]}))
-              ]
+                                   :jar-exclusions [#"^WEB-INF/appengine-generated.*$"]}))]
           (copy-to-dir jar-file target-lib-dir))
         ;; copy important dependencies into WEB-INF/lib
-        (doseq [dep dependencies] 
+        (doseq [dep dependencies]
           (copy-to-dir dep target-lib-dir))
       )
 
