@@ -1,24 +1,10 @@
-The appengine-magic library attempts to abstract away the infrastructural nuts
-and bolts of writing a Clojure application for the Google App Engine platform.
+The appengine-magic library aims to abstract the intricate details of developing a Clojure application for the Google App Engine platform, simplifying the process significantly.
 
-The development environment of Google App Engine for Java expects pre-compiled
-classes, and generally does not fit well with Clojure's interactive development
-model. appengine-magic attempts to make REPL-based development of App Engine
-applications as natural as any other Clojure program.
+Google's App Engine development environment for Java demands pre-compiled classes, which often clashes with Clojure's interactive development model. appengine-magic bridges this gap by enabling REPL-based development for App Engine applications, making the experience as seamless as developing any other Clojure program.
 
-1. Programs using appengine-magic just need to include appengine-magic as a
-   Leiningen dev-dependency.
-2. appengine-magic takes a Ring handler and makes it available as a servlet for
-   App Engine deployment.
-3. appengine-magic is also a Leiningen plugin, and adds several tasks which
-   simplify preparing for App Engine deployment.
+To utilize appengine-magic, simply include it as a Leiningen dev-dependency. This library takes a Ring handler and transforms it into a servlet, facilitating smooth deployment on App Engine. It also functions as a Leiningen plugin, offering streamlined tasks to simplify the App Engine deployment process. While appengine-magic enhances the development experience, it's essential to have a basic understanding of Google App Engine. This README provides a comprehensive overview of using App Engine with Clojure; however, for in-depth App Engine semantics, it's advisable to consult Google's official documentation.
 
-Using appengine-magic still requires familiarity with Google App Engine. This
-README file tries to describe everything you need to know to use App Engine with
-Clojure, but does not explain the details of App Engine semantics. Please refer
-to Google's official documentation for details.
-
-Please read the project's HISTORY file to learn what changed in recent releases.
+For recent updates, please refer to the project's HISTORY file.
 
 
 
